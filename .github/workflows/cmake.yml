@@ -1,12 +1,15 @@
 name: CMake
+
 on:
   push:
-    branches: [ "CMake" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "CMake" ]
+    branches: [ "main" ]
+
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
+
 jobs:
   build:
     # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
@@ -25,14 +28,24 @@ jobs:
         cd ${{github.workspace}}/musl-source;
         export CC="${{github.workspace}}/aarch64-linux-gnu/bin/aarch64-linux-gnu-gcc";
         ./configure --prefix=${{github.workspace}}/musl aarch64 && make target=aarch64 && make target=aarch64 install
+    - name: Create directory
+      run:
+        mkdir -p ${{github.workspace}}/build
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run:
-        mkdir -p ${{github.workspace}}/build;
         export CC="${{github.workspace}}/musl/bin/musl-gcc";
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
     - name: Build modules
       run:
         export CC="${{github.workspace}}/musl/bin/musl-gcc";
         cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+    - name: Copy ELF file into module directory
+      run:
+        cp -af ${{github.workspace}}/build/turbo-charge ${{github.workspace}}/module/common/turbo-charge;
+    - name : Zip and upload module
+      uses: actions/upload-artifact@v3
+      with:
+        name: turbo-charge
+        path: ${{github.workspace}}/module
