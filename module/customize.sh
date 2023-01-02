@@ -12,7 +12,7 @@ ui_print "
  - 模块ID: $MODID
  - 作者: $MODAUTHOR
  -      模块介绍↓
- - 使用C语言编写，gcc编译器编译
+ - 使用C语言编写，Github Actions进行静态交叉编译(CMake + gcc-aarch64-linux-gnu + musl libc)
  - 删除温控，关闭阶梯式充电
  - 可选添加温控，默认当手机温度高于52℃时最高充电电流限制为2A
  - 可选添加电量控制，默认电量到达95%时断电，小于等于80%时恢复充电
