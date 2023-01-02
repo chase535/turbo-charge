@@ -52,16 +52,6 @@ void set_value(char *file, char *numb)
 			fclose(fn);
 			fn = NULL;
 		}
-		else
-		{
-			printf("无法读取%s文件，程序强制退出！\n", file);
-			exit(3);
-		}
-	}
-	else
-	{
-		printf("无法向%s文件写入数据，程序强制退出！\n", file);
-		exit(4);
 	}
 }
 
