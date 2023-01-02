@@ -37,7 +37,7 @@ jobs:
       run:
         export CC="${{github.workspace}}/musl/bin/musl-gcc";
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-    - name: Build modules
+    - name: Build module
       run:
         export CC="${{github.workspace}}/musl/bin/musl-gcc";
         cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
