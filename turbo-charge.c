@@ -24,6 +24,22 @@ void strrpc(char *str, char *oldstr, char *newstr)
 	strcpy(str, bstr);
 }
 
+void fclose_file(FILE *ffile)
+{
+	if(ffile != NULL)
+	{
+		fclose(ffile);
+	}
+}
+
+void pclose_file(FILE *pfile)
+{
+	if(pfile != NULL)
+	{
+		pclose(pfile);
+	}
+}
+
 void set_value(char *abc, char *numb)
 {
 	FILE *fn;
@@ -39,22 +55,6 @@ void set_value(char *abc, char *numb)
 				fn = NULL;
 			}
 		}
-	}
-}
-
-void fclose_file(FILE *ffile)
-{
-	if(ffile != NULL)
-	{
-		fclose(ffile);
-	}
-}
-
-void pclose_file(FILE *pfile)
-{
-	if(pfile != NULL)
-	{
-		pclose(pfile);
 	}
 }
 
