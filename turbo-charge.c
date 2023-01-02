@@ -40,21 +40,28 @@ void pclose_file(FILE *pfile)
 	}
 }
 
-void set_value(char *abc, char *numb)
+void set_value(char *file, char *numb)
 {
 	FILE *fn;
-	if(abc != NULL)
+	if((file != NULL) && (access(file, W_OK) == 0))
 	{
-		if(access(abc, W_OK) == 0)
+		fn = fopen(file, "wt");
+		if(fn != NULL)
 		{
-			fn = fopen(abc, "wt");
-			if(fn != NULL)
-			{
-				fputs(numb, fn);
-				fclose_file(fn);
-				fn = NULL;
-			}
+			fputs(numb, fn);
+			fclose(fn);
+			fn = NULL;
 		}
+		else
+		{
+			printf("无法读取%s文件，程序强制退出！\n", file);
+			exit(3);
+		}
+	}
+	else
+	{
+		printf("无法向%s文件写入数据，程序强制退出！\n", file);
+		exit(4);
 	}
 }
 
