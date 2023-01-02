@@ -71,12 +71,12 @@ void charge_value(char *i)
 {
 	set_value("/sys/class/power_supply/battery/charging_enabled", i);
 	set_value("/sys/class/power_supply/battery/battery_charging_enabled", i);
-	if(i == "1")
+	if(srtcmp(i,"1") == 0)
 	{
 		set_value("/sys/class/power_supply/battery/input_suspend", "0");
 		set_value("/sys/class/qcom-battery/restricted_charging", "0");
 	}
-	else if(i == "0")
+	else if(srtcmp(i,"0") == 0)
 	{
 		set_value("/sys/class/power_supply/battery/input_suspend", "1");
 		set_value("/sys/class/qcom-battery/restricted_charging", "1");
