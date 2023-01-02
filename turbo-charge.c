@@ -103,7 +103,7 @@ int main()
 			break;
 		}
 	}
-	if(strstr(&buffer,"type") == NULL)
+	if(strstr(buffer,"type") == NULL)
 	{
 		printf("获取温度失败！请联系模块制作者！");
 		exit(2);
