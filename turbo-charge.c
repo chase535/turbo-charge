@@ -210,13 +210,13 @@ int main()
                     }
                     fm = fopen("/sys/class/power_supply/battery/current_now", "rt");
                     fgets(done, 15, fm);
+                    fclose(fm);
+                    fm=NULL;
                     if(atoi(done) == 0)
                     {
                         charge_value("0");
                         qwer = 1;
                     }
-                    fclose(fm);
-                    fm=NULL;
                 }
                 else
                 {
@@ -237,7 +237,6 @@ int main()
                 charge_value("1");
                 qwer = 0;
             }
-            
         }
         if(temp_ctrl == 1)
         {
