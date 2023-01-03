@@ -49,6 +49,7 @@ void fclose_file(FILE *ffile)
     {
         fclose(ffile);
         ffile = NULL;
+        printf("NULL");
     }
 }
 
