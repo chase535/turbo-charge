@@ -7,20 +7,21 @@
 void strrpc(char *str, char *oldstr, char *newstr)
 {
     char bstr[strlen(str)];
-    memset(bstr, 0, sizeof(bstr));
-    for(int i = 0; i < strlen(str); i++)
+    int i=0;
+    memset(bstr,0,sizeof(bstr));
+    for(i=0; i<strlen(str);i++)
     {
         if(!strncmp(str+i, oldstr, strlen(oldstr)))
         {
-            strcat(bstr, newstr);
-            i += strlen(oldstr) - 1;
+            strcat(bstr,newstr);
+            i+=strlen(oldstr)-1;
         }
         else
         {
-            strncat(bstr, str + i, 1);
+            strncat(bstr,str+i,1);
         }
     }
-    strcpy(str, bstr);
+    strcpy(str,bstr);
 }
 
 void list_dir(char *path, char ***ppp, int *file_num)
@@ -32,7 +33,7 @@ void list_dir(char *path, char ***ppp, int *file_num)
     *ppp=(char**)malloc(sizeof(char *) * 1000);
     pDir = opendir(path);
     while ((ent = readdir(pDir)) != NULL)
-   {
+    {
         if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
         sprintf(childpath,"%s/%s",path,ent->d_name);
         (*ppp)[i]=(char *)malloc(sizeof(char) * (strlen(childpath) + 1));
@@ -40,15 +41,6 @@ void list_dir(char *path, char ***ppp, int *file_num)
         i++;
     }
     *file_num=i;
-}
-
-void fclose_file(FILE *ffile)
-{
-    if(ffile != NULL)
-    {
-        fclose(ffile);
-        ffile = NULL;
-    }
 }
 
 void set_value(char *file, char *numb)
@@ -102,8 +94,13 @@ int main()
         sprintf(buffer, "%s/type", thermal_dir[i]);
         if(access(buffer, R_OK) != 0) continue;
         fq = fopen(buffer, "rt");
-        fgets(msg, 100, fq);
-        fclose_file(fq);
+        if(fq != NULL)
+        {
+            fgets(msg, 100, fq);
+            fclose(fq);
+            fq=NULL;
+        }
+        else continue;
         line_feed(msg);
         if(strcmp(msg, "conn_therm") == 0)
         {
@@ -135,8 +132,15 @@ int main()
             printf("配置文件丢失！请联系模块制作者！");
             exit(1);
         }
+        if(access("/sys/class/power_supply/battery/status", R_OK) != 0)
+        {
+            printf("读取充电状态失败！请联系模块制作者！");
+            exit(10);
+        }
         fe = fopen("/sys/class/power_supply/battery/status", "rt");
         fgets(charge, 20, fe);
+        fclose(fe);
+        fe=NULL;
         if(strcmp(charge, "Charging") == 0)
         {
             for(i=0;i<power_supply_file_num;i++)
@@ -148,17 +152,28 @@ int main()
         }
         else
         {
+            if(access(buffer, R_OK) != 0)
+            {
+                printf("获取温度失败！请联系模块制作者！");
+                exit(20);
+            }
+            fm = fopen(buffer, "rt");
+            fscanf(fm, "%c%c%c", &asdf[0],&asdf[1],&asdf[2]);
+            fclose(fm);
+            fm=NULL;
+            asdf_int=atoi(asdf);
             for(i=0;i<power_supply_file_num;i++)
             {
                 sprintf(temps, "%s/temp", power_supply_dir[i]);
                 if(access(temps, W_OK) != 0) continue;
-                fm = fopen(buffer, "rt");
-                fscanf(fm, "%c%c%c", &asdf[0],&asdf[1],&asdf[2]);
-                asdf_int = atoi(asdf);
                 (asdf_int >= 550)?set_value(temps, "280"):set_value(temps, asdf);
             }
         }
-        fclose_file(fe);
+        if(access("/data/adb/turbo-charge/option.txt", R_OK) != 0)
+        {
+            printf("配置文件丢失！请联系模块制作者！");
+            exit(30);
+        }
         fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
         while(fgets(option, 1000, fc) != NULL)
         {
@@ -171,22 +186,37 @@ int main()
             sscanf(option, "HIGHEST_TEMP_CURRENT=%s", highest_temp_current);
             sscanf(option, "RECHARGE_TEMP=%d", &recharge_temp);
         }
+        fclose(fc);
+        fc=NULL;
         if(power_ctrl == 1)
         {
+            if(access("/sys/class/power_supply/battery/capacity", R_OK) != 0)
+            {
+                printf("获取电量信息失败！请联系模块制作者！");
+                exit(40);
+            }
             fd = fopen("/sys/class/power_supply/battery/capacity", "rt");
             fgets(power, 5, fd);
+            fclose(fd);
+            fd=NULL;
             if(atoi(power) >= charge_stop)
             {
                 if(charge_stop == 100)
                 {
+                    if(access("/sys/class/power_supply/battery/current_now", R_OK) != 0)
+                    {
+                        printf("获取电流信息失败！请联系模块制作者！");
+                        exit(50);
+                    }
                     fm = fopen("/sys/class/power_supply/battery/current_now", "rt");
                     fgets(done, 15, fm);
+                    fclose(fm);
+                    fm=NULL;
                     if(atoi(done) == 0)
                     {
                         charge_value("0");
                         qwer = 1;
                     }
-                    fclose_file(fm);
                 }
                 else
                 {
@@ -207,25 +237,38 @@ int main()
                 charge_value("1");
                 qwer = 0;
             }
-            
         }
-        fclose_file(fd);
         if(temp_ctrl == 1)
         {
+            if(access(buffer, R_OK) != 0)
+            {
+                printf("获取温度失败！请联系模块制作者！");
+                exit(60);
+            }
             fm = fopen(buffer, "rt");
             fgets(thermal, 10, fm);
+            fclose(fm);
+            fm=NULL;
             temp_int = atoi(thermal);
-            sleep(5);
             if(temp_int > temp_max*1000)
             {
                 while(temp_int > recharge_temp*1000)
                 {
-                    fclose_file(fm);
+                    if(access(buffer, R_OK) != 0)
+                    {
+                        printf("获取温度失败！请联系模块制作者！");
+                        exit(70);
+                    }
                     fm = fopen(buffer, "rt");
                     fgets(thermal, 300, fm);
+                    fclose(fm);
+                    fm=NULL;
                     temp_int = atoi(thermal);
-                    sleep(5);
-                    fclose_file(fc);
+                    if(access("/data/adb/turbo-charge/option.txt", R_OK) != 0)
+                    {
+                        printf("配置文件丢失！请联系模块制作者！");
+                        exit(80);
+                    }
                     fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
                     while(fgets(option, 1000, fc) != NULL)
                     {
@@ -235,7 +278,8 @@ int main()
                         sscanf(option, "HIGHEST_TEMP_CURRENT=%s", highest_temp_current);
                         sscanf(option, "RECHARGE_TEMP=%d", &recharge_temp);
                     }
-                    fclose_file(fc);
+                    fclose(fc);
+                    fc=NULL;
                     if(temp_ctrl == 0) break;
                     for(i=0;i<power_supply_file_num;i++)
                     {
@@ -243,28 +287,17 @@ int main()
                         if(access(constants, W_OK) != 0) continue;
                         set_value(constants, highest_temp_current);
                     }
+                    sleep(5);
                 }
             }
-            for(i=0;i<power_supply_file_num;i++)
-            {
-                sprintf(constants, "%s/constant_charge_current_max", power_supply_dir[i]);
-                if(access(constants, W_OK) != 0) continue;
-                set_value(constants, current_max);
-            }
-            fclose_file(fm);
-            fclose_file(fc);
         }
-        else
+        for(i=0;i<power_supply_file_num;i++)
         {
-            sleep(5);
-            for(i=0;i<power_supply_file_num;i++)
-            {
-                sprintf(constants, "%s/constant_charge_current_max", power_supply_dir[i]);
-                if(access(constants, W_OK) != 0) continue;
-                set_value(constants, current_max);
-            }
-            fclose_file(fc);
+            sprintf(constants, "%s/constant_charge_current_max", power_supply_dir[i]);
+            if(access(constants, W_OK) != 0) continue;
+            set_value(constants, current_max);
         }
+        sleep(5);
     }
     return 0;
 }
