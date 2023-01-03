@@ -7,20 +7,21 @@
 void strrpc(char *str, char *oldstr, char *newstr)
 {
     char bstr[strlen(str)];
-    memset(bstr, 0, sizeof(bstr));
-    for(int i = 0; i < strlen(str); i++)
+    int i=0;
+    memset(bstr,0,sizeof(bstr));
+    for(i=0; i<strlen(str);i++)
     {
         if(!strncmp(str+i, oldstr, strlen(oldstr)))
         {
-            strcat(bstr, newstr);
-            i += strlen(oldstr) - 1;
+            strcat(bstr,newstr);
+            i+=strlen(oldstr)-1;
         }
         else
         {
-            strncat(bstr, str + i, 1);
+            strncat(bstr,str+i,1);
         }
     }
-    strcpy(str, bstr);
+    strcpy(str,bstr);
 }
 
 void list_dir(char *path, char ***ppp, int *file_num)
@@ -137,6 +138,7 @@ int main()
         }
         fe = fopen("/sys/class/power_supply/battery/status", "rt");
         fgets(charge, 20, fe);
+        fclose_file(fe);
         if(strcmp(charge, "Charging") == 0)
         {
             for(i=0;i<power_supply_file_num;i++)
@@ -158,7 +160,6 @@ int main()
                 (asdf_int >= 550)?set_value(temps, "280"):set_value(temps, asdf);
             }
         }
-        fclose_file(fe);
         fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
         while(fgets(option, 1000, fc) != NULL)
         {
@@ -171,6 +172,7 @@ int main()
             sscanf(option, "HIGHEST_TEMP_CURRENT=%s", highest_temp_current);
             sscanf(option, "RECHARGE_TEMP=%d", &recharge_temp);
         }
+        fclose_file(fc);
         if(power_ctrl == 1)
         {
             fd = fopen("/sys/class/power_supply/battery/capacity", "rt");
@@ -225,7 +227,6 @@ int main()
                     fgets(thermal, 300, fm);
                     temp_int = atoi(thermal);
                     sleep(5);
-                    fclose_file(fc);
                     fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
                     while(fgets(option, 1000, fc) != NULL)
                     {
@@ -252,7 +253,6 @@ int main()
                 set_value(constants, current_max);
             }
             fclose_file(fm);
-            fclose_file(fc);
         }
         else
         {
@@ -263,7 +263,6 @@ int main()
                 if(access(constants, W_OK) != 0) continue;
                 set_value(constants, current_max);
             }
-            fclose_file(fc);
         }
     }
     return 0;
