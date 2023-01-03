@@ -104,7 +104,8 @@ int main()
         if(access(buffer, R_OK) != 0) continue;
         fq = fopen(buffer, "rt");
         fgets(msg, 100, fq);
-        fclose_file(fq);
+        fclose(fq);
+fq=NULL;
         line_feed(msg);
         if(strcmp(msg, "conn_therm") == 0)
         {
