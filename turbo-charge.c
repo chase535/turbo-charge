@@ -111,6 +111,7 @@ int main()
             break;
         }
     }
+printf("1\n");
     if(strstr(buffer,"temp") == NULL)
     {
         printf("获取温度失败！请联系模块制作者！");
@@ -135,12 +136,14 @@ int main()
             printf("配置文件丢失！请联系模块制作者！");
             exit(1);
         }
+printf("2\n");
         fe = fopen("/sys/class/power_supply/battery/status", "rt");
         fgets(charge, 20, fq);
         if(strcmp(charge, "Charging") == 0)
         {
             for(i=0;i<power_supply_file_num;i++)
             {
+printf("3\n");
                 sprintf(temps, "%s/temp", power_supply_dir[i]);
                 if(access(temps, W_OK) != 0) continue;
                 set_value(temps, "280");
@@ -150,6 +153,7 @@ int main()
         {
             for(i=0;i<power_supply_file_num;i++)
             {
+printf("4\n");
                 sprintf(temps, "%s/temp", power_supply_dir[i]);
                 if(access(temps, W_OK) != 0) continue;
                 fm = fopen(buffer, "rt");
@@ -158,6 +162,7 @@ int main()
                 (asdf_int >= 550)?set_value(temps, "280"):set_value(temps, asdf);
             }
         }
+printf("5\n");
         fclose_file(fe);
         fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
         while(fgets(option, 1000, fc) != NULL)
@@ -171,6 +176,7 @@ int main()
             sscanf(option, "HIGHEST_TEMP_CURRENT=%s", highest_temp_current);
             sscanf(option, "RECHARGE_TEMP=%d", &recharge_temp);
         }
+printf("6\n");
         if(power_ctrl == 1)
         {
             fd = fopen("/sys/class/power_supply/battery/capacity", "rt");
