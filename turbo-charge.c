@@ -49,7 +49,6 @@ void fclose_file(FILE *ffile)
     {
         fclose(ffile);
         ffile = NULL;
-        printf("NULL");
     }
 }
 
@@ -157,6 +156,7 @@ int main()
                 if(access(temps, W_OK) != 0) continue;
                 fm = fopen(buffer, "rt");
                 fscanf(fm, "%c%c%c", &asdf[0],&asdf[1],&asdf[2]);
+                fclose_file(fm);
                 asdf_int = atoi(asdf);
                 (asdf_int >= 550)?set_value(temps, "280"):set_value(temps, asdf);
             }
@@ -178,6 +178,7 @@ int main()
         {
             fd = fopen("/sys/class/power_supply/battery/capacity", "rt");
             fgets(power, 5, fd);
+            fclose_file(fd);
             if(atoi(power) >= charge_stop)
             {
                 if(charge_stop == 100)
@@ -212,20 +213,20 @@ int main()
             }
             
         }
-        fclose_file(fd);
         if(temp_ctrl == 1)
         {
             fm = fopen(buffer, "rt");
             fgets(thermal, 10, fm);
+            fclose_file(fm);
             temp_int = atoi(thermal);
             sleep(5);
             if(temp_int > temp_max*1000)
             {
                 while(temp_int > recharge_temp*1000)
                 {
-                    fclose_file(fm);
                     fm = fopen(buffer, "rt");
                     fgets(thermal, 300, fm);
+                    fclose_file(fm);
                     temp_int = atoi(thermal);
                     sleep(5);
                     fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
@@ -253,7 +254,6 @@ int main()
                 if(access(constants, W_OK) != 0) continue;
                 set_value(constants, current_max);
             }
-            fclose_file(fm);
         }
         else
         {
@@ -278,10 +278,15 @@ int main()
         printf("%ld\n",sizeof(recharge_temp));
         printf("%ld\n",sizeof(power_supply_dir));
         printf("%ld\n",sizeof(thermal_dir));
+        if(fq == NULL) printf("fq NULL\n");
         printf("%ld\n",sizeof(fq));
+        if(fm == NULL) printf("fm NULL\n");
         printf("%ld\n",sizeof(fm));
+        if(fc == NULL) printf("fc NULL\n");
         printf("%ld\n",sizeof(fc));
+        if(fd == NULL) printf("fd NULL\n");
         printf("%ld\n",sizeof(fd));
+        if(fe == NULL) printf("fe NULL\n");
         printf("%ld\n",sizeof(fe));
         printf("\n");
     }
