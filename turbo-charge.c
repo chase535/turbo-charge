@@ -219,7 +219,7 @@ int main()
 			temp_int = atoi(thermal);
 			sprintf(highest_temp_current, "%d", highest_temp_current_int);
 			sprintf(current_max, "%d", current_max_int);
-			sleep(1);
+			sleep(5);
 			if(temp_int > temp_max*1000)
 			{
 				while(temp_int > recharge_temp*1000)
@@ -228,7 +228,7 @@ int main()
 					fm = fopen(buffer, "rt");
 					fgets(thermal, 300, fm);
 					temp_int = atoi(thermal);
-					sleep(1);
+					sleep(5);
 					fclose_file(fc);
 					fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
 					while(fgets(option, 1000, fc) != NULL)
@@ -263,7 +263,7 @@ int main()
 		}
 		else
 		{
-			sleep(1);
+			sleep(5);
 			sprintf(current_max, "%d", current_max_int);
 			fa = popen("ls /sys/class/power_supply/*/constant_charge_current_max", "r");
 			while (fgets(constants, 3000, fa) != NULL)
