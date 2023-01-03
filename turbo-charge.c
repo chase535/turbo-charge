@@ -33,7 +33,7 @@ void list_dir(char *path, char ***ppp, int *file_num)
     *ppp=(char**)malloc(sizeof(char *) * 1000);
     pDir = opendir(path);
     while ((ent = readdir(pDir)) != NULL)
-   {
+    {
         if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
         sprintf(childpath,"%s/%s",path,ent->d_name);
         (*ppp)[i]=(char *)malloc(sizeof(char) * (strlen(childpath) + 1));
@@ -41,15 +41,6 @@ void list_dir(char *path, char ***ppp, int *file_num)
         i++;
     }
     *file_num=i;
-}
-
-void fclose_file(FILE *ffile)
-{
-    if(ffile != NULL)
-    {
-        printf("%d",fclose(ffile));
-        ffile = NULL;
-    }
 }
 
 void set_value(char *file, char *numb)
@@ -105,7 +96,7 @@ int main()
         fq = fopen(buffer, "rt");
         fgets(msg, 100, fq);
         fclose(fq);
-fq=NULL;
+        fq=NULL;
         line_feed(msg);
         if(strcmp(msg, "conn_therm") == 0)
         {
@@ -139,7 +130,8 @@ fq=NULL;
         }
         fe = fopen("/sys/class/power_supply/battery/status", "rt");
         fgets(charge, 20, fe);
-        fclose_file(fe);
+        fclose(fe);
+        fe=NULL;
         if(strcmp(charge, "Charging") == 0)
         {
             for(i=0;i<power_supply_file_num;i++)
@@ -157,7 +149,8 @@ fq=NULL;
                 if(access(temps, W_OK) != 0) continue;
                 fm = fopen(buffer, "rt");
                 fscanf(fm, "%c%c%c", &asdf[0],&asdf[1],&asdf[2]);
-                fclose_file(fm);
+                fclose(fm);
+                fm=NULL;
                 asdf_int = atoi(asdf);
                 (asdf_int >= 550)?set_value(temps, "280"):set_value(temps, asdf);
             }
@@ -174,12 +167,14 @@ fq=NULL;
             sscanf(option, "HIGHEST_TEMP_CURRENT=%s", highest_temp_current);
             sscanf(option, "RECHARGE_TEMP=%d", &recharge_temp);
         }
-        fclose_file(fc);
+        fclose(fc);
+        fc=NULL;
         if(power_ctrl == 1)
         {
             fd = fopen("/sys/class/power_supply/battery/capacity", "rt");
             fgets(power, 5, fd);
-            fclose_file(fd);
+            fclose(fd);
+            fd=NULL;
             if(atoi(power) >= charge_stop)
             {
                 if(charge_stop == 100)
@@ -191,7 +186,8 @@ fq=NULL;
                         charge_value("0");
                         qwer = 1;
                     }
-                    fclose_file(fm);
+                    fclose(fm);
+                    fm=NULL;
                 }
                 else
                 {
@@ -218,7 +214,8 @@ fq=NULL;
         {
             fm = fopen(buffer, "rt");
             fgets(thermal, 10, fm);
-            fclose_file(fm);
+            fclose(fm);
+            fm=NULL;
             temp_int = atoi(thermal);
             sleep(5);
             if(temp_int > temp_max*1000)
@@ -227,7 +224,8 @@ fq=NULL;
                 {
                     fm = fopen(buffer, "rt");
                     fgets(thermal, 300, fm);
-                    fclose_file(fm);
+                    fclose(fm);
+                    fm=NULL;
                     temp_int = atoi(thermal);
                     sleep(5);
                     fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
@@ -239,7 +237,8 @@ fq=NULL;
                         sscanf(option, "HIGHEST_TEMP_CURRENT=%s", highest_temp_current);
                         sscanf(option, "RECHARGE_TEMP=%d", &recharge_temp);
                     }
-                    fclose_file(fc);
+                    fclose(fc);
+                    fc=NULL;
                     if(temp_ctrl == 0) break;
                     for(i=0;i<power_supply_file_num;i++)
                     {
