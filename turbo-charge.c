@@ -94,8 +94,8 @@ void charge_value(char *i)
 int main()
 {
     FILE *fq,*fm,*fc,*fd,*fe;
-    char **power_supply_dir,**thermal_dir,done[20],asdf[310],charge[100],uevent[3010],power[100],current_max[100],highest_temp_current[100],buffer[100],constants[100],msg[20],thermal[15],temps[100],option[1010];
-    int power_supply_file_num,thermal_file_num,i,done_int,asdf_int,charge_start,charge_stop,temp_ctrl,power_ctrl,power_int,recharge_temp,current_max_int,temp_max,highest_temp_current_int,temp_int,qwer;
+    char charge_start,charge_stop,temp_ctrl,power_ctrl,recharge_temp,temp_max,**power_supply_dir,**thermal_dir,done[20],asdf[310],charge[100],uevent[3010],power[100],current_max,highest_temp_current,buffer[100],constants[100],msg[20],thermal[15],temps[100],option[1010];
+    int power_supply_file_num,thermal_file_num,i,done_int,asdf_int,power_int,temp_int,qwer;
     list_dir("/sys/class/thermal", &thermal_dir, &thermal_file_num);
     for(i=0;i<thermal_file_num;i++)
     {
@@ -165,28 +165,26 @@ int main()
         fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
         while(fgets(option, 1000, fc) != NULL)
         {
-            sscanf(option, "TEMP_CTRL=%d", &temp_ctrl);
-            sscanf(option, "POWER_CTRL=%d", &power_ctrl);
-            sscanf(option, "CHARGE_START=%d", &charge_start);
-            sscanf(option, "CHARGE_STOP=%d", &charge_stop);
-            sscanf(option, "CURRENT_MAX=%d", &current_max_int);
-            sscanf(option, "TEMP_MAX=%d", &temp_max);
-            sscanf(option, "HIGHEST_TEMP_CURRENT=%d", &highest_temp_current_int);
-            sscanf(option, "RECHARGE_TEMP=%d", &recharge_temp);
+            sscanf(option, "TEMP_CTRL=%s", &temp_ctrl);
+            sscanf(option, "POWER_CTRL=%s", &power_ctrl);
+            sscanf(option, "CHARGE_START=%s", &charge_start);
+            sscanf(option, "CHARGE_STOP=%s", &charge_stop);
+            sscanf(option, "CURRENT_MAX=%s", &current_max);
+            sscanf(option, "TEMP_MAX=%s", &temp_max);
+            sscanf(option, "HIGHEST_TEMP_CURRENT=%s", &highest_temp_current);
+            sscanf(option, "RECHARGE_TEMP=%s", &recharge_temp);
         }
-        if(power_ctrl == 1)
+        if(atoi(power_ctrl) == 1)
         {
             fd = fopen("/sys/class/power_supply/battery/capacity", "rt");
             fgets(power, 90, fd);
-            power_int = atoi(power);
-            if(power_int >= charge_stop)
+            if(power >= charge_stop)
             {
-                if(charge_stop == 100)
+                if(atoi(charge_stop) == 100)
                 {
                     fm = fopen("/sys/class/power_supply/battery/current_now", "rt");
                     fgets(done, 15, fm);
-                    done_int = atoi(done);
-                    if(done_int == 0)
+                    if(atoi(done) == 0)
                     {
                         charge_value("0");
                         qwer = 1;
@@ -199,7 +197,7 @@ int main()
                     qwer = 1;
                 }
             }
-            if(power_int <= charge_start)
+            if(power <= charge_start)
             {
                 charge_value("1");
                 qwer = 0;
@@ -215,17 +213,15 @@ int main()
             
         }
         fclose_file(fd);
-        if(temp_ctrl == 1)
+        if(atoi(temp_ctrl) == 1)
         {
             fm = fopen(buffer, "rt");
             fgets(thermal, 10, fm);
             temp_int = atoi(thermal);
-            sprintf(highest_temp_current, "%d", highest_temp_current_int);
-            sprintf(current_max, "%d", current_max_int);
             sleep(5);
-            if(temp_int > temp_max*1000)
+            if(temp_int > atoi(temp_max)*1000)
             {
-                while(temp_int > recharge_temp*1000)
+                while(temp_int > atoi(recharge_temp)*1000)
                 {
                     fclose_file(fm);
                     fm = fopen(buffer, "rt");
@@ -236,15 +232,14 @@ int main()
                     fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
                     while(fgets(option, 1000, fc) != NULL)
                     {
-                        sscanf(option, "TEMP_CTRL=%d", &temp_ctrl);
-                        sscanf(option, "CURRENT_MAX=%d", &current_max_int);
-                        sscanf(option, "TEMP_MAX=%d", &temp_max);
-                        sscanf(option, "HIGHEST_TEMP_CURRENT=%d", &highest_temp_current_int);
-                        sscanf(option, "RECHARGE_TEMP=%d", &recharge_temp);
+                        sscanf(option, "TEMP_CTRL=%s", &temp_ctrl);
+                        sscanf(option, "CURRENT_MAX=%s", &current_max);
+                        sscanf(option, "TEMP_MAX=%s", &temp_max);
+                        sscanf(option, "HIGHEST_TEMP_CURRENT=%s", &highest_temp_current);
+                        sscanf(option, "RECHARGE_TEMP=%s", &recharge_temp);
                     }
                     fclose_file(fc);
-                    sprintf(highest_temp_current, "%d", highest_temp_current_int);
-                    if(temp_ctrl == 0) break;
+                    if(atoi(temp_ctrl) == 0) break;
                     for(i=0;i<power_supply_file_num;i++)
                     {
                         sprintf(constants, "%s/constant_charge_current_max", power_supply_dir[i]);
