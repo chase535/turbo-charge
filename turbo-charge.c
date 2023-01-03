@@ -29,6 +29,7 @@ void fclose_file(FILE *ffile)
 	if(ffile != NULL)
 	{
 		fclose(ffile);
+		ffile = NULL;
 	}
 }
 
@@ -37,6 +38,7 @@ void pclose_file(FILE *pfile)
 	if(pfile != NULL)
 	{
 		pclose(pfile);
+		pfile = NULL;
 	}
 }
 
@@ -92,7 +94,6 @@ int main()
 		fq = fopen(buffer, "rt");
 		fgets(msg, 100, fq);
 		fclose_file(fq);
-		fq = NULL;
 		line_feed(msg);
 		if(strcmp(msg, "conn_therm") == 0)
 		{
@@ -106,8 +107,17 @@ int main()
 		exit(2);
 	}
 	pclose_file(fp);
-	fp = NULL;
 	charge_value("1");
+	set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+	set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
+	set_value("/sys/class/power_supply/battery/system_temp_level", "1");
+	set_value("/sys/kernel/fast_charge/failsafe", "1");
+	set_value("/sys/class/power_supply/battery/allow_hvdcp3", "1");
+	set_value("/sys/class/power_supply/usb/pd_allowed", "1");
+	set_value("/sys/class/power_supply/battery/subsystem/usb/pd_allowed", "1");
+	set_value("/sys/class/power_supply/battery/input_current_limited", "0");
+	set_value("/sys/class/power_supply/battery/input_current_settled", "1");
+	set_value("/sys/class/qcom-battery/restrict_chg", "0");
 	while(1)
 	{
 		if(access("/data/adb/turbo-charge/option.txt", F_OK) == -1)
@@ -115,16 +125,6 @@ int main()
 			printf("配置文件丢失！请联系模块制作者！");
 			exit(1);
 		}
-		set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
-		set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
-		set_value("/sys/class/power_supply/battery/system_temp_level", "1");
-		set_value("/sys/kernel/fast_charge/failsafe", "1");
-		set_value("/sys/class/power_supply/battery/allow_hvdcp3", "1");
-		set_value("/sys/class/power_supply/usb/pd_allowed", "1");
-		set_value("/sys/class/power_supply/battery/subsystem/usb/pd_allowed", "1");
-		set_value("/sys/class/power_supply/battery/input_current_limited", "0");
-		set_value("/sys/class/power_supply/battery/input_current_settled", "1");
-		set_value("/sys/class/qcom-battery/restrict_chg", "0");
 		fe = fopen("/sys/class/power_supply/battery/uevent", "rt");
 		while (fgets(uevent, 3000, fe) != NULL)
 		{
@@ -139,7 +139,6 @@ int main()
 				set_value(temps, "280");
 			}
 			pclose_file(fb);
-			fb = NULL;
 			wasd = 1;
 		}
 		else
@@ -155,14 +154,11 @@ int main()
 					asdf_int = atoi(asdf);
 					asdf_int >= 550?set_value(temps, "280"):set_value(temps, asdf);
 					fclose_file(fm);
-					fm = NULL;
 				}
 				pclose_file(fb);
-				fb = NULL;
 			}
 		}
 		fclose_file(fe);
-		fe = NULL;
 		fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
 		while(fgets(option, 1000, fc) != NULL)
 		{
@@ -193,7 +189,6 @@ int main()
 						qwer = 1;
 					}
 					fclose_file(fm);
-					fm = NULL;
 				}
 				else
 				{
@@ -217,7 +212,6 @@ int main()
 			
 		}
 		fclose_file(fd);
-		fd = NULL;
 		if(temp_ctrl == 1)
 		{
 			fm = fopen(buffer, "rt");
@@ -231,13 +225,11 @@ int main()
 				while(temp_int > recharge_temp*1000)
 				{
 					fclose_file(fm);
-					fm = NULL;
 					fm = fopen(buffer, "rt");
 					fgets(thermal, 300, fm);
 					temp_int = atoi(thermal);
 					sleep(1);
 					fclose_file(fc);
-					fc = NULL;
 					fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
 					while(fgets(option, 1000, fc) != NULL)
 					{
@@ -248,7 +240,6 @@ int main()
 						sscanf(option, "RECHARGE_TEMP=%d", &recharge_temp);
 					}
 					fclose_file(fc);
-					fc = NULL;
 					sprintf(highest_temp_current, "%d", highest_temp_current_int);
 					if(temp_ctrl == 0) break;
 					fa = popen("ls /sys/class/power_supply/*/constant_charge_current_max", "r");
@@ -258,7 +249,6 @@ int main()
 						set_value(constants, highest_temp_current);
 					}
 					pclose_file(fa);
-					fa = NULL;
 				}
 			}
 			fa = popen("ls /sys/class/power_supply/*/constant_charge_current_max", "r");
@@ -268,11 +258,8 @@ int main()
 				set_value(constants, current_max);
 			}
 			fclose_file(fm);
-			fm = NULL;
 			pclose_file(fa);
-			fa = NULL;
 			fclose_file(fc);
-			fc = NULL;
 		}
 		else
 		{
@@ -285,9 +272,7 @@ int main()
 				set_value(constants, current_max);
 			}
 			pclose_file(fa);
-			fa = NULL;
 			fclose_file(fc);
-			fc = NULL;
 		}
 	}
 	return 0;
