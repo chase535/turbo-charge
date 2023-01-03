@@ -134,7 +134,7 @@ int main()
         }
         if(access("/sys/class/power_supply/battery/status", R_OK) != 0)
         {
-            printf("读取充电状态失败！请联系模块制作者！")
+            printf("读取充电状态失败！请联系模块制作者！");
             exit(10);
         }
         fe = fopen("/sys/class/power_supply/battery/status", "rt");
@@ -154,7 +154,7 @@ int main()
         {
             if(access(buffer, R_OK) != 0)
             {
-                printf("获取温度失败！请联系模块制作者！")
+                printf("获取温度失败！请联系模块制作者！");
                 exit(20);
             }
             fm = fopen(buffer, "rt");
@@ -171,7 +171,7 @@ int main()
         }
         if(access("/data/adb/turbo-charge/option.txt", R_OK) != 0)
         {
-            printf("配置文件丢失！请联系模块制作者！")
+            printf("配置文件丢失！请联系模块制作者！");
             exit(30);
         }
         fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
@@ -192,7 +192,7 @@ int main()
         {
             if(access("/sys/class/power_supply/battery/capacity", R_OK) != 0)
             {
-                printf("获取电量信息失败！请联系模块制作者！")
+                printf("获取电量信息失败！请联系模块制作者！");
                 exit(40);
             }
             fd = fopen("/sys/class/power_supply/battery/capacity", "rt");
@@ -205,7 +205,7 @@ int main()
                 {
                     if(access("/sys/class/power_supply/battery/current_now", R_OK) != 0)
                     {
-                        printf("获取电流信息失败！请联系模块制作者！")
+                        printf("获取电流信息失败！请联系模块制作者！");
                         exit(50);
                     }
                     fm = fopen("/sys/class/power_supply/battery/current_now", "rt");
@@ -242,7 +242,7 @@ int main()
         {
             if(access(buffer, R_OK) != 0)
             {
-                printf("获取温度失败！请联系模块制作者！")
+                printf("获取温度失败！请联系模块制作者！");
                 exit(60);
             }
             fm = fopen(buffer, "rt");
@@ -256,7 +256,7 @@ int main()
                 {
                     if(access(buffer, R_OK) != 0)
                     {
-                        printf("获取温度失败！请联系模块制作者！")
+                        printf("获取温度失败！请联系模块制作者！");
                         exit(70);
                     }
                     fm = fopen(buffer, "rt");
@@ -266,7 +266,7 @@ int main()
                     temp_int = atoi(thermal);
                     if(access("/data/adb/turbo-charge/option.txt", R_OK) != 0)
                     {
-                        printf("配置文件丢失！请联系模块制作者！")
+                        printf("配置文件丢失！请联系模块制作者！");
                         exit(80);
                     }
                     fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
