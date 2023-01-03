@@ -111,7 +111,8 @@ int main()
     listDir("/sys/class/thermal", &ppp, &file_num);
     for(i=0;i<file_num;i++)
     {
-        buffer=strcpy(&(*ppp)[i],"/type");
+        printf("%s",ppp[i]);
+        buffer=strcpy(ppp[i],"/type");
         printf("%s",buffer);
         if(access(buffer, W_OK) != 0) continue;
         fq = fopen(buffer, "rt");
