@@ -94,7 +94,7 @@ void charge_value(char *i)
 int main()
 {
     FILE *fq,*fm,*fc,*fd,*fe;
-    char charge_start,charge_stop,temp_ctrl,power_ctrl,recharge_temp,temp_max,**power_supply_dir,**thermal_dir,done,asdf[310],charge,uevent[3010],power,current_max,highest_temp_current,buffer[100],constants[100],msg[20],thermal[15],temps[100],option[1010];
+    char **power_supply_dir,**thermal_dir,charge_start,charge_stop,temp_ctrl,power_ctrl,recharge_temp,temp_max,done,charge,power,current_max,highest_temp_current,buffer[100],constants[100],msg[20],thermal[15],temps[100],option[1010],asdf[310];
     int power_supply_file_num,thermal_file_num,i,asdf_int,temp_int,qwer;
     list_dir("/sys/class/thermal", &thermal_dir, &thermal_file_num);
     for(i=0;i<thermal_file_num;i++)
@@ -135,11 +135,8 @@ int main()
             printf("配置文件丢失！请联系模块制作者！");
             exit(1);
         }
-        fe = fopen("/sys/class/power_supply/battery/uevent", "rt");
-        while (fgets(uevent, 3000, fe) != NULL)
-        {
-            sscanf(uevent, "POWER_SUPPLY_STATUS=%s", &charge);
-        }
+        fe = fopen("/sys/class/power_supply/battery/status", "rt");
+        fgets(&charge, 20, fq);
         if(strcmp(&charge, "Charging") == 0)
         {
             for(i=0;i<power_supply_file_num;i++)
