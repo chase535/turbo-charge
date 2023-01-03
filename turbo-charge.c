@@ -25,19 +25,18 @@ void strrpc(char *str, char *oldstr, char *newstr)
     strcpy(str, bstr);
 }
 
-void listDir(char *path, char ***ppp, int *file_num)
+void list_dir(char *path, char ***ppp, int *file_num)
 {
     DIR *pDir;
     struct dirent *ent;
     int i=0;
     char childpath[600];
-    *ppp=(char**)malloc(sizeof(char *) * 100);
+    *ppp=(char**)malloc(sizeof(char *) * 1000);
     pDir = opendir(path);
     while ((ent = readdir(pDir)) != NULL)
    {
         if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
         sprintf(childpath,"%s/%s",path,ent->d_name);
-        printf("%s\n",childpath);
         (*ppp)[i]=(char *)malloc(sizeof(char) * (strlen(childpath) + 1));
         strcpy((*ppp)[i],childpath);
         i++;
@@ -51,15 +50,6 @@ void fclose_file(FILE *ffile)
     {
         fclose(ffile);
         ffile = NULL;
-    }
-}
-
-void pclose_file(FILE *pfile)
-{
-    if(pfile != NULL)
-    {
-        pclose(pfile);
-        pfile = NULL;
     }
 }
 
@@ -105,16 +95,14 @@ void charge_value(char *i)
 
 int main()
 {
-    FILE *fp,*fq,*fm,*fa,*fb,*fc,*fd,*fe;
-    char **ppp,done[100],asdf[310],charge[100],uevent[3010],power[100],current_max[100],highest_temp_current[100],buffer[100],constants[3010],msg[110],thermal[310],temps[3010],option[1010];
-    int file_num,i,done_int,asdf_int,wasd=0,charge_start,charge_stop,temp_ctrl,power_ctrl,power_int,recharge_temp,current_max_int,temp_max,highest_temp_current_int,temp_int,qwer;
-    listDir("/sys/class/thermal", &ppp, &file_num);
-    for(i=0;i<file_num;i++)
+    FILE *fq,*fm,*fc,*fd,*fe;
+    char **power_supply_dir,**thermal_dir,done[100],asdf[310],charge[100],uevent[3010],power[100],current_max[100],highest_temp_current[100],buffer[100],constants[100],msg[110],thermal[310],temps[3010],option[1010];
+    int power_supply_file_num,thermal_file_num,i,done_int,asdf_int,wasd=0,charge_start,charge_stop,temp_ctrl,power_ctrl,power_int,recharge_temp,current_max_int,temp_max,highest_temp_current_int,temp_int,qwer;
+    list_dir("/sys/class/thermal", &thermal_dir, &thermal_file_num);
+    for(i=0;i<thermal_file_num;i++)
     {
-        printf("%s\n",ppp[i]);
-        sprintf(buffer, "%s/type", ppp[i]);
-        printf("%s\n",buffer);
-        if(access(buffer, W_OK) != 0) continue;
+        sprintf(buffer, "%s/type", thermal_dir[i]);
+        if(access(buffer, R_OK) != 0) continue;
         fq = fopen(buffer, "rt");
         fgets(msg, 100, fq);
         fclose_file(fq);
@@ -130,7 +118,7 @@ int main()
         printf("获取温度失败！请联系模块制作者！");
         exit(2);
     }
-    pclose_file(fp);
+    list_dir("/sys/class/power_supply", &power_supply_dir, &power_supply_file_num);
     charge_value("1");
     set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
     set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
@@ -144,7 +132,7 @@ int main()
     set_value("/sys/class/qcom-battery/restrict_chg", "0");
     while(1)
     {
-        if(access("/data/adb/turbo-charge/option.txt", F_OK) == -1)
+        if(access("/data/adb/turbo-charge/option.txt", R_OK) != 0)
         {
             printf("配置文件丢失！请联系模块制作者！");
             exit(1);
@@ -156,30 +144,27 @@ int main()
         }
         if(strcmp(charge, "Charging") == 0)
         {
-            fb = popen("ls /sys/class/power_supply/*/*temp", "r");
-            while (fgets(temps, 3000, fb) != NULL)
+            for(i=0;i<power_supply_file_num;i++)
             {
-                line_feed(temps);
+                sprintf(temps, "%s/temp", power_supply_dir[i]);
+                if(access(temps, W_OK) != 0) continue;
                 set_value(temps, "280");
             }
-            pclose_file(fb);
             wasd = 1;
         }
         else
         {
             if(wasd == 1)
             {
-                fb = popen("ls /sys/class/power_supply/*/*temp", "r");
-                while (fgets(temps, 3000, fb) != NULL)
+                for(i=0;i<power_supply_file_num;i++)
                 {
-                    line_feed(temps);
+                    sprintf(temps, "%s/temp", power_supply_dir[i]);
+                    if(access(temps, W_OK) != 0) continue;
                     fm = fopen(buffer, "rt");
                     fscanf(fm, "%c%c%c", &asdf[0],&asdf[1],&asdf[2]);
                     asdf_int = atoi(asdf);
                     asdf_int >= 550?set_value(temps, "280"):set_value(temps, asdf);
-                    fclose_file(fm);
                 }
-                pclose_file(fb);
             }
         }
         fclose_file(fe);
@@ -266,36 +251,33 @@ int main()
                     fclose_file(fc);
                     sprintf(highest_temp_current, "%d", highest_temp_current_int);
                     if(temp_ctrl == 0) break;
-                    fa = popen("ls /sys/class/power_supply/*/constant_charge_current_max", "r");
-                    while (fgets(constants, 3000, fa) != NULL)
+                    for(i=0;i<power_supply_file_num;i++)
                     {
-                        line_feed(constants);
+                        sprintf(constants, "%s/constant_charge_current_max", power_supply_dir[i]);
+                        if(access(constants, W_OK) != 0) continue;
                         set_value(constants, highest_temp_current);
                     }
-                    pclose_file(fa);
                 }
             }
-            fa = popen("ls /sys/class/power_supply/*/constant_charge_current_max", "r");
-            while (fgets(constants, 3000, fa) != NULL)
+            for(i=0;i<power_supply_file_num;i++)
             {
-                line_feed(constants);
+                sprintf(constants, "%s/constant_charge_current_max", power_supply_dir[i]);
+                if(access(constants, W_OK) != 0) continue;
                 set_value(constants, current_max);
             }
             fclose_file(fm);
-            pclose_file(fa);
             fclose_file(fc);
         }
         else
         {
             sleep(5);
             sprintf(current_max, "%d", current_max_int);
-            fa = popen("ls /sys/class/power_supply/*/constant_charge_current_max", "r");
-            while (fgets(constants, 3000, fa) != NULL)
-            {    
-                line_feed(constants);
+            for(i=0;i<power_supply_file_num;i++)
+            {
+                sprintf(constants, "%s/constant_charge_current_max", power_supply_dir[i]);
+                if(access(constants, W_OK) != 0) continue;
                 set_value(constants, current_max);
             }
-            pclose_file(fa);
             fclose_file(fc);
         }
     }
