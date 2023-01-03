@@ -109,10 +109,10 @@ int main()
     char **ppp,done[100],asdf[310],charge[100],uevent[3010],power[100],current_max[100],highest_temp_current[100],*buffer,constants[3010],msg[110],thermal[310],temps[3010],option[1010];
     int file_num,i,done_int,asdf_int,wasd=0,charge_start,charge_stop,temp_ctrl,power_ctrl,power_int,recharge_temp,current_max_int,temp_max,highest_temp_current_int,temp_int,qwer;
     listDir("/sys/class/thermal", &ppp, &file_num);
-    fp = popen("ls /sys/class/thermal/thermal_*/type", "r");
     for(i=0;i<file_num;i++)
     {
         buffer=strcpy(&(*ppp)[i],"/type");
+        printf("%s",buffer);
         if(access(buffer, W_OK) != 0) continue;
         fq = fopen(buffer, "rt");
         fgets(msg, 100, fq);
