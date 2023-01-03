@@ -79,12 +79,12 @@ void charge_value(char *i)
 {
     set_value("/sys/class/power_supply/battery/charging_enabled", i);
     set_value("/sys/class/power_supply/battery/battery_charging_enabled", i);
-    if(strcmp(i,"1") == 0)
+    if(atoi(i) == 1)
     {
         set_value("/sys/class/power_supply/battery/input_suspend", "0");
         set_value("/sys/class/qcom-battery/restricted_charging", "0");
     }
-    else if(strcmp(i,"0") == 0)
+    else if(atoi(i) == 0)
     {
         set_value("/sys/class/power_supply/battery/input_suspend", "1");
         set_value("/sys/class/qcom-battery/restricted_charging", "1");
@@ -94,8 +94,8 @@ void charge_value(char *i)
 int main()
 {
     FILE *fq,*fm,*fc,*fd,*fe;
-    char **power_supply_dir,**thermal_dir,done[100],asdf[310],charge[100],uevent[3010],power[100],current_max[100],highest_temp_current[100],buffer[100],constants[100],msg[110],thermal[310],temps[3010],option[1010];
-    int power_supply_file_num,thermal_file_num,i,done_int,asdf_int,wasd=0,charge_start,charge_stop,temp_ctrl,power_ctrl,power_int,recharge_temp,current_max_int,temp_max,highest_temp_current_int,temp_int,qwer;
+    char **power_supply_dir,**thermal_dir,done[20],asdf[310],charge[100],uevent[3010],power[100],current_max[100],highest_temp_current[100],buffer[100],constants[100],msg[20],thermal[15],temps[100],option[1010];
+    int power_supply_file_num,thermal_file_num,i,done_int,asdf_int,charge_start,charge_stop,temp_ctrl,power_ctrl,power_int,recharge_temp,current_max_int,temp_max,highest_temp_current_int,temp_int,qwer;
     list_dir("/sys/class/thermal", &thermal_dir, &thermal_file_num);
     for(i=0;i<thermal_file_num;i++)
     {
@@ -148,21 +148,17 @@ int main()
                 if(access(temps, W_OK) != 0) continue;
                 set_value(temps, "280");
             }
-            wasd = 1;
         }
         else
         {
-            if(wasd == 1)
+            for(i=0;i<power_supply_file_num;i++)
             {
-                for(i=0;i<power_supply_file_num;i++)
-                {
-                    sprintf(temps, "%s/temp", power_supply_dir[i]);
-                    if(access(temps, W_OK) != 0) continue;
-                    fm = fopen(buffer, "rt");
-                    fscanf(fm, "%c%c%c", &asdf[0],&asdf[1],&asdf[2]);
-                    asdf_int = atoi(asdf);
-                    asdf_int >= 550?set_value(temps, "280"):set_value(temps, asdf);
-                }
+                sprintf(temps, "%s/temp", power_supply_dir[i]);
+                if(access(temps, W_OK) != 0) continue;
+                fm = fopen(buffer, "rt");
+                fscanf(fm, "%c%c%c", &asdf[0],&asdf[1],&asdf[2]);
+                asdf_int = atoi(asdf);
+                (asdf_int >= 550)?set_value(temps, "280"):set_value(temps, asdf);
             }
         }
         fclose_file(fe);
@@ -188,7 +184,7 @@ int main()
                 if(charge_stop == 100)
                 {
                     fm = fopen("/sys/class/power_supply/battery/current_now", "rt");
-                    fgets(done, 300, fm);
+                    fgets(done, 15, fm);
                     done_int = atoi(done);
                     if(done_int == 0)
                     {
@@ -222,7 +218,7 @@ int main()
         if(temp_ctrl == 1)
         {
             fm = fopen(buffer, "rt");
-            fgets(thermal, 300, fm);
+            fgets(thermal, 10, fm);
             temp_int = atoi(thermal);
             sprintf(highest_temp_current, "%d", highest_temp_current_int);
             sprintf(current_max, "%d", current_max_int);
