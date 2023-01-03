@@ -166,9 +166,9 @@ int main()
             sscanf(option, "POWER_CTRL=%d", &power_ctrl);
             sscanf(option, "CHARGE_START=%d", &charge_start);
             sscanf(option, "CHARGE_STOP=%d", &charge_stop);
-            sscanf(option, "CURRENT_MAX=%s", &current_max);
+            sscanf(option, "CURRENT_MAX=%s", current_max);
             sscanf(option, "TEMP_MAX=%d", &temp_max);
-            sscanf(option, "HIGHEST_TEMP_CURRENT=%s", &highest_temp_current);
+            sscanf(option, "HIGHEST_TEMP_CURRENT=%s", highest_temp_current);
             sscanf(option, "RECHARGE_TEMP=%d", &recharge_temp);
         }
         if(power_ctrl == 1)
@@ -230,9 +230,9 @@ int main()
                     while(fgets(option, 1000, fc) != NULL)
                     {
                         sscanf(option, "TEMP_CTRL=%d", &temp_ctrl);
-                        sscanf(option, "CURRENT_MAX=%s", &current_max);
+                        sscanf(option, "CURRENT_MAX=%s", current_max);
                         sscanf(option, "TEMP_MAX=%d", &temp_max);
-                        sscanf(option, "HIGHEST_TEMP_CURRENT=%s", &highest_temp_current);
+                        sscanf(option, "HIGHEST_TEMP_CURRENT=%s", highest_temp_current);
                         sscanf(option, "RECHARGE_TEMP=%d", &recharge_temp);
                     }
                     fclose_file(fc);
@@ -241,7 +241,7 @@ int main()
                     {
                         sprintf(constants, "%s/constant_charge_current_max", power_supply_dir[i]);
                         if(access(constants, W_OK) != 0) continue;
-                        set_value(constants, &highest_temp_current);
+                        set_value(constants, highest_temp_current);
                     }
                 }
             }
