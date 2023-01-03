@@ -138,7 +138,7 @@ printf("1\n");
         }
 printf("2\n");
         fe = fopen("/sys/class/power_supply/battery/status", "rt");
-        fgets(charge, 20, fq);
+        fgets(charge, 20, fe);
         if(strcmp(charge, "Charging") == 0)
         {
             for(i=0;i<power_supply_file_num;i++)
