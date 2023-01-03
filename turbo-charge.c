@@ -275,7 +275,13 @@ int main()
         printf("%ld\n",sizeof(charge_start));
         printf("%ld\n",sizeof(charge_stop));
         printf("%ld\n",sizeof(recharge_temp));
-        printf("%ld\n",sizeof(temp_max));
+        printf("%ld\n",sizeof(power_supply_dir));
+        printf("%ld\n",sizeof(thermal_dir));
+        printf("%ld\n",sizeof(fq));
+        printf("%ld\n",sizeof(fm));
+        printf("%ld\n",sizeof(fc));
+        printf("%ld\n",sizeof(fd));
+        printf("%ld\n",sizeof(fe));
         printf("\n");
     }
     return 0;
