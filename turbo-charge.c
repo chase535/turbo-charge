@@ -264,6 +264,18 @@ int main()
                 set_value(constants, current_max);
             }
         }
+        printf("%d\n",sizeof(power_supply_file_num));
+        printf("%d\n",sizeof(thermal_file_num));
+        printf("%d\n",sizeof(i));
+        printf("%d\n",sizeof(asdf_int));
+        printf("%d\n",sizeof(temp_int));
+        printf("%d\n",sizeof(qwer));
+        printf("%d\n",sizeof(temp_ctrl));
+        printf("%d\n",sizeof(power_ctrl));
+        printf("%d\n",sizeof(charge_start));
+        printf("%d\n",sizeof(charge_stop));
+        printf("%d\n",sizeof(recharge_temp));
+        printf("%d\n",sizeof(temp_max));
     }
     return 0;
 }
