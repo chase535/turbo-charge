@@ -112,7 +112,7 @@ int main()
     fp = popen("ls /sys/class/thermal/thermal_*/type", "r");
     for(i=0;i<*file_num;i++)
     {
-        buffer=strcpy((*ppp)[i],"/type");
+        buffer=strcpy(&((*ppp)[i]),"/type");
         if(access(buffer, W_OK) != 0) continue;
         fq = fopen(buffer, "rt");
         fgets(msg, 100, fq);
