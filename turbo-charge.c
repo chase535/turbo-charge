@@ -94,7 +94,7 @@ void charge_value(char *i)
 int main()
 {
     FILE *fq,*fm,*fc,*fd,*fe;
-    char charge_start,charge_stop,temp_ctrl,power_ctrl,recharge_temp,temp_max,**power_supply_dir,**thermal_dir,done[20],asdf[310],charge[100],uevent[3010],power[100],current_max,highest_temp_current,buffer[100],constants[100],msg[20],thermal[15],temps[100],option[1010];
+    char charge_start,charge_stop,temp_ctrl,power_ctrl,recharge_temp,temp_max,**power_supply_dir,**thermal_dir,done,asdf[310],charge,uevent[3010],power,current_max,highest_temp_current,buffer[100],constants[100],msg[20],thermal[15],temps[100],option[1010];
     int power_supply_file_num,thermal_file_num,i,asdf_int,temp_int,qwer;
     list_dir("/sys/class/thermal", &thermal_dir, &thermal_file_num);
     for(i=0;i<thermal_file_num;i++)
@@ -138,9 +138,9 @@ int main()
         fe = fopen("/sys/class/power_supply/battery/uevent", "rt");
         while (fgets(uevent, 3000, fe) != NULL)
         {
-            sscanf(uevent, "POWER_SUPPLY_STATUS=%s", charge);
+            sscanf(uevent, "POWER_SUPPLY_STATUS=%s", &charge);
         }
-        if(strcmp(charge, "Charging") == 0)
+        if(strcmp(&charge, "Charging") == 0)
         {
             for(i=0;i<power_supply_file_num;i++)
             {
@@ -177,14 +177,14 @@ int main()
         if(atoi(&power_ctrl) == 1)
         {
             fd = fopen("/sys/class/power_supply/battery/capacity", "rt");
-            fgets(power, 90, fd);
-            if(*power >= charge_stop)
+            fgets(&power, 90, fd);
+            if(power >= charge_stop)
             {
                 if(atoi(&charge_stop) == 100)
                 {
                     fm = fopen("/sys/class/power_supply/battery/current_now", "rt");
-                    fgets(done, 15, fm);
-                    if(atoi(done) == 0)
+                    fgets(&done, 15, fm);
+                    if(atoi(&done) == 0)
                     {
                         charge_value("0");
                         qwer = 1;
@@ -197,7 +197,7 @@ int main()
                     qwer = 1;
                 }
             }
-            if(*power <= charge_start)
+            if(power <= charge_start)
             {
                 charge_value("1");
                 qwer = 0;
@@ -221,7 +221,7 @@ int main()
             sleep(5);
             if(temp_int > atoi(&temp_max)*1000)
             {
-                while(temp_int > atoi(recharge_temp)*1000)
+                while(temp_int > atoi(&recharge_temp)*1000)
                 {
                     fclose_file(fm);
                     fm = fopen(buffer, "rt");
