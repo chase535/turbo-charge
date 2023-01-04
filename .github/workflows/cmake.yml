@@ -18,11 +18,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Clone aarch64-linux-gnu
-      run: git clone https://github.com/radcolor/aarch64-linux-gnu.git ${{github.workspace}}/aarch64-linux-gnu --depth=1
-    - name: Clone musl source
+    - name: Cloning binutils
+      run: git clone git://sourceware.org/git/binutils-gdb.git -b master binutils --depth=1
+    - name: Cloning GCC
+      run: git clone git://gcc.gnu.org/git/gcc.git -b master gcc --depth=1
+    - name: Building Binutils
+      run:
+        mkdir build-binutils;
+        cd build-binutils;
+        ../binutils/configure --target="aarch64-linux-gnu" CFLAGS="-flto -flto-compression-level=10 -O3 -pipe -ffunction-sections -fdata-sections" CXXFLAGS="-flto -flto-compression-level=10 -O3 -pipe -ffunction-sections -fdata-sections" --disable-docs --disable-gdb --disable-nls --disable-werror --enable-gold --prefix="${{github.workspace}}/gcc-aarch64-linux-gnu" --with-pkgversion="Eva Binutils" --with-sysroot;
+        make -j$(nproc --all);
+        make install -j$(nproc --all)
+      
+    - name: Building GCC
+      run:
+        mkdir build-gcc;
+        cd gcc;
+        ./contrib/download_prerequisites;
+        echo "Bleeding Edge" > gcc/DEV-PHASE;
+        cd ../build-gcc;
+        ../gcc/configure --target="aarch64-linux-gnu" CFLAGS="-flto -flto-compression-level=10 -O3 -pipe -ffunction-sections -fdata-sections" CXXFLAGS="-flto -flto-compression-level=10 -O3 -pipe -ffunction-sections -fdata-sections" --disable-decimal-float --disable-docs --disable-gcov --disable-libffi --disable-libgomp --disable-libmudflap --disable-libquadmath --disable-libstdcxx-pch --disable-nls --disable-shared --enable-default-ssp --enable-languages=c,c++ --enable-threads=posix --prefix="${{github.workspace}}/gcc-aarch64-linux-gnu" --with-gnu-as --with-gnu-ld --with-headers="/usr/include" --with-linker-hash-style=gnu --with-newlib --with-pkgversion="Eva GCC" --with-sysroot;
+        make all-gcc -j$(nproc --all);
+        make all-target-libgcc -j$(nproc --all);
+        make install-gcc -j$(nproc --all);
+        make install-target-libgcc -j$(nproc --all)
+    - name: Cloning musl source
       run: git clone https://github.com/bminor/musl.git ${{github.workspace}}/musl-source --depth=1
-    - name: Build musl
+    - name: Building musl
       run:
         mkdir -p ${{github.workspace}}/musl;
         cd ${{github.workspace}}/musl-source;
