@@ -141,6 +141,7 @@ int main()
         fgets(charge, 20, fe);
         fclose(fe);
         fe=NULL;
+        line_feed(charge);
         if(strcmp(charge, "Charging") == 0)
         {
             for(i=0;i<power_supply_file_num;i++)
