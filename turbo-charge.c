@@ -51,7 +51,7 @@ void set_value(char *file, char *numb)
         fn = fopen(file, "wt");
         if(fn != NULL)
         {
-            fputs(numb, fn);
+            fputs(numb,fn);
             fclose(fn);
             fn = NULL;
         }
@@ -86,42 +86,52 @@ void charge_value(char *i)
 int main()
 {
     FILE *fq,*fm,*fc,*fd,*fe;
-    char **power_supply_dir,**thermal_dir,done[20],charge[25],power[10],current_max[20],highest_temp_current[20],buffer[100],bms[100]="none",conn_therm[100]="none",battery[100]="none",constants[100],msg[20],thermal[15],option[1010],asdf[15];
-    int power_supply_file_num,thermal_file_num,i,temp_int,qwer,temp_ctrl,power_ctrl,charge_start,charge_stop,recharge_temp,temp_max;
+    char **power_supply_dir,**thermal_dir,done[20],charge[25],power[10],current_max[20],highest_temp_current[20],buffer[100],bms[100]="none",conn_therm[100]="none",battery[100]="none",constants[100],msg[20],thermal[15],option[1010],asdf[15],bat_temp[15];
+    int power_supply_file_num,thermal_file_num,i,asdf_int,temp_int,fu,bat_temp_int,qwer,temp_ctrl,power_ctrl,charge_start,charge_stop,recharge_temp,temp_max;
     list_dir("/sys/class/thermal", &thermal_dir, &thermal_file_num);
     for(i=0;i<thermal_file_num;i++)
     {
-        sprintf(buffer, "%s/type", thermal_dir[i]);
-        if(access(buffer, R_OK) != 0) continue;
-        fq = fopen(buffer, "rt");
-        if(fq != NULL)
+        if(strstr(thermal_dir[i],"thermal_zone")!=NULL)
         {
-            fgets(msg, 100, fq);
-            fclose(fq);
-            fq=NULL;
-        }
-        else continue;
-        line_feed(msg);
-        if(strcmp(msg, "conn_therm") == 0)
-        {
-            strrpc(buffer, "type", "temp");
-            strcpy(conn_therm, buffer);
-        }
-        else if(strcmp(msg, "battery") == 0)
-        {
-            strrpc(buffer, "type", "temp");
-            strcpy(battery, buffer);
-        }
-        else if(strcmp(msg, "bms") == 0)
-        {
-            strrpc(buffer, "type", "temp");
-            strcpy(bms, buffer);
+            sprintf(buffer, "%s/type", thermal_dir[i]);
+            if(access(buffer, R_OK) != 0) continue;
+            fq = fopen(buffer, "rt");
+            if(fq != NULL)
+            {
+                fgets(msg, 100, fq);
+                fclose(fq);
+                fq=NULL;
+            }
+            else continue;
+            line_feed(msg);
+            if(strcmp(msg, "conn_therm") == 0)
+            {
+                strrpc(buffer, "type", "temp");
+                strcpy(conn_therm, buffer);
+            }
+            else if(strcmp(msg, "battery") == 0)
+            {
+                strrpc(buffer, "type", "temp");
+                strcpy(battery, buffer);
+            }
+            else if(strcmp(msg, "bms") == 0)
+            {
+                strrpc(buffer, "type", "temp");
+                strcpy(bms, buffer);
+            }
         }
     }
+    strcpy(battery, "/sys/class/power_supply/battery/temp");
+    strcpy(bms, "/sys/class/power_supply/bms/temp");
     if(strcmp(conn_therm,"none")==0 || strcmp(battery,"none")==0 || strcmp(bms,"none")==0)
     {
         printf("获取温度失败！请联系模块制作者！");
         exit(2);
+    }
+    else if(access(conn_therm, R_OK) != 0 || access(battery, W_OK) != 0 || access(bms, W_OK) != 0)
+    {
+        printf("获取温度失败！请联系模块制作者！");
+        exit(5);
     }
     list_dir("/sys/class/power_supply", &power_supply_dir, &power_supply_file_num);
     charge_value("1");
@@ -168,13 +178,13 @@ int main()
         line_feed(charge);
         if(strcmp(charge, "Charging") == 0)
         {
-            set_value(battery, "280");
-            set_value(bms, "280");
             if(access(conn_therm, R_OK) != 0 || access(battery, W_OK) != 0 || access(bms, W_OK) != 0)
             {
                 printf("获取温度失败！请联系模块制作者！");
                 exit(20);
             }
+            set_value(battery, "280");
+            set_value(bms, "280");
             if(power_ctrl == 1)
             {
                 if(access("/sys/class/power_supply/battery/capacity", R_OK) != 0)
@@ -247,12 +257,12 @@ int main()
                         if(access(conn_therm, R_OK) != 0 || access(battery, W_OK) != 0 || access(bms, W_OK) != 0)
                         {
                             printf("获取温度失败！请联系模块制作者！");
-                            exit(20);
+                            exit(70);
                         }
                         if(access("/sys/class/power_supply/battery/status", R_OK) != 0)
                         {
                             printf("读取充电状态失败！请联系模块制作者！");
-                            exit(10);
+                            exit(80);
                         }
                         fe = fopen("/sys/class/power_supply/battery/status", "rt");
                         fgets(charge, 20, fe);
@@ -265,7 +275,7 @@ int main()
                         if(access(conn_therm, R_OK) != 0)
                         {
                             printf("获取温度失败！请联系模块制作者！");
-                            exit(70);
+                            exit(90);
                         }
                         fm = fopen(conn_therm, "rt");
                         fgets(thermal, 300, fm);
@@ -276,7 +286,7 @@ int main()
                         if(access("/data/adb/turbo-charge/option.txt", R_OK) != 0)
                         {
                             printf("配置文件丢失！请联系模块制作者！");
-                            exit(80);
+                            exit(100);
                         }
                         fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
                         while(fgets(option, 1000, fc) != NULL)
@@ -312,22 +322,42 @@ int main()
             if(access(conn_therm, R_OK) != 0 || access(battery, W_OK) != 0 || access(bms, W_OK) != 0)
             {
                 printf("获取温度失败！请联系模块制作者！");
-                exit(20);
+                exit(110);
             }
             fm = fopen(conn_therm, "rt");
             fgets(asdf, 10, fm);
             fclose(fm);
             fm=NULL;
             line_feed(asdf);
-            if(atoi(asdf) >= 55000)
+            asdf_int=atoi(asdf);
+            fu=0;
+            if(asdf_int<0)
             {
-                set_value(battery, "280");
-                set_value(bms, "280");
+                asdf_int=abs(asdf_int);
+                fu=1;
+            }
+            sprintf(asdf,"%05d",asdf_int);
+            sprintf(bat_temp,"%c%c%c",asdf[0],asdf[1],asdf[2]);
+            bat_temp_int=atoi(bat_temp);
+            if(fu==0)
+            {
+                if(asdf_int >= 55000)
+                {
+                    set_value(battery, "280");
+                    set_value(bms, "280");
+                }
+                else
+                {
+                    sprintf(bat_temp,"%d",bat_temp_int);
+                    set_value(battery, bat_temp);
+                    set_value(bms, bat_temp);
+                }
             }
             else
             {
-                set_value(battery, asdf);
-                set_value(bms, asdf);
+                sprintf(bat_temp,"-%d",bat_temp_int);
+                set_value(battery, bat_temp);
+                set_value(bms, bat_temp);
             }
         }
         sleep(5);
