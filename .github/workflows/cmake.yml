@@ -33,6 +33,22 @@ jobs:
       run:
         export CC="${{github.workspace}}/aarch64-linux-gnu-with-musl/musl/bin/musl-gcc";
         cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+    - name: Build module
+      run:
+        mkdir -p ${{github.workspace}}/123
+        export CC="${{github.workspace}}/aarch64-linux-gnu-with-musl/musl/bin/musl-gcc";
+        cmake --build ${{github.workspace}}/123 --config ${{env.BUILD_TYPE}}
+    - name: Build module
+      run:
+        mkdir -p ${{github.workspace}}/1/2;
+        cp -af ${{github.workspace}}/aarch64-linux-gnu-with-musl ${{github.workspace}}/1;
+        rm -rf ${{github.workspace}}/aarch64-linux-gnu-with-musl;
+        export CC="${{github.workspace}}/1/aarch64-linux-gnu-with-musl/musl/bin/musl-gcc";
+        cmake --build ${{github.workspace}}/1/2 --config ${{env.BUILD_TYPE}}
+    - name: Build module
+      run:
+        export CC="${{github.workspace}}/1/aarch64-linux-gnu-with-musl/musl/bin/musl-gcc";
+        cmake --build ${{github.workspace}}/1 --config ${{env.BUILD_TYPE}}
     - name: Copy ELF file into module directory
       run:
         cp -af ${{github.workspace}}/build/turbo-charge ${{github.workspace}}/module/common/turbo-charge;
