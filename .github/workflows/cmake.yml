@@ -35,7 +35,7 @@ jobs:
         cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
     - name: Build module
       run:
-        mkdir -p ${{github.workspace}}/123
+        mkdir -p ${{github.workspace}}/123;
         export CC="${{github.workspace}}/aarch64-linux-gnu-with-musl/musl/bin/musl-gcc";
         cmake --build ${{github.workspace}}/123 --config ${{env.BUILD_TYPE}}
     - name: Build module
