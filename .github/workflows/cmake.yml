@@ -18,67 +18,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Cloning binutils
-      run: git clone git://sourceware.org/git/binutils-gdb.git -b master binutils --depth=1
-    - name: Cloning GCC
-      run: git clone git://gcc.gnu.org/git/gcc.git -b master gcc --depth=1
-      
-    - name: Building GMP6.2.1
-      run:
-        wget https://ftp.gnu.org/gnu/gmp/gmp-6.2.1.tar.bz2;
-        tar -vxf gmp-6.2.1.tar.bz2;
-        cd gmp-6.2.1/;
-        ./configure --prefix="${{github.workspace}}/gmp";
-        make -j$(nproc --all);
-        make install -j$(nproc --all)
-    - name: Building MPFR4.1.1
-      run:
-        wget https://ftp.gnu.org/gnu/mpfr/mpfr-4.1.1.tar.gz;
-        tar -vxf mpfr-4.1.1.tar.gz;
-        cd mpfr-4.1.1/;
-        ./configure --prefix="${{github.workspace}}/mpfr";
-        make -j$(nproc --all);
-        make install -j$(nproc --all)
-    - name: Building Binutils
-      run:
-        mkdir build-binutils;
-        cd build-binutils;
-        ../binutils/configure --target="aarch64-linux-gnu" --with-gmp="${{github.workspace}}/gmp" --with-mpfr="${{github.workspace}}/mpfr" CFLAGS="-flto -flto-compression-level=10 -O3 -pipe -ffunction-sections -fdata-sections" CXXFLAGS="-flto -flto-compression-level=10 -O3 -pipe -ffunction-sections -fdata-sections" --disable-docs --disable-gdb --disable-nls --disable-werror --enable-gold --prefix="${{github.workspace}}/gcc-aarch64-linux-gnu" --with-pkgversion="Eva Binutils" --with-sysroot;
-        make -j$(nproc --all);
-        make install -j$(nproc --all)
-      
-    - name: Building GCC
-      run:
-        mkdir build-gcc;
-        cd gcc;
-        ./contrib/download_prerequisites;
-        echo "Bleeding Edge" > gcc/DEV-PHASE;
-        cd ../build-gcc;
-        ../gcc/configure --target="aarch64-linux-gnu" CFLAGS="-flto -flto-compression-level=10 -O3 -pipe -ffunction-sections -fdata-sections" CXXFLAGS="-flto -flto-compression-level=10 -O3 -pipe -ffunction-sections -fdata-sections" --disable-decimal-float --disable-docs --disable-gcov --disable-libffi --disable-libgomp --disable-libmudflap --disable-libquadmath --disable-libstdcxx-pch --disable-nls --disable-shared --enable-default-ssp --enable-languages=c,c++ --enable-threads=posix --prefix="${{github.workspace}}/gcc-aarch64-linux-gnu" --with-gnu-as --with-gnu-ld --with-headers="/usr/include" --with-linker-hash-style=gnu --with-newlib --with-pkgversion="Eva GCC" --with-sysroot;
-        make all-gcc -j$(nproc --all);
-        make all-target-libgcc -j$(nproc --all);
-        make install-gcc -j$(nproc --all);
-        make install-target-libgcc -j$(nproc --all)
-    - name: Cloning musl source
-      run: git clone https://github.com/bminor/musl.git ${{github.workspace}}/musl-source --depth=1
-    - name: Building musl
-      run:
-        mkdir -p ${{github.workspace}}/musl;
-        cd ${{github.workspace}}/musl-source;
-        export CC="${{github.workspace}}/gcc-aarch64-linux-gnu/bin/aarch64-linux-gnu-gcc";
-        ./configure --prefix=${{github.workspace}}/musl aarch64 && make target=aarch64 && make target=aarch64 install
+    - name: Clone aarch64-linux-gnu-with-musl
+      run: git clone https://github.com/chase535/aarch64-linux-gnu-with-musl.git ${{github.workspace}}/aarch64-linux-gnu-with-musl -b main --depth=1
     - name: Create directory
       run:
-        mkdir -p ${{github.workspace}}/build
+        mkdir -vp ${{github.workspace}}/build
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run:
-        export CC="${{github.workspace}}/musl/bin/musl-gcc";
+        export CC="${{github.workspace}}/aarch64-linux-gnu-with-musl/musl/bin/musl-gcc";
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
     - name: Build module
       run:
-        export CC="${{github.workspace}}/musl/bin/musl-gcc";
+        export CC="${{github.workspace}}/aarch64-linux-gnu-with-musl/musl/bin/musl-gcc";
         cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
     - name: Copy ELF file into module directory
       run:
