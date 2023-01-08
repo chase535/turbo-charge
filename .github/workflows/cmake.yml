@@ -18,7 +18,7 @@ jobs:
       uses: actions/checkout@v3
     - name: Set timezone to GMT+8
       run: |
-        sudo rm -f /etc/localtime && sudo ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+        sudo timedatectl set-timezone "Asia/Shanghai"
         echo "$(date "+%Y.%m.%d %H:%M:%S GMT+8")"
     - name: Clone aarch64-linux-gnu-with-musl
       run: git clone https://github.com/chase535/aarch64-linux-gnu-with-musl.git ${{github.workspace}}/aarch64-linux-gnu-with-musl -b main --depth=1
