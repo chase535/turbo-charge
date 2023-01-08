@@ -16,10 +16,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-    - name: Set timezone to UTC+8
-      run: |
-        sudo rm -f /etc/localtime && sudo ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
-        echo "$(date "+%Y.%m.%d %H:%M:%S %Z")"
     - name: Clone aarch64-linux-gnu-with-musl
       run: git clone https://github.com/chase535/aarch64-linux-gnu-with-musl.git ${{github.workspace}}/aarch64-linux-gnu-with-musl -b main --depth=1
     - name: Create directory
