@@ -12,40 +12,27 @@ env:
 
 jobs:
   build:
-    # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
-    # You can convert this to a matrix build if you need cross-platform coverage.
-    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Clone aarch64-linux-gnu
-      run: git clone https://github.com/radcolor/aarch64-linux-gnu.git ${{github.workspace}}/aarch64-linux-gnu --depth=1
-    - name: Clone musl source
-      run: git clone https://github.com/bminor/musl.git ${{github.workspace}}/musl-source --depth=1
-    - name: Build musl
-      run:
-        mkdir -p ${{github.workspace}}/musl;
-        cd ${{github.workspace}}/musl-source;
-        export CC="${{github.workspace}}/aarch64-linux-gnu/bin/aarch64-linux-gnu-gcc";
-        ./configure --prefix=${{github.workspace}}/musl aarch64 && make target=aarch64 && make target=aarch64 install
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Clone aarch64-linux-gnu-with-musl
+      run: git clone https://github.com/chase535/aarch64-linux-gnu-with-musl.git ${{github.workspace}}/aarch64-linux-gnu-with-musl -b main --depth=1
     - name: Create directory
-      run:
-        mkdir -p ${{github.workspace}}/build
+      run: mkdir -vp ${{github.workspace}}/build
     - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run:
-        export CC="${{github.workspace}}/musl/bin/musl-gcc";
+      run: |
+        export CC="${{github.workspace}}/aarch64-linux-gnu-with-musl/musl/bin/musl-gcc"
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
     - name: Build module
-      run:
-        export CC="${{github.workspace}}/musl/bin/musl-gcc";
+      run: |
+        export CC="${{github.workspace}}/aarch64-linux-gnu-with-musl/musl/bin/musl-gcc"
         cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
     - name: Copy ELF file into module directory
-      run:
-        cp -af ${{github.workspace}}/build/turbo-charge ${{github.workspace}}/module/common/turbo-charge;
+      run: cp -af ${{github.workspace}}/build/turbo-charge ${{github.workspace}}/module/common/turbo-charge;
     - name : Zip and upload module
       uses: actions/upload-artifact@v3
+      if: always()
       with:
         name: turbo-charge
         path: ${{github.workspace}}/module
