@@ -336,10 +336,15 @@ int main()
                 asdf_int=abs(asdf_int);
                 fu=1;
             }
-            sprintf(asdf,"%05d",asdf_int);
-            sprintf(bat_temp,"%c%c%c",asdf[0],asdf[1],asdf[2]);
+            snprintf(bat_temp,4,"%05d",asdf_int);
             bat_temp_int=atoi(bat_temp);
-            if(fu==0)
+            if(fu)
+            {
+                sprintf(bat_temp,"-%d",bat_temp_int);
+                set_value(battery, bat_temp);
+                set_value(bms, bat_temp);
+            }
+            else
             {
                 if(asdf_int >= 55000)
                 {
@@ -352,12 +357,6 @@ int main()
                     set_value(battery, bat_temp);
                     set_value(bms, bat_temp);
                 }
-            }
-            else
-            {
-                sprintf(bat_temp,"-%d",bat_temp_int);
-                set_value(battery, bat_temp);
-                set_value(bms, bat_temp);
             }
         }
         sleep(5);
