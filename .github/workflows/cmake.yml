@@ -28,7 +28,6 @@ jobs:
       run: cp -af ${{github.workspace}}/build/turbo-charge ${{github.workspace}}/module/common/turbo-charge
     - name : Zip and upload module
       uses: actions/upload-artifact@v3
-      if: always()
       with:
         name: turbo-charge
         path: ${{github.workspace}}/module
