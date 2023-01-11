@@ -86,8 +86,8 @@ void charge_value(char *i)
 int main()
 {
     FILE *fq,*fm,*fc,*fd,*fe;
-    char **power_supply_dir,**thermal_dir,done[20],charge[25],power[10],current_max[20],highest_temp_current[20],buffer[100],bms[100]="none",conn_therm[100]="none",battery[100]="none",constants[100],msg[20],thermal[15],option[1010],asdf[15],bat_temp[15];
-    int power_supply_file_num,thermal_file_num,i,asdf_int,temp_int,fu,bat_temp_int,qwer,temp_ctrl,power_ctrl,charge_start,charge_stop,recharge_temp,temp_max;
+    char **power_supply_dir,**thermal_dir,done[20],charge[25],power[10],current_max[20],highest_temp_current[20],buffer[100],bms[100]="none",conn_therm[100]="none",battery[100]="none",constants[100],msg[20],thermal[15],option[1010],asdf[15],bat_temp_tmp[1],bat_temp[6];
+    int power_supply_file_num,thermal_file_num,i,bat_temp_size,asdf_int,temp_int,fu,bat_temp_int,qwer,temp_ctrl,power_ctrl,charge_start,charge_stop,recharge_temp,temp_max;
     list_dir("/sys/class/thermal", &thermal_dir, &thermal_file_num);
     for(i=0;i<thermal_file_num;i++)
     {
@@ -337,10 +337,14 @@ int main()
                 fu=1;
             }
             snprintf(bat_temp,4,"%05d",asdf_int);
-            bat_temp_int=atoi(bat_temp);
+            for(bat_temp_tmp[0]=bat_temp[0];atoi(bat_temp_tmp)==0;bat_temp_tmp[0]=bat_temp[0])
+            {
+                for(bat_temp_size=0;bat_temp_size<5;bat_temp_size++) bat_temp[bat_temp_size]=bat_temp[bat_temp_size+1];
+                bat_temp[5]='\0';
+            }
             if(fu)
             {
-                sprintf(bat_temp,"-%d",bat_temp_int);
+                sprintf(bat_temp,"-%s",bat_temp);
                 set_value(battery, bat_temp);
                 set_value(bms, bat_temp);
             }
@@ -353,7 +357,6 @@ int main()
                 }
                 else
                 {
-                    sprintf(bat_temp,"%d",bat_temp_int);
                     set_value(battery, bat_temp);
                     set_value(bms, bat_temp);
                 }
