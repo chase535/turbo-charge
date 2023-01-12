@@ -337,10 +337,17 @@ int main()
                 fu=1;
             }
             snprintf(bat_temp,4,"%05d",asdf_int);
-            for(bat_temp_tmp[0]=bat_temp[0];atoi(bat_temp_tmp)==0;bat_temp_tmp[0]=bat_temp[0])
+            if(strcmp(bat_temp,"000")==0)
             {
-                for(bat_temp_size=0;bat_temp_size<5;bat_temp_size++) bat_temp[bat_temp_size]=bat_temp[bat_temp_size+1];
-                bat_temp[5]='\0';
+                sprintf(bat_temp,"0");
+            }
+            else
+            {
+                for(bat_temp_tmp[0]=bat_temp[0];atoi(bat_temp_tmp)==0;bat_temp_tmp[0]=bat_temp[0])
+                {
+                    for(bat_temp_size=0;bat_temp_size<5;bat_temp_size++) bat_temp[bat_temp_size]=bat_temp[bat_temp_size+1];
+                    bat_temp[5]='\0';
+                }
             }
             if(fu)
             {
