@@ -30,4 +30,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: turbo-charge
-        path: ${{github.workspace}}/module
+        path: ${{github.workspace}}/module/*
