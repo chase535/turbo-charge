@@ -101,10 +101,9 @@ run_power_ctrl()
 
 on_install()
 {
+    cp -f $TMPDIR/turbo-charge $MODPATH/turbo-charge
     [[ ! -d /data/adb/turbo-charge ]] && mkdir -p /data/adb/turbo-charge
-    cp -af $TMPDIR/option.txt /data/adb/turbo-charge/option.txt
-    [[ ! -d $MODPATH/system/bin ]] && mkdir -p $MODPATH/system/bin
-    cp -af $TMPDIR/turbo-charge $MODPATH/system/bin/turbo-charge
+    cp -f $TMPDIR/option.txt /data/adb/turbo-charge/option.txt
     thermals=`ls /system/bin/*thermal* /system/etc/init/*thermal* /system/etc/perf/*thermal* /system/vendor/bin/*thermal* /system/vendor/etc/*thermal* /system/vendor/etc/powerhint* /system/vendor/etc/init/*_thermal* /system/vendor/etc/perf/*thermal* /system/vendor/lib/hw/thermal* /system/vendor/lib64/hw/thermal* 2>/dev/null | grep -v mi_thermald`
     for thermal in $thermals; do
         [[ ! -d $MODPATH/${thermal%/*} ]] && mkdir -p $MODPATH/${thermal%/*}
@@ -121,6 +120,6 @@ on_install()
 set_permissions()
 {
     set_perm_recursive  $MODPATH  0  0  0755  0644
-    chmod 0777 $MODPATH/system/bin/turbo-charge
+    chmod 0777 $MODPATH/turbo-charge
     chmod 0777 /data/adb/turbo-charge/option.txt
 }
