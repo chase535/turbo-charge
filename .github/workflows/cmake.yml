@@ -25,7 +25,7 @@ jobs:
         export CC="${{github.workspace}}/aarch64-linux-gnu-with-musl/musl/bin/musl-gcc"
         cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
     - name: Copy ELF file into module directory
-      run: cp -af ${{github.workspace}}/build/turbo-charge ${{github.workspace}}/module/common/turbo-charge
+      run: cp -f ${{github.workspace}}/build/turbo-charge ${{github.workspace}}/module/common/turbo-charge
     - name : Zip and upload module
       uses: actions/upload-artifact@v3
       with:
