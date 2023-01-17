@@ -1,2 +1,3 @@
 #!/system/bin/sh
-nohup /system/bin/turbo-charge &
+MODDIR=${0%/*}
+nohup $MODDIR/turbo-charge &
