@@ -185,7 +185,6 @@ int main()
             }
             set_value(battery, "280");
             set_value(bms, "280");
-            set_value("/sys/class/power_supply/usb/quick_charge_type", "4");
             if(power_ctrl == 1)
             {
                 if(access("/sys/class/power_supply/battery/capacity", R_OK) != 0)
@@ -307,7 +306,7 @@ int main()
                             if(access(constants, W_OK) != 0) continue;
                             set_value(constants, highest_temp_current);
                         }
-                        sleep(1);
+                        sleep(5);
                     }
                 }
             }
@@ -370,7 +369,7 @@ int main()
                 }
             }
         }
-        sleep(1);
+        sleep(5);
     }
     return 0;
 }
