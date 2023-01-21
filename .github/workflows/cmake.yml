@@ -1,11 +1,8 @@
 name: CMake
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-env:
-  BUILD_TYPE: Release
+    paths-ignore:
+      - 'README.md'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,11 +16,11 @@ jobs:
     - name: Configure CMake
       run: |
         export CC="${{github.workspace}}/aarch64-linux-musl-gcc/bin/aarch64-linux-musl-gcc"
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
     - name: Build module
       run: |
         export CC="${{github.workspace}}/aarch64-linux-musl-gcc/bin/aarch64-linux-musl-gcc"
-        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        cmake --build ${{github.workspace}}/build --config Release
     - name: Copy ELF file into module directory
       run: cp -f ${{github.workspace}}/build/turbo-charge ${{github.workspace}}/module/common/turbo-charge
     - name : Zip and upload module
