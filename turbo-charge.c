@@ -7,14 +7,14 @@
 void strrpc(char *str, char *oldstr, char *newstr)
 {
     char bstr[strlen(str)];
-    long unsigned int i=0;
+    int i=0;
     memset(bstr,0,sizeof(bstr));
-    for(i=0; i<strlen(str);i++)
+    for(i=0; i<(int)strlen(str);i++)
     {
         if(!strncmp(str+i, oldstr, strlen(oldstr)))
         {
             strcat(bstr,newstr);
-            i+=strlen(oldstr)-1;
+            i+=(int)strlen(oldstr)-1;
         }
         else
         {
