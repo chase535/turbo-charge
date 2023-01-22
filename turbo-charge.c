@@ -24,11 +24,11 @@ void strrpc(char *str, char *oldstr, char *newstr)
     strcpy(str,bstr);
 }
 
-void list_dir(char *path, char ***ppp, int *file_num)
+int list_dir(char *path, char ***ppp)
 {
     DIR *pDir;
     struct dirent *ent;
-    int i=0;
+    int file_num=0;
     char childpath[600];
     *ppp=(char**)malloc(sizeof(char *) * 1000);
     pDir = opendir(path);
@@ -38,9 +38,9 @@ void list_dir(char *path, char ***ppp, int *file_num)
         sprintf(childpath,"%s/%s",path,ent->d_name);
         (*ppp)[i]=(char *)malloc(sizeof(char) * (strlen(childpath) + 1));
         strcpy((*ppp)[i],childpath);
-        i++;
+        file_num++;
     }
-    *file_num=i;
+    return file_num;
 }
 
 void set_value(char *file, char *numb)
@@ -67,6 +67,17 @@ void line_feed(char *line)
     }
 }
 
+void list_dir_set_value(char **file_dir, char *file_name, int file_num, char *value)
+{
+    char file[100];
+    for(i=0;i<file_num;i++)
+    {
+        sprintf(file, "%s/%s", file_dir[i], file_name);
+        if(access(file, W_OK) != 0) continue;
+        set_value(file, value);
+    }
+}
+
 void charge_value(char *i)
 {
     set_value("/sys/class/power_supply/battery/charging_enabled", i);
@@ -86,9 +97,9 @@ void charge_value(char *i)
 int main()
 {
     FILE *fq,*fm,*fc,*fd,*fe;
-    char **power_supply_dir,**thermal_dir,done[20],charge[25],power[10],current_max[20],highest_temp_current[20],buffer[100],bms[100]="none",conn_therm[100]="none",battery[100]="none",constants[100],msg[20],thermal[15],option[1010],asdf[15],bat_temp_tmp[1],bat_temp[6];
-    int power_supply_file_num,thermal_file_num,i,temp_int,bat_temp_size,asdf_int,fu,qwer=0,temp_ctrl,power_ctrl,charge_start,charge_stop,recharge_temp,temp_max;
-    list_dir("/sys/class/thermal", &thermal_dir, &thermal_file_num);
+    char **power_supply_dir,**thermal_dir,done[20],charge[25],power[10],current_max[20],highest_temp_current[20],buffer[100],conn_therm[100]="none",constants[100],msg[20],thermal[15],option[1010],asdf[15],bat_temp_tmp[1],bat_temp[6];
+    int power_supply_file_num,thermal_file_num,temp_int,bat_temp_size,asdf_int,fu,qwer=0,temp_ctrl,power_ctrl,charge_start,charge_stop,recharge_temp,temp_max;
+    thermal_file_num=list_dir("/sys/class/thermal", &thermal_dir);
     for(i=0;i<thermal_file_num;i++)
     {
         if(strstr(thermal_dir[i],"thermal_zone")!=NULL)
@@ -109,21 +120,11 @@ int main()
                 strrpc(buffer, "type", "temp");
                 strcpy(conn_therm, buffer);
             }
-            else if(strcmp(msg, "battery") == 0)
-            {
-                strrpc(buffer, "type", "temp");
-                strcpy(battery, buffer);
-            }
-            else if(strcmp(msg, "bms") == 0)
-            {
-                strrpc(buffer, "type", "temp");
-                strcpy(bms, buffer);
-            }
         }
     }
     strcpy(battery, "/sys/class/power_supply/battery/temp");
     strcpy(bms, "/sys/class/power_supply/bms/temp");
-    if(strcmp(conn_therm,"none")==0 || strcmp(battery,"none")==0 || strcmp(bms,"none")==0)
+    if(strcmp(conn_therm,"none")==0)
     {
         printf("获取温度失败！请联系模块制作者！");
         exit(2);
@@ -133,7 +134,7 @@ int main()
         printf("获取温度失败！请联系模块制作者！");
         exit(5);
     }
-    list_dir("/sys/class/power_supply", &power_supply_dir, &power_supply_file_num);
+    power_supply_file_num=list_dir("/sys/class/power_supply", &power_supply_dir);
     charge_value("1");
     set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
     set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
@@ -183,8 +184,7 @@ int main()
                 printf("获取温度失败！请联系模块制作者！");
                 exit(20);
             }
-            set_value(battery, "280");
-            set_value(bms, "280");
+            list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
             if(power_ctrl == 1)
             {
                 if(access("/sys/class/power_supply/battery/capacity", R_OK) != 0)
@@ -270,8 +270,7 @@ int main()
                         fe=NULL;
                         line_feed(charge);
                         if(strcmp(charge, "Charging") != 0) break;
-                        set_value(battery, "280");
-                        set_value(bms, "280");
+                        list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
                         if(access(conn_therm, R_OK) != 0)
                         {
                             printf("获取温度失败！请联系模块制作者！");
@@ -300,22 +299,12 @@ int main()
                         fclose(fc);
                         fc=NULL;
                         if(temp_ctrl == 0) break;
-                        for(i=0;i<power_supply_file_num;i++)
-                        {
-                            sprintf(constants, "%s/constant_charge_current_max", power_supply_dir[i]);
-                            if(access(constants, W_OK) != 0) continue;
-                            set_value(constants, highest_temp_current);
-                        }
+                        list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, highest_temp_current);
                         sleep(5);
                     }
                 }
             }
-            for(i=0;i<power_supply_file_num;i++)
-            {
-                sprintf(constants, "%s/constant_charge_current_max", power_supply_dir[i]);
-                if(access(constants, W_OK) != 0) continue;
-                set_value(constants, current_max);
-            }
+            list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, current_max);
         }
         else
         {
@@ -352,21 +341,11 @@ int main()
             if(fu)
             {
                 sprintf(bat_temp,"-%s",bat_temp);
-                set_value(battery, bat_temp);
-                set_value(bms, bat_temp);
+                list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, bat_temp);
             }
             else
             {
-                if(asdf_int >= 55000)
-                {
-                    set_value(battery, "280");
-                    set_value(bms, "280");
-                }
-                else
-                {
-                    set_value(battery, bat_temp);
-                    set_value(bms, bat_temp);
-                }
+                (asdf_int >= 55000)?list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280"):list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, bat_temp);
             }
         }
         sleep(5);
