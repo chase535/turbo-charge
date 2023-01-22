@@ -248,7 +248,7 @@ int main()
                 {
                     while(temp_int > recharge_temp*1000)
                     {
-                        if(access(conn_therm, R_OK) != 0 || access(battery, W_OK) != 0 || access(bms, W_OK) != 0)
+                        if(access(conn_therm, R_OK) != 0)
                         {
                             printf("获取温度失败！请联系模块制作者！");
                             exit(70);
