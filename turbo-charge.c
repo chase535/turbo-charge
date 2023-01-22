@@ -176,7 +176,7 @@ int main()
         fclose(fe);
         fe=NULL;
         line_feed(charge);
-        if(strcmp(charge, "Charging") == 0)
+        if(strcmp(charge, "Charging") == 0 || strcmp(charge, "Full") == 0)
         {
             if(access(conn_therm, R_OK) != 0 || access(battery, W_OK) != 0 || access(bms, W_OK) != 0)
             {
