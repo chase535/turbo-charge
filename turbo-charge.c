@@ -7,7 +7,7 @@
 void strrpc(char *str, char *oldstr, char *newstr)
 {
     char bstr[strlen(str)];
-    int i=0;
+    long unsigned int i=0;
     memset(bstr,0,sizeof(bstr));
     for(i=0; i<strlen(str);i++)
     {
