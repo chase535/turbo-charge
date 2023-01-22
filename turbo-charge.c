@@ -36,8 +36,8 @@ int list_dir(char *path, char ***ppp)
     {
         if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
         sprintf(childpath,"%s/%s",path,ent->d_name);
-        (*ppp)[i]=(char *)malloc(sizeof(char) * (strlen(childpath) + 1));
-        strcpy((*ppp)[i],childpath);
+        (*ppp)[file_num]=(char *)malloc(sizeof(char) * (strlen(childpath) + 1));
+        strcpy((*ppp)[file_num],childpath);
         file_num++;
     }
     return file_num;
@@ -123,8 +123,6 @@ int main()
             }
         }
     }
-    strcpy(battery, "/sys/class/power_supply/battery/temp");
-    strcpy(bms, "/sys/class/power_supply/bms/temp");
     if(strcmp(conn_therm,"none")==0)
     {
         printf("获取温度失败！请联系模块制作者！");
