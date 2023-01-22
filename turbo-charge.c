@@ -173,10 +173,10 @@ int main()
         line_feed(charge);
         if(strcmp(charge, "Charging") == 0 || strcmp(charge, "Full") == 0)
         {
-            if(access(conn_therm, R_OK) != 0 || access(battery, W_OK) != 0 || access(bms, W_OK) != 0)
+            if(access(conn_therm, R_OK) != 0)
             {
                 printf("获取温度失败！请联系模块制作者！");
-                exit(20);
+                exit(220);
             }
             list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
             if(power_ctrl == 1)
@@ -302,7 +302,7 @@ int main()
         }
         else
         {
-            if(access(conn_therm, R_OK) != 0 || access(battery, W_OK) != 0 || access(bms, W_OK) != 0)
+            if(access(conn_therm, R_OK) != 0)
             {
                 printf("获取温度失败！请联系模块制作者！");
                 exit(110);
