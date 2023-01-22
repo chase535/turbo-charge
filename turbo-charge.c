@@ -123,15 +123,10 @@ int main()
             }
         }
     }
-    if(strcmp(conn_therm,"none")==0)
+    if(strcmp(conn_therm, "none") == 0 || access(conn_therm, R_OK) != 0)
     {
         printf("获取温度失败！请联系模块制作者！");
         exit(2);
-    }
-    else if(access(conn_therm, R_OK) != 0 || access(battery, W_OK) != 0 || access(bms, W_OK) != 0)
-    {
-        printf("获取温度失败！请联系模块制作者！");
-        exit(5);
     }
     power_supply_file_num=list_dir("/sys/class/power_supply", &power_supply_dir);
     charge_value("1");
