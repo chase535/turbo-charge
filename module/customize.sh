@@ -41,6 +41,19 @@ ui_print "
  "
 }
 
+check_file()
+{
+    temp=$(ls /sys/class/power_supply/*/temp 2>/dev/null)
+    constant_charge_current_max=$(ls /sys/class/power_supply/*/constant_charge_current_max 2>/dev/null)
+    for i in $(ls /sys/class/thermal 2>/dev/null); do
+        [ -f "$i/type" ] && [ "$(cat $i/type)" == "conn_therm" ] && conn_therm="$i"
+    done
+    if [[ ! -f "/sys/class/power_supply/battery/step_charging_enabled" ] || [ ! -f "/sys/class/power_supply/battery/status" ] || [ ! -f "/sys/class/power_supply/battery/current_now" ] || [ ! -f "/sys/class/power_supply/battery/capacity" ] || [ -z "$temp" ] || [ -z "$constant_charge_current_max" ] || [ -z "$conn_therm" ]]; then
+        echo "缺少必要文件，不支持此机型，安装失败！"
+        exit 1
+    fi
+}
+
 volume_keytest()
 {
     ui_print "--- 音量键测试 ---"
