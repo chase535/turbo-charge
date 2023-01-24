@@ -9,19 +9,17 @@ ui_print "
  ********************************************************
  
  - 模块: $MODNAME
- - 模块ID: $MODID
  - 模块版本: $MODversion
  - 作者: $MODAUTHOR
- -      模块介绍↓
- - 使用C语言编写，Github Actions进行静态交叉编译(CMake + aarch64-linux-musl-gcc)
- - 删除温控，关闭阶梯式充电
- - 可选添加温控，默认当手机温度高于52℃时最高充电电流限制为2A
- - 可选添加电量控制，默认电量到达95%时断电，小于等于80%时恢复充电
+ -      ↓模块介绍↓
+ - 删除温控，电量高于20%时关闭阶梯充电
  - 充电时持续修改电池温度，让系统认为电池温度一直是28℃
  - 持续修改充电电流，以达到最快充电速度
- - 为了避免电池过热强制关机，故做如下调整
-   · 若断电后电池温度高于55℃，程序仍会强制显示28℃
-   · 待电池温度降至55℃以下，显示电池真实温度
+ - 可选添加温控，默认当手机温度高于52℃时最高充电电流限制为2A
+ - 可选添加电量控制，默认电量到达95%时断电，小于等于80%时恢复充电
+ - 为了避免电池过热强制关机，故有如下限制
+   · 若不充电时电池温度高于55℃，程序仍会强制显示28℃
+   · 待电池温度降至55℃以下，显示真实温度
 
  ！！！若手机体感温度过高，请立即拔下充电器并将手机静置在阴凉处！！！
 
@@ -29,12 +27,10 @@ ui_print "
 
  - 可修改/data/adb/turbo-charge/option.txt来更改一些参数，即时生效
  - 当然也可以通过重新刷模块来选择是否添加温控和电量控制
- - 已知很多手机无法正常使用，不要问我xxx手机行不行，具体自测
 
  ********************************************************
 
  ！！！卸载模块请务必在Magisk中卸载！！！
-
  ！！！或手动执行模块目录下的uninstall.sh文件后再删除模块目录！！！
 
  ********************************************************
@@ -43,15 +39,18 @@ ui_print "
 
 check_file()
 {
+    echo "---检查必要文件是否存在---"
     temp=$(ls /sys/class/power_supply/*/temp 2>/dev/null)
     constant_charge_current_max=$(ls /sys/class/power_supply/*/constant_charge_current_max 2>/dev/null)
     for i in $(ls /sys/class/thermal 2>/dev/null); do
-        [ -f "$i/type" ] && [ "$(cat $i/type)" == "conn_therm" ] && conn_therm="$i"
+        [ -f "/sys/class/thermal/$i/type" ] && [ "$(cat /sys/class/thermal/$i/type 2>/dev/null)" == "conn_therm" ] && conn_therm="$i"
     done
-    if [[ ! -f "/sys/class/power_supply/battery/step_charging_enabled" ] || [ ! -f "/sys/class/power_supply/battery/status" ] || [ ! -f "/sys/class/power_supply/battery/current_now" ] || [ ! -f "/sys/class/power_supply/battery/capacity" ] || [ -z "$temp" ] || [ -z "$constant_charge_current_max" ] || [ -z "$conn_therm" ]]; then
-        echo "缺少必要文件，不支持此机型，安装失败！"
+    if ([ ! -f "/sys/class/power_supply/battery/step_charging_enabled" ] || [ ! -f "/sys/class/power_supply/battery/status" ] || [ ! -f "/sys/class/power_supply/battery/current_now" ] || [ ! -f "/sys/class/power_supply/battery/capacity" ] || [ -z "$temp" ] || [ -z "$constant_charge_current_max" ] || [ -z "$conn_therm" ]); then
+        echo " ！缺少必要文件，不支持此手机，安装失败！"
+        echo ""
         exit 1
     fi
+    echo "- 必要文件均存在，开始安装"
 }
 
 volume_keytest()
