@@ -1,149 +1,33 @@
 #!/sbin/sh
 
+#################
+# Initialization
+#################
+
 umask 022
-
-# Global vars
-TMPDIR=/dev/tmp
-var_Android="`grep_prop ro.build.version.release`"
-if [ $var_Android = 11 ];then
-  PERSISTDIR=/dev/*/.magisk/mirror/persist
-else
-  PERSISTDIR=/sbin/.magisk/mirror/persist
-fi
-
-rm -rf $TMPDIR 2>/dev/null
-mkdir -p $TMPDIR
 
 # echo before loading util_functions
 ui_print() { echo "$1"; }
 
 require_new_magisk() {
   ui_print "*******************************"
-  ui_print " 请安装面具版本 v19.0+! "
+  ui_print " Please install Magisk v20.4+! "
   ui_print "*******************************"
   exit 1
 }
+
+#########################
+# Load util_functions.sh
+#########################
 
 OUTFD=$2
 ZIPFILE=$3
 
 mount /data 2>/dev/null
 
-# Load utility functions
 [ -f /data/adb/magisk/util_functions.sh ] || require_new_magisk
 . /data/adb/magisk/util_functions.sh
-[ $MAGISK_VER_CODE -gt 18100 ] || require_new_magisk
+[ $MAGISK_VER_CODE -lt 20400 ] && require_new_magisk
 
-# Preperation for flashable zips
-setup_flashable
-
-# Mount partitions
-mount_partitions
-
-# Detect version and architecture
-api_level_arch_detect
-
-# Setup busybox and binaries
-$BOOTMODE && boot_actions || recovery_actions
-
-##############
-# 准备
-##############
-
-# Extract prop file
-unzip -o "$ZIPFILE" module.prop -d $TMPDIR >&2
-[ ! -f $TMPDIR/module.prop ] && abort "! 无法解压zip包!"
-
-$BOOTMODE && MODDIRNAME=modules_update || MODDIRNAME=modules
-MODULEROOT=$NVBASE/$MODDIRNAME
-MODID=`grep_prop id $TMPDIR/module.prop`
-MODPATH=$MODULEROOT/$MODID
-MODNAME=`grep_prop name $TMPDIR/module.prop`
-MODversion=`grep_prop version $TMPDIR/module.prop`
-MODAUTHOR=`grep_prop author $TMPDIR/module.prop`
-MODdescription=`grep_prop description $TMPDIR/module.prop`
-Device="`getprop ro.fota.oem`"
-device="`getprop ro.product.device`"
-MIUI="`getprop ro.miui.ui.version.name`"
-Version="`getprop ro.build.version.incremental`"
-Android="`getprop ro.build.version.release`"
-Sdk="`getprop ro.build.version.sdk`"
-
-# Create mod paths
-rm -rf $MODPATH 2>/dev/null
-mkdir -p $MODPATH
-
-##########
-# Install
-##########
-  unzip -oj "$ZIPFILE" module.prop customize.sh uninstall.sh 'common/*' -d $TMPDIR >&2
-  ui_print " "
-  # Load install script
-  . $TMPDIR/customize.sh
-
-  # Callbacks
-  check_file
-  print_modname
-  run_volume_key_test
-  run_temp
-  run_power_ctrl
-  on_install
-  
-  # Custom uninstaller
-  [ -f $TMPDIR/uninstall.sh ] && cp -af $TMPDIR/uninstall.sh $MODPATH/uninstall.sh
-  
-  # Skip mount
-  $SKIPMOUNT && touch $MODPATH/skip_mount
-
-  # prop file
-  $PROPFILE && cp -af $TMPDIR/system.prop $MODPATH/system.prop
-
-  # Module info
-  cp -af $TMPDIR/module.prop $MODPATH/module.prop
-
-  # post-fs-data scripts
-  $POSTFSDATA && cp -af $TMPDIR/post-fs-data.sh $MODPATH/post-fs-data.sh
-
-  # service scripts
-  $LATESTARTSERVICE && cp -af $TMPDIR/service.sh $MODPATH/service.sh
-
-  ui_print " "
-  ui_print "- 设置模块权限"
-  set_permissions
-
-# Handle replace folders
-for TARGET in $REPLACE; do
-  ui_print "- 替换目标文件: $TARGET"
-  mktouch $MODPATH$TARGET/.replace
-done
-
-if $BOOTMODE; then
-  # Update info for Magisk Manager
-  mktouch $NVBASE/modules/$MODID/update
-  cp -af $MODPATH/module.prop $NVBASE/modules/$MODID/module.prop
-fi
-
-# Copy over custom sepolicy rules
-if [ -f $MODPATH/sepolicy.rule -a -e $PERSISTDIR ]; then
-  ui_print "- 正在安装自定义sepolicy修补程序"
-  PERSISTMOD=$PERSISTDIR/magisk/$MODID
-  mkdir -p $PERSISTMOD
-  cp -af $MODPATH/sepolicy.rule $PERSISTMOD/sepolicy.rule
-fi
-
-# Remove stuffs that don't belong to modules
-rm -rf \
-$MODPATH/system/placeholder $MODPATH/customize.sh \
-$MODPATH/README.md $MODPATH/.git* 2>/dev/null
-
-##############
-# Finalizing
-##############
-
-cd /
-$BOOTMODE || recovery_cleanup
-rm -rf $TMPDIR
-
-ui_print "- 完成"
+install_module
 exit 0
-# ABajiang
