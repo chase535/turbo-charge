@@ -1,6 +1,7 @@
-#!/sbin/sh
-
-umask 022
+SKIPMOUNT=false
+PROPFILE=false
+POSTFSDATA=false
+LATESTARTSERVICE=true
 
 print_modname()
 {
