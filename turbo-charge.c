@@ -131,7 +131,6 @@ int main()
     check_file("/sys/class/power_supply/battery/current_now");
     check_file("/sys/class/power_supply/battery/capacity");
     list_dir_check_file("/sys/class/power_supply", "temp");
-    list_dir_check_file("/sys/class/power_supply", "charge_temp");
     list_dir_check_file("/sys/class/power_supply", "constant_charge_current_max");
     thermal_file_num=list_dir("/sys/class/thermal", &thermal_dir);
     for(i=0;i<thermal_file_num;i++)
@@ -212,7 +211,6 @@ int main()
                 exit(220);
             }
             list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
-            list_dir_set_value(power_supply_dir, "charge_temp", power_supply_file_num, "280");
             if(power_ctrl == 1)
             {
                 if(access("/sys/class/power_supply/battery/capacity", R_OK) != 0)
@@ -299,7 +297,6 @@ int main()
                         line_feed(charge);
                         if(strcmp(charge, "Charging") != 0) break;
                         list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
-                        list_dir_set_value(power_supply_dir, "charge_temp", power_supply_file_num, "280");
                         if(access(conn_therm, R_OK) != 0)
                         {
                             printf("获取温度失败！请联系模块制作者！\n");
@@ -371,19 +368,16 @@ int main()
             {
                 sprintf(bat_temp,"-%s",bat_temp);
                 list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, bat_temp);
-                list_dir_set_value(power_supply_dir, "charge_temp", power_supply_file_num, bat_temp);
             }
             else
             {
                 if(asdf_int >= 55000)
                 {
                     list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
-                    list_dir_set_value(power_supply_dir, "charge_temp", power_supply_file_num, "280");
                 }
                 else
                 {
                     list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, bat_temp);
-                    list_dir_set_value(power_supply_dir, "charge_temp", power_supply_file_num, bat_temp);
                 }
             }
         }
