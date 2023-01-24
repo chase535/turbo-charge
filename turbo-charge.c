@@ -40,6 +40,7 @@ int list_dir(char *path, char ***ppp)
         strcpy((*ppp)[file_num],childpath);
         file_num++;
     }
+    closedir(pDir);
     return file_num;
 }
 
