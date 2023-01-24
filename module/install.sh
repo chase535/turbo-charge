@@ -33,6 +33,7 @@ ui_print "
 
 check_file()
 {
+    ui_print ""
     ui_print "--- 检查必要文件是否存在 ---"
     temp=$(ls /sys/class/power_supply/*/temp 2>/dev/null)
     constant_charge_current_max=$(ls /sys/class/power_supply/*/constant_charge_current_max 2>/dev/null)
