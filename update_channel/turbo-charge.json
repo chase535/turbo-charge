@@ -1,6 +1,6 @@
 {
   "version": "v23",
   "versionCode": "23",
-  "zipUrl": "https://github.com/chase535/turbo-charge/releases/download/v23/turbo-charge.zip",
-  "changelog": "https://raw.githubusercontent.com/chase535/turbo-charge/main/update_channel/changelog.md"
+  "zipUrl": "https://gh-proxy.chase535.workers.dev/https://github.com/chase535/turbo-charge/releases/download/v23/turbo-charge.zip",
+  "changelog": "https://gh-proxy.chase535.workers.dev/https://raw.githubusercontent.com/chase535/turbo-charge/main/update_channel/changelog.md"
 }
