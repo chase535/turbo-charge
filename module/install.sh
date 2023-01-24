@@ -8,9 +8,9 @@ print_modname()
 ui_print "
  ********************************************************
  
- - 模块: $MODNAME
- - 模块版本: $MODversion
- - 作者: $MODAUTHOR
+ - 模块: $name
+ - 模块版本: $version
+ - 作者: $author
  -      ↓模块介绍↓
  - 删除温控，电量高于20%时关闭阶梯充电
  - 充电时持续修改电池温度，让系统认为电池温度一直是28℃
@@ -142,3 +142,4 @@ set_permissions()
 }
 
 check_file
+source $TMPDIR/module.prop
