@@ -43,9 +43,9 @@ check_file()
     temp=$(ls /sys/class/power_supply/*/temp 2>/dev/null)
     constant_charge_current_max=$(ls /sys/class/power_supply/*/constant_charge_current_max 2>/dev/null)
     for i in $(ls /sys/class/thermal 2>/dev/null); do
-        [ -f "/sys/class/thermal/$i/type" ] && [ "$(cat /sys/class/thermal/$i/type 2>/dev/null)" == "conn_therm" ] && conn_therm="$i"
+        [[ -f "/sys/class/thermal/$i/type" && "$(cat /sys/class/thermal/$i/type 2>/dev/null)" == "conn_therm" ]] && conn_therm="$i"
     done
-    if ([ ! -f "/sys/class/power_supply/battery/step_charging_enabled" ] || [ ! -f "/sys/class/power_supply/battery/status" ] || [ ! -f "/sys/class/power_supply/battery/current_now" ] || [ ! -f "/sys/class/power_supply/battery/capacity" ] || [ -z "$temp" ] || [ -z "$constant_charge_current_max" ] || [ -z "$conn_therm" ]); then
+    if [[ ! -f "/sys/class/power_supply/battery/step_charging_enabled" || ! -f "/sys/class/power_supply/battery/status" || ! -f "/sys/class/power_supply/battery/current_now" || ! -f "/sys/class/power_supply/battery/capacity" || -z "$temp" || -z "$constant_charge_current_max" || -z "$conn_therm" ]]; then
         echo " ！缺少必要文件，不支持此手机，安装失败！"
         echo ""
         exit 1
