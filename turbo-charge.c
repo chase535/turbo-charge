@@ -104,7 +104,7 @@ void check_file(char *file)
     }
 }
 
-void list_dir_check_file(char *file_dir, *file_name)
+void list_dir_check_file(char *file_dir, char *file_name)
 {
     int i,j=0,file_num;
     char file[100], **dir;
