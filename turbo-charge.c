@@ -95,7 +95,7 @@ void charge_value(char *i)
     }
 }
 
-void check_file(char file[100])
+void check_file(char *file)
 {
     if(access(file, F_OK) != 0)
     {
@@ -104,7 +104,7 @@ void check_file(char file[100])
     }
 }
 
-void list_dir_check_file(char file_dir[50], char file_name[50])
+void list_dir_check_file(char *file_dir, *file_name)
 {
     int i,j=0,file_num;
     char file[100], **dir;
@@ -125,7 +125,7 @@ int main()
 {
     FILE *fq,*fm,*fc,*fd,*fe;
     char **power_supply_dir,**thermal_dir,done[20],charge[25],power[10],current_max[20],highest_temp_current[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],option[1010],asdf[15],bat_temp_tmp[1],bat_temp[6];
-    int power_supply_file_num,thermal_file_num,temp_int,bat_temp_size,asdf_int,i,j,fu,qwer=0,temp_ctrl,power_ctrl,charge_start,charge_stop,recharge_temp,temp_max;
+    int power_supply_file_num,thermal_file_num,temp_int,bat_temp_size,asdf_int,i,fu,qwer=0,temp_ctrl,power_ctrl,charge_start,charge_stop,recharge_temp,temp_max;
     check_file("/sys/class/power_supply/battery/step_charging_enabled");
     check_file("/sys/class/power_supply/battery/status");
     check_file("/sys/class/power_supply/battery/current_now");
