@@ -83,15 +83,41 @@ void charge_value(char *i)
 {
     set_value("/sys/class/power_supply/battery/charging_enabled", i);
     set_value("/sys/class/power_supply/battery/battery_charging_enabled", i);
-    if(atoi(i) == 1)
+    if(atoi(i))
     {
         set_value("/sys/class/power_supply/battery/input_suspend", "0");
         set_value("/sys/class/qcom-battery/restricted_charging", "0");
     }
-    else if(atoi(i) == 0)
+    else
     {
         set_value("/sys/class/power_supply/battery/input_suspend", "1");
         set_value("/sys/class/qcom-battery/restricted_charging", "1");
+    }
+}
+
+void check_file(char file[100])
+{
+    if(access(file, F_OK) != 0)
+    {
+        printf("无法找到%s文件，程序强制退出！\n", file);
+        exit(999);
+    }
+}
+
+void list_dir_check_file(char file_dir[50], char file_name[50])
+{
+    int i,j=0,file_num;
+    char file[100], **dir;
+    file_num=list_dir(file_dir, &dir);
+    for(i=0;i<file_num;i++)
+    {
+        sprintf(file, "%s/%s", dir[i], file_name);
+        if(access(file, F_OK) == 0) j++;
+    }
+    if(j == 0)
+    {
+        printf("无法在%s中的所有文件夹内找到%s文件，程序强制退出！\n",file_dir , file_name);
+        exit(999);
     }
 }
 
@@ -99,7 +125,14 @@ int main()
 {
     FILE *fq,*fm,*fc,*fd,*fe;
     char **power_supply_dir,**thermal_dir,done[20],charge[25],power[10],current_max[20],highest_temp_current[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],option[1010],asdf[15],bat_temp_tmp[1],bat_temp[6];
-    int power_supply_file_num,thermal_file_num,temp_int,bat_temp_size,asdf_int,i,fu,qwer=0,temp_ctrl,power_ctrl,charge_start,charge_stop,recharge_temp,temp_max;
+    int power_supply_file_num,thermal_file_num,temp_int,bat_temp_size,asdf_int,i,j,fu,qwer=0,temp_ctrl,power_ctrl,charge_start,charge_stop,recharge_temp,temp_max;
+    check_file("/sys/class/power_supply/battery/step_charging_enabled");
+    check_file("/sys/class/power_supply/battery/status");
+    check_file("/sys/class/power_supply/battery/current_now");
+    check_file("/sys/class/power_supply/battery/capacity");
+    list_dir_check_file("/sys/class/power_supply", "temp");
+    list_dir_check_file("/sys/class/power_supply", "charge_temp");
+    list_dir_check_file("/sys/class/power_supply", "constant_charge_current_max");
     thermal_file_num=list_dir("/sys/class/thermal", &thermal_dir);
     for(i=0;i<thermal_file_num;i++)
     {
@@ -179,6 +212,7 @@ int main()
                 exit(220);
             }
             list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
+            list_dir_set_value(power_supply_dir, "charge_temp", power_supply_file_num, "280");
             if(power_ctrl == 1)
             {
                 if(access("/sys/class/power_supply/battery/capacity", R_OK) != 0)
@@ -265,6 +299,7 @@ int main()
                         line_feed(charge);
                         if(strcmp(charge, "Charging") != 0) break;
                         list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
+                        list_dir_set_value(power_supply_dir, "charge_temp", power_supply_file_num, "280");
                         if(access(conn_therm, R_OK) != 0)
                         {
                             printf("获取温度失败！请联系模块制作者！\n");
@@ -336,10 +371,20 @@ int main()
             {
                 sprintf(bat_temp,"-%s",bat_temp);
                 list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, bat_temp);
+                list_dir_set_value(power_supply_dir, "charge_temp", power_supply_file_num, bat_temp);
             }
             else
             {
-                (asdf_int >= 55000)?list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280"):list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, bat_temp);
+                if(asdf_int >= 55000)
+                {
+                    list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
+                    list_dir_set_value(power_supply_dir, "charge_temp", power_supply_file_num, "280");
+                }
+                else
+                {
+                    list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, bat_temp);
+                    list_dir_set_value(power_supply_dir, "charge_temp", power_supply_file_num, bat_temp);
+                }
             }
         }
         sleep(5);
