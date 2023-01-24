@@ -33,18 +33,18 @@ ui_print "
 
 check_file()
 {
-    echo "--- 检查必要文件是否存在 ---"
+    ui_print "--- 检查必要文件是否存在 ---"
     temp=$(ls /sys/class/power_supply/*/temp 2>/dev/null)
     constant_charge_current_max=$(ls /sys/class/power_supply/*/constant_charge_current_max 2>/dev/null)
     for i in $(ls /sys/class/thermal 2>/dev/null); do
         [[ -f "/sys/class/thermal/$i/type" && "$(cat /sys/class/thermal/$i/type 2>/dev/null)" == "conn_therm" ]] && conn_therm="$i"
     done
     if [[ ! -f "/sys/class/power_supply/battery/step_charging_enabled" || ! -f "/sys/class/power_supply/battery/status" || ! -f "/sys/class/power_supply/battery/current_now" || ! -f "/sys/class/power_supply/battery/capacity" || -z "$temp" || -z "$constant_charge_current_max" || -z "$conn_therm" ]]; then
-        echo " ！缺少必要文件，不支持此手机，安装失败！"
-        echo ""
+        ui_print " ！缺少必要文件，不支持此手机，安装失败！"
+        ui_print ""
         exit 1
     fi
-    echo "- 必要文件均存在，开始安装"
+    ui_print "- 必要文件均存在，开始安装"
 }
 
 volume_keytest()
@@ -83,11 +83,11 @@ run_volume_key_test()
 
 run_temp()
 {
-    ui_print " "
+    ui_print ""
     ui_print "--- 请选择是否添加温控（默认添加） ---"
     ui_print "  音量+键 = 添加温控，当温度高于52℃时限制最高充电电流为2A，低于45℃时恢复"
     ui_print "  音量-键 = 不添加温控，真·极速快充，高温伤手又伤机，谨慎选择！"
-    ui_print " "
+    ui_print ""
     if "$KEYTEST"; then
         ui_print "- 不添加温控"
         sed -i 's/TEMP_CTRL=1/TEMP_CTRL=0/g' $TMPDIR/option.txt
@@ -98,17 +98,18 @@ run_temp()
 
 run_power_ctrl()
 {
-    ui_print " "
+    ui_print ""
     ui_print "--- 请选择是否添加电量控制（默认不添加） ---"
     ui_print "  音量+键 = 不添加电量控制"
     ui_print "  音量-键 = 添加电量控制，默认为电量到达95%时断电，小于等于80%时恢复充电"
-    ui_print " "
+    ui_print ""
     if "$KEYTEST"; then
         ui_print "- 添加电量控制"
         sed -i 's/POWER_CTRL=0/POWER_CTRL=1/g' $TMPDIR/option.txt
     else
         ui_print "- 不添加电量控制"
     fi
+    ui_print ""
 }
 
 on_install()
