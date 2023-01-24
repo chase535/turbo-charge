@@ -83,6 +83,7 @@ mkdir -p $MODPATH
 
   # Callbacks
   print_modname
+  check_file
   run_volume_key_test
   run_temp
   run_power_ctrl
