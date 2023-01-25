@@ -364,10 +364,7 @@ int main()
                 fu=1;
             }
             snprintf(bat_temp,4,"%05d",asdf_int);
-            if(strcmp(bat_temp,"000")==0)
-            {
-                sprintf(bat_temp,"0");
-            }
+            if(strcmp(bat_temp,"000")==0) sprintf(bat_temp,"0");
             else
             {
                 for(bat_temp_tmp[0]=bat_temp[0];atoi(bat_temp_tmp)==0;bat_temp_tmp[0]=bat_temp[0])
@@ -381,17 +378,7 @@ int main()
                 sprintf(bat_temp,"-%s",bat_temp);
                 list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, bat_temp);
             }
-            else
-            {
-                if(asdf_int >= 55000)
-                {
-                    list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
-                }
-                else
-                {
-                    list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, bat_temp);
-                }
-            }
+            else (asdf_int >= 55000)?list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280"):list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, bat_temp);
         }
         sleep(5);
     }
