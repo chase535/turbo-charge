@@ -335,17 +335,15 @@ int main()
                         fc=NULL;
                         if(temp_ctrl == 0) break;
                         list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, highest_temp_current);
+                        list_dir_set_value(power_supply_dir, "hw_current_max", power_supply_file_num, highest_temp_current);
                         list_dir_set_value(power_supply_dir, "current_max", power_supply_file_num, highest_temp_current);
-                        set_value("/sys/class/power_supply/usb/pd_current_max", highest_temp_current);
-                        set_value("/sys/class/power_supply/usb/passthrough_curr_max", highest_temp_current);
-                        sleep(1);
+                        sleep(5);
                     }
                 }
             }
             list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, current_max);
+            list_dir_set_value(power_supply_dir, "hw_current_max", power_supply_file_num, current_max);
             list_dir_set_value(power_supply_dir, "current_max", power_supply_file_num, current_max);
-            set_value("/sys/class/power_supply/usb/pd_current_max", current_max);
-            set_value("/sys/class/power_supply/usb/passthrough_curr_max", current_max);
         }
         else
         {
@@ -383,7 +381,7 @@ int main()
             }
             else (asdf_int >= 55000)?list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280"):list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, bat_temp);
         }
-        sleep(1);
+        sleep(5);
     }
     return 0;
 }
