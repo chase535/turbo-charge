@@ -3,6 +3,7 @@
 #include "string.h"
 #include "dirent.h"
 #include "unistd.h"
+#include "io.h"
 
 void strrpc(char *str, char *oldstr, char *newstr)
 {
@@ -44,6 +45,7 @@ int list_dir(char *path, char ***ppp)
 void set_value(char *file, char *numb)
 {
     FILE *fn;
+    chmod(file, 0777);
     fn = fopen(file, "wt");
     if(fn != NULL)
     {
