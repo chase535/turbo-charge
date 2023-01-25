@@ -3,5 +3,5 @@ name=充电加速
 version=v26
 versionCode=26
 author=酷安@诺鸡鸭
-description=删除温控，电量高于30%时关闭阶梯式充电，持续修改电池温度及充电电流，以达到最快充电速度。配置文件在/data/adb/turbo-charge/option.txt，可以更改一些参数，即时生效。卸载模块请务必在Magisk中卸载，或手动执行模块目录下的uninstall.sh文件后再删除模块目录
+description=删除温控，电量大于等于15%时关闭阶梯式充电，持续修改电池温度及充电电流，以达到最快充电速度。配置文件在/data/adb/turbo-charge/option.txt，可以更改一些参数，即时生效。卸载模块请务必在Magisk中卸载，或手动执行模块目录下的uninstall.sh文件后再删除模块目录
 updateJson=https://gh-proxy.chase535.xyz/https://raw.githubusercontent.com/chase535/turbo-charge/main/update_channel/turbo-charge.json
