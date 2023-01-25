@@ -9,17 +9,14 @@ void strrpc(char *str, char *oldstr, char *newstr)
     char bstr[strlen(str)];
     int i=0;
     memset(bstr,0,sizeof(bstr));
-    for(i=0; i<(int)strlen(str);i++)
+    for(i=0;i<(int)strlen(str);i++)
     {
         if(!strncmp(str+i, oldstr, strlen(oldstr)))
         {
             strcat(bstr,newstr);
             i+=(int)strlen(oldstr)-1;
         }
-        else
-        {
-            strncat(bstr,str+i,1);
-        }
+        else strncat(bstr,str+i,1);
     }
     strcpy(str,bstr);
 }
@@ -47,25 +44,19 @@ int list_dir(char *path, char ***ppp)
 void set_value(char *file, char *numb)
 {
     FILE *fn;
-    if((file != NULL) && (access(file, W_OK) == 0))
+    fn = fopen(file, "wt");
+    if(fn != NULL)
     {
-        fn = fopen(file, "wt");
-        if(fn != NULL)
-        {
-            fputs(numb,fn);
-            fclose(fn);
-            fn = NULL;
-        }
+        fputs(numb,fn);
+        fclose(fn);
+        fn = NULL;
     }
 }
 
 void line_feed(char *line)
 {
     char *p;
-    if((p = strchr(line, '\n')) != NULL)
-    {
-        *p = '\0';
-    }
+    if((p = strchr(line, '\n')) != NULL) *p = '\0';
 }
 
 void list_dir_set_value(char **file_dir, char *file_name, int file_num, char *value)
