@@ -335,15 +335,11 @@ int main()
                         fc=NULL;
                         if(temp_ctrl == 0) break;
                         list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, highest_temp_current);
-                        list_dir_set_value(power_supply_dir, "hw_current_max", power_supply_file_num, highest_temp_current);
-                        list_dir_set_value(power_supply_dir, "current_max", power_supply_file_num, highest_temp_current);
                         sleep(5);
                     }
                 }
             }
             list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, current_max);
-            list_dir_set_value(power_supply_dir, "hw_current_max", power_supply_file_num, current_max);
-            list_dir_set_value(power_supply_dir, "current_max", power_supply_file_num, current_max);
         }
         else
         {
