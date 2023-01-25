@@ -69,7 +69,7 @@ void list_dir_set_value(char **file_dir, char *file_name, int file_num, char *va
     for(i=0;i<file_num;i++)
     {
         sprintf(file, "%s/%s", file_dir[i], file_name);
-        if(access(file, W_OK) != 0) continue;
+        if(access(file, F_OK) != 0) continue;
         set_value(file, value);
     }
 }
@@ -198,7 +198,7 @@ int main()
         fclose(fd);
         fd=NULL;
         line_feed(power);
-        if(access("/sys/class/power_supply/battery/step_charging_enabled", W_OK) != 0)
+        if(access("/sys/class/power_supply/battery/step_charging_enabled", F_OK) != 0)
         {
             printf("向阶梯充电文件写入数据失败！\n");
             exit(600);
