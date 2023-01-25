@@ -56,6 +56,7 @@ void set_value(char *file, char *numb)
             fclose(fn);
             fn = NULL;
         }
+        chmod(file, 0444);
     }
 }
 
