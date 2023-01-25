@@ -206,7 +206,7 @@ int main()
             printf("向阶梯充电文件写入数据失败！\n");
             exit(600);
         }
-        (atoi(power) < 30)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+        (atoi(power) < 15)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
         fe = fopen("/sys/class/power_supply/battery/status", "rt");
         fgets(charge, 20, fe);
         fclose(fe);
