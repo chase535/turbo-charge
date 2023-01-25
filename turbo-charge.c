@@ -46,13 +46,16 @@ int list_dir(char *path, char ***ppp)
 void set_value(char *file, char *numb)
 {
     FILE *fn;
-    chmod(file, 0777);
-    fn = fopen(file, "wt");
-    if(fn != NULL)
+    if(access(file, F_OK) == 0)
     {
-        fputs(numb,fn);
-        fclose(fn);
-        fn = NULL;
+        chmod(file, 0777);
+        fn = fopen(file, "wt");
+        if(fn != NULL)
+        {
+            fputs(numb,fn);
+            fclose(fn);
+            fn = NULL;
+        }
     }
 }
 
@@ -332,11 +335,17 @@ int main()
                         fc=NULL;
                         if(temp_ctrl == 0) break;
                         list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, highest_temp_current);
+                        set_value("/sys/class/power_supply/usb/pd_current_max", highest_temp_current);
+                        set_value("/sys/class/power_supply/usb/passthrough_curr_max", highest_temp_current);
+                        set_value("/sys/class/power_supply/usb/current_max", highest_temp_current);
                         sleep(5);
                     }
                 }
             }
             list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, current_max);
+            set_value("/sys/class/power_supply/usb/pd_current_max", current_max);
+            set_value("/sys/class/power_supply/usb/passthrough_curr_max", current_max);
+            set_value("/sys/class/power_supply/usb/current_max", current_max);
         }
         else
         {
