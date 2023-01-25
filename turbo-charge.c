@@ -307,7 +307,7 @@ int main()
                         fclose(fe);
                         fe=NULL;
                         line_feed(charge);
-                        if(strcmp(charge, "Charging") != 0) break;
+                        if(strcmp(charge, "Charging") != 0 || strcmp(charge, "Full") != 0) break;
                         list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
                         if(access(conn_therm, R_OK) != 0)
                         {
