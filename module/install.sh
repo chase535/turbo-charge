@@ -43,13 +43,13 @@ check_file()
     ui_print "--- 检查必要文件是否存在 ---"
     temp=$(ls /sys/class/power_supply/*/temp 2>/dev/null)
     constant_charge_current_max=$(ls /sys/class/power_supply/*/constant_charge_current_max 2>/dev/null)
-    if[[ ! -f "/sys/class/power_supply/battery/step_charging_enabled" ]]; then
+    if [[ ! -f "/sys/class/power_supply/battery/step_charging_enabled" ]]; then
         ui_print "  · 由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯充电有关功能失效！"
     fi
-    if[[ -z "$temp" ]]; then
+    if [[ -z "$temp" ]]; then
         ui_print "  · 无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！"
     fi
-    if[[ -z "$constant_charge_current_max" ]]; then
+    if [[ -z "$constant_charge_current_max" ]]; then
         ui_print "  · 无法在/sys/class/power_supply中的所有文件夹内找到constant_charge_current_max文件，电流调节有关功能失效！"
     fi
     for i in $(ls /sys/class/thermal 2>/dev/null); do
