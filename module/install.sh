@@ -12,14 +12,15 @@ ui_print "
  - 模块版本: $version
  - 作者: $author
  -      ↓模块介绍↓
- - 删除温控，电量大于等于15%时关闭阶梯充电
- - 充电时持续修改电池温度，让系统认为电池温度一直是28℃
+ - 删除温控，充电时持续修改电池温度，让系统认为电池温度一直是28℃
  - 持续修改充电电流，以达到最快充电速度
- - 可选添加温控，默认当手机温度高于52℃时最高充电电流限制为2A
- - 可选添加电量控制，默认电量到达95%时断电，小于等于80%时恢复充电
+ - 可选添加温控，若添加，默认当手机温度高于52℃时最高充电电流限制为2A
+ - 可选添加电量控制，若添加，默认电量到达95%时断电，小于等于80%时恢复充电
+ - 可选是否关闭阶梯式充电，若选是，默认电量大于15%时关闭阶梯式充电，电量小于等于15%时开启阶梯式充电
  - 为了避免电池过热强制关机，故有如下限制
    · 若不充电时电池温度高于55℃，程序仍会强制显示28℃
    · 待电池温度降至55℃以下，显示真实温度
+
  ！！！若手机体感温度过高，请立即拔下充电器并将手机静置在阴凉处！！！
 
  ********************************************************
@@ -118,11 +119,31 @@ run_power_ctrl()
     ui_print ""
 }
 
+run_step_charge()
+{
+    ui_print ""
+    ui_print "--- 请选择是否关闭阶梯式充电（默认不关闭） ---"
+    ui_print "  音量+键 = 不关闭阶梯式充电"
+    ui_print "  音量-键 = 关闭阶梯式充电"
+    ui_print ""
+    if "$KEYTEST"; then
+        ui_print "- 关闭阶梯式充电"
+        ui_print "- 电池健康状态不好的手机关闭阶梯式充电后低电量充电时会疯狂断充"
+        ui_print "- 故在配置文件添加了关闭阶梯式充电的电量阈值，经测试此阈值为15%"
+        ui_print "- 且在阶梯充电状态改变时也会造成1-2次的断充"
+        sed -i 's/STEP_CHARGING_DISABLED=0/STEP_CHARGING_DISABLED=1/g' $TMPDIR/option.txt
+    else
+        ui_print "- 不关闭阶梯式充电"
+    fi
+    ui_print ""
+}
+
 on_install()
 {
     run_volume_key_test
     run_temp
     run_power_ctrl
+    run_step_charge
     cp -f $TMPDIR/turbo-charge $MODPATH/turbo-charge
     [[ ! -d /data/adb/turbo-charge ]] && mkdir -p /data/adb/turbo-charge
     cp -f $TMPDIR/option.txt /data/adb/turbo-charge/option.txt
