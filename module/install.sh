@@ -64,7 +64,7 @@ check_file()
         rm -rf $MODPATH
         exit 1
     fi
-    sed -i "s|^description=.*|description=${description}|g" $TMPDIR/option.txt
+    sed -i "s|^description=.*|description=${description}|g" $TMPDIR/module.prop
     ui_print "- 必要文件存在，开始安装"
 }
 
