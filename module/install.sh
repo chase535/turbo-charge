@@ -58,6 +58,7 @@ check_file()
     if [[ ! -f "/sys/class/power_supply/battery/status" || ! -f "/sys/class/power_supply/battery/current_now" || ! -f "/sys/class/power_supply/battery/capacity" || -z "$conn_therm" ]]; then
         ui_print " ！缺少必要文件，不支持此手机，安装失败！"
         ui_print ""
+        rm -rf $MODPATH
         exit 1
     fi
     ui_print "- 必要文件均存在，开始安装"
@@ -93,7 +94,7 @@ run_volume_key_test()
         ui_print "- 音量键测试完成"
     else
         KEYTEST=false
-        ui_print " ！错误：没有检测到音量键选择，默认添加温控、不添加电量控制"
+        ui_print " ！错误：没有检测到音量键选择，默认添加温控、不添加电量控制、不关闭阶梯式充电"
     fi
 }
 
