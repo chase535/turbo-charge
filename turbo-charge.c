@@ -123,7 +123,7 @@ int main()
 {
     FILE *fq,*fm,*fc,*fd,*fe;
     char **power_supply_dir,**thermal_dir,done[20],charge[25],power[10],current_max[20],highest_temp_current[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],option[1010],asdf[15],bat_temp_tmp[1],bat_temp[6];
-    int power_supply_file_num,thermal_file_num,temp_int,bat_temp_size,asdf_int,i,fu,qwer=0,temp_ctrl,power_ctrl,charge_start,charge_stop,recharge_temp,temp_max;
+    int power_supply_file_num,thermal_file_num,temp_int,bat_temp_size,asdf_int,i,fu,qwer=0,temp_ctrl,power_ctrl,charge_start,charge_stop,recharge_temp,temp_max,step_charging_disabled,step_charging_disabled_threshold;
     check_file("/sys/class/power_supply/battery/step_charging_enabled");
     check_file("/sys/class/power_supply/battery/status");
     check_file("/sys/class/power_supply/battery/current_now");
@@ -188,6 +188,8 @@ int main()
             sscanf(option, "TEMP_MAX=%d", &temp_max);
             sscanf(option, "HIGHEST_TEMP_CURRENT=%s", highest_temp_current);
             sscanf(option, "RECHARGE_TEMP=%d", &recharge_temp);
+            sscanf(option, "STEP_CHARGING_DISABLED=%d", &step_charging_disabled);
+            sscanf(option, "STEP_CHARGING_DISABLED_THRESHOLD=%d", &step_charging_disabled_threshold);
         }
         fclose(fc);
         fc=NULL;
@@ -206,7 +208,8 @@ int main()
             printf("向阶梯充电文件写入数据失败！\n");
             exit(600);
         }
-        (atoi(power) < 15)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+        if(step_charging_disabled == 1) (atoi(power) <= step_charging_disabled_threshold)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+        else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");=
         fe = fopen("/sys/class/power_supply/battery/status", "rt");
         fgets(charge, 20, fe);
         fclose(fe);
