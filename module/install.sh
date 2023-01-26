@@ -20,19 +20,13 @@ ui_print "
  - 为了避免电池过热强制关机，故有如下限制
    · 若不充电时电池温度高于55℃，程序仍会强制显示28℃
    · 待电池温度降至55℃以下，显示真实温度
-
  ！！！若手机体感温度过高，请立即拔下充电器并将手机静置在阴凉处！！！
-
  ********************************************************
-
  - 可修改/data/adb/turbo-charge/option.txt来更改一些参数，即时生效
  - 当然也可以通过重新刷模块来选择是否添加温控和电量控制
-
  ********************************************************
-
  ！！！卸载模块请务必在Magisk中卸载！！！
  ！！！或手动执行模块目录下的uninstall.sh文件后再删除模块目录！！！
-
  ********************************************************
  "
 }
@@ -45,18 +39,12 @@ check_file()
     constant_charge_current_max=$(ls /sys/class/power_supply/*/constant_charge_current_max 2>/dev/null)
     if [[ ! -f "/sys/class/power_supply/battery/step_charging_enabled" ]]; then
         ui_print " ！由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯充电有关功能失效！"
-        description_tmp="${description_tmp}！由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯充电有关功能失效！"
-        sed -i "s|^description=.*|description=${description_tmp}|g" $TMPDIR/module.prop
     fi
     if [[ -z "$temp" ]]; then
         ui_print " ！无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！"
-        description_tmp="${description_tmp}！无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！"
-        sed -i "s|^description=.*|description=${description_tmp}|g" $TMPDIR/module.prop
     fi
     if [[ -z "$constant_charge_current_max" ]]; then
         ui_print " ！无法在/sys/class/power_supply中的所有文件夹内找到constant_charge_current_max文件，电流调节有关功能失效！"
-        description_tmp="${description_tmp}！无法在/sys/class/power_supply中的所有文件夹内找到constant_charge_current_max文件，电流调节有关功能失效！"
-        sed -i "s|^description=.*|description=${description_tmp}|g" $TMPDIR/module.prop
     fi
     for i in $(ls /sys/class/thermal 2>/dev/null); do
         [[ -f "/sys/class/thermal/$i/type" && "$(cat /sys/class/thermal/$i/type 2>/dev/null)" == "conn_therm" ]] && conn_therm="$i"
@@ -183,5 +171,5 @@ set_permissions()
     chmod 0777 /data/adb/turbo-charge/option.txt
 }
 
-source $TMPDIR/module.prop
 check_file
+source $TMPDIR/module.prop
