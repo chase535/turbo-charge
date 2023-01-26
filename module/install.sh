@@ -45,12 +45,15 @@ check_file()
     constant_charge_current_max=$(ls /sys/class/power_supply/*/constant_charge_current_max 2>/dev/null)
     if [[ ! -f "/sys/class/power_supply/battery/step_charging_enabled" ]]; then
         ui_print " ！由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯充电有关功能失效！"
+        description="${description}！由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯充电有关功能失效！"
     fi
     if [[ -z "$temp" ]]; then
         ui_print " ！无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！"
+        description="${description}！无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！"
     fi
     if [[ -z "$constant_charge_current_max" ]]; then
         ui_print " ！无法在/sys/class/power_supply中的所有文件夹内找到constant_charge_current_max文件，电流调节有关功能失效！"
+        description="${description}！无法在/sys/class/power_supply中的所有文件夹内找到constant_charge_current_max文件，电流调节有关功能失效！"
     fi
     for i in $(ls /sys/class/thermal 2>/dev/null); do
         [[ -f "/sys/class/thermal/$i/type" && "$(cat /sys/class/thermal/$i/type 2>/dev/null)" == "conn_therm" ]] && conn_therm="$i"
@@ -61,6 +64,7 @@ check_file()
         rm -rf $MODPATH
         exit 1
     fi
+    sed -i "s|^description=.*|description=${description}|g" $TMPDIR/option.txt
     ui_print "- 必要文件存在，开始安装"
 }
 
@@ -177,5 +181,5 @@ set_permissions()
     chmod 0777 /data/adb/turbo-charge/option.txt
 }
 
-check_file
 source $TMPDIR/module.prop
+check_file
