@@ -43,10 +43,19 @@ check_file()
     ui_print "--- 检查必要文件是否存在 ---"
     temp=$(ls /sys/class/power_supply/*/temp 2>/dev/null)
     constant_charge_current_max=$(ls /sys/class/power_supply/*/constant_charge_current_max 2>/dev/null)
+    if[[ ! -f "/sys/class/power_supply/battery/step_charging_enabled" ]]; then
+        ui_print "  · 由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯充电有关功能失效！"
+    fi
+    if[[ -z "$temp" ]]; then
+        ui_print "  · 无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！"
+    fi
+    if[[ -z "$constant_charge_current_max" ]]; then
+        ui_print "  · 无法在/sys/class/power_supply中的所有文件夹内找到constant_charge_current_max文件，电流调节有关功能失效！"
+    fi
     for i in $(ls /sys/class/thermal 2>/dev/null); do
         [[ -f "/sys/class/thermal/$i/type" && "$(cat /sys/class/thermal/$i/type 2>/dev/null)" == "conn_therm" ]] && conn_therm="$i"
     done
-    if [[ ! -f "/sys/class/power_supply/battery/step_charging_enabled" || ! -f "/sys/class/power_supply/battery/status" || ! -f "/sys/class/power_supply/battery/current_now" || ! -f "/sys/class/power_supply/battery/capacity" || -z "$temp" || -z "$constant_charge_current_max" || -z "$conn_therm" ]]; then
+    if [[ ! -f "/sys/class/power_supply/battery/status" || ! -f "/sys/class/power_supply/battery/current_now" || ! -f "/sys/class/power_supply/battery/capacity" || -z "$conn_therm" ]]; then
         ui_print " ！缺少必要文件，不支持此手机，安装失败！"
         ui_print ""
         exit 1
