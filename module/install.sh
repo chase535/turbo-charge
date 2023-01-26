@@ -126,7 +126,6 @@ run_power_ctrl()
     else
         ui_print "- 不添加电量控制"
     fi
-    ui_print ""
 }
 
 run_step_charge()
