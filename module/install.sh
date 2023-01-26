@@ -145,15 +145,15 @@ run_step_charge()
     else
         ui_print "- 不关闭阶梯式充电"
     fi
-    ui_print ""
 }
 
 on_install()
 {
     run_volume_key_test
+    run_step_charge
     run_temp
     run_power_ctrl
-    run_step_charge
+    ui_print ""
     cp -f $TMPDIR/turbo-charge $MODPATH/turbo-charge
     [[ ! -d /data/adb/turbo-charge ]] && mkdir -p /data/adb/turbo-charge
     cp -f $TMPDIR/option.txt /data/adb/turbo-charge/option.txt
