@@ -51,13 +51,23 @@ void set_value(char *file, char *numb)
     FILE *fn;
     if(access(file, F_OK) == 0)
     {
-        chmod(file, 0777);
         fn = fopen(file, "wt");
         if(fn != NULL)
         {
             fputs(numb,fn);
             fclose(fn);
             fn = NULL;
+        }
+        else
+        {
+            chmod(file, 0644);
+            fn = fopen(file, "wt");
+            if(fn != NULL)
+            {
+                fputs(numb,fn);
+                fclose(fn);
+                fn = NULL;
+            }
         }
     }
 }
