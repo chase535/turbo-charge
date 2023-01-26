@@ -31,15 +31,18 @@ int list_dir(char *path, char ***ppp)
     char childpath[600];
     *ppp=(char**)malloc(sizeof(char *) * 1000);
     pDir = opendir(path);
-    while ((ent = readdir(pDir)) != NULL)
+    if(pDir != NULL)
     {
-        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
-        sprintf(childpath,"%s/%s",path,ent->d_name);
-        (*ppp)[file_num]=(char *)malloc(sizeof(char) * (strlen(childpath) + 1));
-        strcpy((*ppp)[file_num],childpath);
-        file_num++;
+        while ((ent = readdir(pDir)) != NULL)
+        {
+            if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
+            sprintf(childpath,"%s/%s",path,ent->d_name);
+            (*ppp)[file_num]=(char *)malloc(sizeof(char) * (strlen(childpath) + 1));
+            strcpy((*ppp)[file_num],childpath);
+            file_num++;
+        }
+        closedir(pDir);
     }
-    closedir(pDir);
     return file_num;
 }
 
