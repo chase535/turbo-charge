@@ -147,7 +147,7 @@ int main()
     char options[10][50]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_START","CHARGE_STOP","CURRENT_MAX","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
     char **power_supply_dir,**thermal_dir,done[20],charge[25],power[10],chartmp[100],current_max_char[20],highest_temp_current_char[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],option[1010],bat_temp_tmp[1],bat_temp[6];
     int temp_int;
-    unsigned char tmp[5]={0,0,0,0,0},num=0,stop=0,fu,i,bat_temp_size,power_supply_file_num,thermal_file_num,opt;
+    unsigned char tmp[7]={0,0,0,0,0,0,0},num=0,stop=0,fu,i,bat_temp_size,power_supply_file_num,thermal_file_num,opt;
     unsigned int opt_old[10]={0,0,0,0,0,0,0,0,0,0},opt_new[10]={0,0,0,0,0,0,0,0,0,0};
     check_file("/sys/class/power_supply/battery/status");
     check_file("/sys/class/power_supply/battery/current_now");
@@ -265,6 +265,7 @@ int main()
                 printf_plus_time("充电器已连接");
                 tmp[1]=0;
                 tmp[2]=1;
+                tmp[6]=1;
             }
             if(access(conn_therm, R_OK) != 0)
             {
@@ -402,11 +403,19 @@ int main()
                             {
                                 snprintf(chartmp,100,"%s值发生改变，新%s值为%d",options[opt],options[opt],opt_new[opt]);
                                 printf_plus_time(chartmp);
+                                if(opt == 7 && opt_old[7] < opt_new[7]) tmp[5]=1;
                                 opt_old[opt]=opt_new[opt];
                             }
                         }
                         snprintf(current_max_char,20,"%u",opt_new[6]);
                         snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
+                        if(tmp[5] == 1)
+                        {
+                            snprintf(chartmp,100,"新的降低充电电流的温度阈值高于旧的温度阈值，恢复充电电流为%dμA",opt_new[6]);
+                            printf_plus_time(chartmp);
+                            tmp[5]=0;
+                            break;
+                        }
                         if(access(conn_therm, R_OK) != 0)
                         {
                             printf_plus_time("获取温度失败，程序强制退出！");
@@ -466,9 +475,15 @@ int main()
         }
         else
         {
-            if(!tmp[1])
+            if(!tmp[1] && !tmp[6])
             {
                 printf_plus_time("充电器未连接");
+                tmp[1]=1;
+                tmp[2]=0;
+            }
+            else if(!tmp[1])
+            {
+                printf_plus_time("充电器断开连接");
                 tmp[1]=1;
                 tmp[2]=0;
             }
