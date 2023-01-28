@@ -145,8 +145,9 @@ int main()
 {
     FILE *fq,*fm,*fc,*fd,*fe;
     char options[10][50]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_START","CHARGE_STOP","CURRENT_MAX","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
-    char **power_supply_dir,**thermal_dir,done[20],charge[25],power[10],chartmp[100],current_max_char[20],highest_temp_current_char[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],option[1010],asdf[15],bat_temp_tmp[1],bat_temp[6];
-    int opt,power_supply_file_num,thermal_file_num,temp_int,bat_temp_size,asdf_int,i,fu,qwer=0,num=0;
+    char **power_supply_dir,**thermal_dir,done[20],charge[25],power[10],chartmp[100],current_max_char[20],highest_temp_current_char[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],option[1010],bat_temp_tmp[1],bat_temp[6];
+    int temp_int;
+    unsigned char tmp[5]={0,0,0,0,0},num=0,stop=0,fu,i,bat_temp_size,power_supply_file_num,thermal_file_num,opt;
     unsigned int opt_old[10]={0,0,0,0,0,0,0,0,0,0},opt_new[10]={0,0,0,0,0,0,0,0,0,0};
     check_file("/sys/class/power_supply/battery/status");
     check_file("/sys/class/power_supply/battery/current_now");
@@ -222,6 +223,8 @@ int main()
             sscanf(option, "HIGHEST_TEMP_CURRENT=%u", &opt_new[8]);
             sscanf(option, "RECHARGE_TEMP=%u", &opt_new[9]);
         }
+        fclose(fc);
+        fc=NULL;
         if(num>1)
         {
             if(num>10) num=1;
@@ -238,8 +241,6 @@ int main()
         else for(opt=0;opt<10;opt++) opt_old[opt]=opt_new[opt];
         snprintf(current_max_char,20,"%u",opt_new[6]);
         snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
-        fclose(fc);
-        fc=NULL;
         if(access("/sys/class/power_supply/battery/status", R_OK) != 0)
         {
             printf_plus_time("读取充电状态失败，程序强制退出！");
@@ -259,6 +260,12 @@ int main()
         line_feed(charge);
         if(strcmp(charge, "Charging") == 0 || strcmp(charge, "Full") == 0)
         {
+            if(!tmp[2])
+            {
+                printf_plus_time("充电器连接");
+                tmp[1]=0;
+                tmp[2]=1;
+            }
             if(access(conn_therm, R_OK) != 0)
             {
                 printf_plus_time("获取温度失败，程序强制退出！");
@@ -291,30 +298,58 @@ int main()
                         fclose(fm);
                         fm=NULL;
                         line_feed(done);
-                        if(atoi(done) == 0)
+                        if(atoi(done) == 0 && opt_new[6] != 0)
                         {
+                            if(!tmp[3])
+                            {
+                                snprintf(chartmp,100,"当前电量为%s%%，到达停止充电的电量阈值，且输入电流为0A，涓流充电结束，停止充电",done);
+                                printf_plus_time(chartmp);
+                                tmp[3]=1;
+                                tmp[4]=0;
+                            }
                             charge_value("0");
-                            qwer = 1;
+                            stop = 1;
                         }
                     }
                     else
                     {
+                        if(!tmp[3])
+                        {
+                            snprintf(chartmp,100,"当前电量为%s%%，到达停止充电的电量阈值，停止充电",done);
+                            printf_plus_time(chartmp);
+                            tmp[3]=1;
+                            tmp[4]=0;
+                        }
                         charge_value("0");
-                        qwer = 1;
+                        stop = 1;
                     }
                 }
-                else if(atoi(power) <= (int)opt_new[4])
+                if(atoi(power) <= (int)opt_new[4])
                 {
+                    if(!tmp[4])
+                    {
+                        snprintf(chartmp,100,"当前电量为%s%%，到达恢复充电的电量阈值，恢复充电",done);
+                        printf_plus_time(chartmp);
+                        tmp[3]=0;
+                        tmp[4]=1;
+                    }
                     charge_value("1");
-                    qwer = 0;
+                    stop = 0;
                 }
             }
             else
             {
-                if(qwer == 1)
+                if(stop == 1)
                 {
+                    if(tmp[3])
+                    {
+                        snprintf(chartmp,100,"当前电量为%s%%，到达恢复充电的电量阈值，恢复充电",done);
+                        printf_plus_time("电量控制关闭，恢复充电");
+                        tmp[3]=0;
+                        tmp[4]=1;
+                    }
                     charge_value("1");
-                    qwer = 0;
+                    stop = 0;
                 }
             }
             if(opt_new[1] == 1)
@@ -332,36 +367,14 @@ int main()
                 temp_int = atoi(thermal);
                 if(temp_int > ((int)opt_new[7])*1000)
                 {
-                    while(temp_int > ((int)opt_new[9])*1000)
+                    if(!tmp[0])
                     {
-                        if(access(conn_therm, R_OK) != 0)
-                        {
-                            printf_plus_time("获取温度失败，程序强制退出！");
-                            exit(70);
-                        }
-                        if(access("/sys/class/power_supply/battery/status", R_OK) != 0)
-                        {
-                            printf_plus_time("读取充电状态失败，程序强制退出！");
-                            exit(80);
-                        }
-                        fe = fopen("/sys/class/power_supply/battery/status", "rt");
-                        fgets(charge, 20, fe);
-                        fclose(fe);
-                        fe=NULL;
-                        line_feed(charge);
-                        if(strcmp(charge, "Charging") != 0 || strcmp(charge, "Full") != 0) break;
-                        list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
-                        if(access(conn_therm, R_OK) != 0)
-                        {
-                            printf_plus_time("获取温度失败，程序强制退出！");
-                            exit(90);
-                        }
-                        fm = fopen(conn_therm, "rt");
-                        fgets(thermal, 300, fm);
-                        fclose(fm);
-                        fm=NULL;
-                        line_feed(thermal);
-                        temp_int = atoi(thermal);
+                        snprintf(chartmp,100,"温度高于降低充电电流的温度阈值，限制充电电流为%dμA",opt_new[8]);
+                        printf_plus_time(chartmp);
+                        tmp[0]=1;
+                    }
+                    while(1)
+                    {
                         if(access("/data/adb/turbo-charge/option.txt", R_OK) != 0)
                         {
                             printf_plus_time("配置文件丢失，程序强制退出！");
@@ -381,6 +394,8 @@ int main()
                             sscanf(option, "HIGHEST_TEMP_CURRENT=%u", &opt_new[8]);
                             sscanf(option, "RECHARGE_TEMP=%u", &opt_new[9]);
                         }
+                        fclose(fc);
+                        fc=NULL;
                         for(opt=0;opt<10;opt++)
                         {
                             if(opt_old[opt] != opt_new[opt])
@@ -392,20 +407,71 @@ int main()
                         }
                         snprintf(current_max_char,20,"%u",opt_new[6]);
                         snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
-                        fclose(fc);
-                        fc=NULL;
-                        if(opt_new[1] == 0) break;
+                        if(access(conn_therm, R_OK) != 0)
+                        {
+                            printf_plus_time("获取温度失败，程序强制退出！");
+                            exit(70);
+                        }
+                        if(access("/sys/class/power_supply/battery/status", R_OK) != 0)
+                        {
+                            printf_plus_time("读取充电状态失败，程序强制退出！");
+                            exit(80);
+                        }
+                        fe = fopen("/sys/class/power_supply/battery/status", "rt");
+                        fgets(charge, 20, fe);
+                        fclose(fe);
+                        fe=NULL;
+                        line_feed(charge);
+                        if(strcmp(charge, "Charging") != 0 || strcmp(charge, "Full") != 0)
+                        {
+                            snprintf(chartmp,100,"充电器断开，恢复充电电流为%dμA",opt_new[6]);
+                            printf_plus_time(chartmp);
+                            tmp[1]=1;
+                            tmp[2]=0;
+                            break;
+                        }
+                        list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
+                        if(access(conn_therm, R_OK) != 0)
+                        {
+                            printf_plus_time("获取温度失败，程序强制退出！");
+                            exit(90);
+                        }
+                        fm = fopen(conn_therm, "rt");
+                        fgets(thermal, 300, fm);
+                        fclose(fm);
+                        fm=NULL;
+                        line_feed(thermal);
+                        temp_int = atoi(thermal);
+                        if(temp_int > ((int)opt_new[9])*1000)
+                        {
+                            snprintf(chartmp,100,"温度低于恢复快充的温度阈值，恢复充电电流为%dμA",opt_new[6]);
+                            printf_plus_time(chartmp);
+                            break;
+                        }
+                        if(opt_new[1] == 0)
+                        {
+                            snprintf(chartmp,100,"温控关闭，恢复充电电流为%dμA",opt_new[6]);
+                            printf_plus_time(chartmp);
+                            break;
+                        }
                         if(opt_new[0] == 1) (atoi(power) <= (int)opt_new[3])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
                         else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
                         list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, highest_temp_current_char);
                         sleep(5);
                     }
+                    tmp[0]=0;
                 }
             }
             list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, current_max_char);
         }
         else
         {
+            if(!tmp[1])
+            {
+                printf_plus_time("充电器未连接");
+                tmp[1]=1;
+                tmp[2]=0;
+            }
             if(opt_new[0] == 1) (atoi(power) <= (int)opt_new[3])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
             else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
             if(access(conn_therm, R_OK) != 0)
@@ -414,18 +480,18 @@ int main()
                 exit(110);
             }
             fm = fopen(conn_therm, "rt");
-            fgets(asdf, 10, fm);
+            fgets(thermal, 10, fm);
             fclose(fm);
             fm=NULL;
-            line_feed(asdf);
-            asdf_int=atoi(asdf);
+            line_feed(thermal);
+            temp_int=atoi(thermal);
             fu=0;
-            if(asdf_int<0)
+            if(temp_int<0)
             {
-                asdf_int=abs(asdf_int);
+                temp_int=abs(temp_int);
                 fu=1;
             }
-            snprintf(bat_temp,4,"%05d",asdf_int);
+            snprintf(bat_temp,4,"%05d",temp_int);
             if(strcmp(bat_temp,"000")==0) sprintf(bat_temp,"0");
             else
             {
@@ -440,7 +506,7 @@ int main()
                 sprintf(bat_temp,"-%s",bat_temp);
                 list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, bat_temp);
             }
-            else (asdf_int >= 55000)?list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280"):list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, bat_temp);
+            else (temp_int >= 55000)?list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280"):list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, bat_temp);
         }
         sleep(5);
     }
