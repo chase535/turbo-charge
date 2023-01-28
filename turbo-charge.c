@@ -231,6 +231,92 @@ void check_read_file(char *file)
     }
 }
 
+void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
+{
+    FILE *fd,*fm;
+    char chartmp[100],power[10],done[20];
+    unsigned char stop=0;
+    if(opt_new[2] == 1)
+    {
+        check_read_file("/sys/class/power_supply/battery/capacity");
+        fd = fopen("/sys/class/power_supply/battery/capacity", "rt");
+        fgets(power, 5, fd);
+        fclose(fd);
+        fd=NULL;
+        line_feed(power);
+        if(atoi(power) >= (int)opt_new[5])
+        {
+            if(opt_new[5] == 100)
+            {
+                check_read_file("/sys/class/power_supply/battery/current_now");
+                fm = fopen("/sys/class/power_supply/battery/current_now", "rt");
+                fgets(done, 15, fm);
+                fclose(fm);
+                fm=NULL;
+                line_feed(done);
+                if(atoi(done) == 0)
+                {
+                    if(!tmp[3])
+                    {
+                        snprintf(chartmp,100,"当前电量为%s%%，到达停止充电的电量阈值，且输入电流为0A，涓流充电结束，停止充电",power);
+                        printf_plus_time(chartmp);
+                        tmp[3]=1;
+                    }
+                    charge_value("0");
+                    stop = 1;
+                }
+            }
+            else
+            {
+                if(!tmp[3])
+                {
+                    snprintf(chartmp,100,"当前电量为%s%%，到达停止充电的电量阈值，停止充电",power);
+                    printf_plus_time(chartmp);
+                    tmp[3]=1;
+                }
+                else
+                {
+                    if(tmp[5] == 1)
+                    {
+                        printf_plus_time("新的停止充电的电量阈值高于旧的电量阈值，恢复充电");
+                        charge_value("1");
+                        stop=0;
+                        tmp[3]=0;
+                        tmp[5]=0;
+                    }
+                }
+                charge_value("0");
+                stop = 1;
+            }
+        }
+        if(atoi(power) <= (int)opt_new[4])
+        {
+            if(tmp[3])
+            {
+                snprintf(chartmp,100,"当前电量为%s%%，到达恢复充电的电量阈值，恢复充电",power);
+                printf_plus_time(chartmp);
+                tmp[3]=0;
+            }
+            charge_value("1");
+            stop = 0;
+        }
+    }
+    else
+    {
+        if(stop == 1)
+        {
+            if(tmp[3])
+            {
+                snprintf(chartmp,100,"当前电量为%s%%，到达恢复充电的电量阈值，恢复充电",power);
+                printf_plus_time("电量控制关闭，恢复充电");
+                tmp[3]=0;
+            }
+            charge_value("1");
+            stop = 0;
+        }
+    }
+}
+
 int main()
 {
     FILE *fq,*fm,*fc,*fd,*fe;
@@ -317,6 +403,7 @@ int main()
                 {
                     snprintf(chartmp,100,"%s值发生改变，新%s值为%d",options[opt],options[opt],opt_new[opt]);
                     printf_plus_time(chartmp);
+                    if(opt == 5 && opt_old[5] < opt_new[5]) tmp[5]=1;
                     opt_old[opt]=opt_new[opt];
                 }
             }
@@ -347,74 +434,7 @@ int main()
             }
             check_read_file(conn_therm);
             list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
-            if(opt_new[2] == 1)
-            {
-                check_read_file("/sys/class/power_supply/battery/capacity");
-                fd = fopen("/sys/class/power_supply/battery/capacity", "rt");
-                fgets(power, 5, fd);
-                fclose(fd);
-                fd=NULL;
-                line_feed(power);
-                if(atoi(power) >= (int)opt_new[5])
-                {
-                    if(opt_new[5] == 100)
-                    {
-                        check_read_file("/sys/class/power_supply/battery/current_now");
-                        fm = fopen("/sys/class/power_supply/battery/current_now", "rt");
-                        fgets(done, 15, fm);
-                        fclose(fm);
-                        fm=NULL;
-                        line_feed(done);
-                        if(atoi(done) == 0)
-                        {
-                            if(!tmp[3])
-                            {
-                                snprintf(chartmp,100,"当前电量为%s%%，到达停止充电的电量阈值，且输入电流为0A，涓流充电结束，停止充电",power);
-                                printf_plus_time(chartmp);
-                                tmp[3]=1;
-                            }
-                            charge_value("0");
-                            stop = 1;
-                        }
-                    }
-                    else
-                    {
-                        if(!tmp[3])
-                        {
-                            snprintf(chartmp,100,"当前电量为%s%%，到达停止充电的电量阈值，停止充电",power);
-                            printf_plus_time(chartmp);
-                            tmp[3]=1;
-                        }
-                        charge_value("0");
-                        stop = 1;
-                    }
-                }
-                if(atoi(power) <= (int)opt_new[4])
-                {
-                    if(tmp[3])
-                    {
-                        snprintf(chartmp,100,"当前电量为%s%%，到达恢复充电的电量阈值，恢复充电",power);
-                        printf_plus_time(chartmp);
-                        tmp[3]=0;
-                    }
-                    charge_value("1");
-                    stop = 0;
-                }
-            }
-            else
-            {
-                if(stop == 1)
-                {
-                    if(tmp[3])
-                    {
-                        snprintf(chartmp,100,"当前电量为%s%%，到达恢复充电的电量阈值，恢复充电",power);
-                        printf_plus_time("电量控制关闭，恢复充电");
-                        tmp[3]=0;
-                    }
-                    charge_value("1");
-                    stop = 0;
-                }
-            }
+            powel_ctl(opt_new, tmp);
             if(opt_new[1] == 1)
             {
                 check_read_file(conn_therm);
@@ -507,6 +527,7 @@ int main()
                         else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
                         list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
                         list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, highest_temp_current_char);
+                        powel_ctl(opt_new, tmp);
                         sleep(5);
                     }
                     tmp[0]=0;
