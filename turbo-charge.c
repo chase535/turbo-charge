@@ -356,10 +356,9 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
 int main()
 {
     FILE *fq;
-    char options[10][50]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_START","CHARGE_STOP","CURRENT_MAX","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
     char **power_supply_dir,**thermal_dir,charge[25],power[10],chartmp[100],current_max_char[20],highest_temp_current_char[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
     int temp_int;
-    unsigned char tmp[6]={0,0,0,0,0,0},num=1,fu,i,bat_temp_size,power_supply_file_num,thermal_file_num,opt;
+    unsigned char tmp[6]={0,0,0,0,0,0},num=1,fu,i,bat_temp_size,power_supply_file_num,thermal_file_num;
     unsigned int opt_old[10]={0,0,0,0,0,0,0,0,0,0},opt_new[10]={0,0,0,0,0,0,0,0,0,0};
     check_file("/sys/class/power_supply/battery/status");
     check_file("/sys/class/power_supply/battery/current_now");
