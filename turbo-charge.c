@@ -261,8 +261,8 @@ void read_option(unsigned int opt_new[10], unsigned int opt_old[10], unsigned ch
             {
                 snprintf(chartmp,200,"%s值发生改变，新%s值为%d",options[opt],options[opt],opt_new[opt]);
                 printf_plus_time(chartmp);
-                if(opt == 5 && opt_old[5] < opt_new[4]) tmp[5]=1;
-                if(is_temp_wall == 1 && (opt == 7 && opt_old[7] < opt_new[7])) tmp[4]=1;
+                if(opt == 4 && opt_old[opt] < opt_new[opt]) tmp[5]=1;
+                if(is_temp_wall == 1 && (opt == 7 && opt_old[opt] < opt_new[opt])) tmp[4]=1;
                 opt_old[opt]=opt_new[opt];
             }
         }
