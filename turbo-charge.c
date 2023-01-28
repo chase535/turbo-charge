@@ -244,6 +244,14 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
         fclose(fd);
         fd=NULL;
         line_feed(power);
+        if(tmp[3] == 1 && tmp[5] == 1)
+        {
+            printf_plus_time("新的停止充电的电量阈值高于旧的电量阈值，恢复充电");
+            charge_value("1");
+            stop=0;
+            tmp[3]=0;
+            tmp[5]=0;
+        }
         if(atoi(power) >= (int)opt_new[5])
         {
             if(opt_new[5] == 100)
@@ -274,17 +282,6 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
                     printf_plus_time(chartmp);
                     tmp[3]=1;
                 }
-                else
-                {
-                    if(tmp[5] == 1)
-                    {
-                        printf_plus_time("新的停止充电的电量阈值高于旧的电量阈值，恢复充电");
-                        charge_value("1");
-                        stop=0;
-                        tmp[3]=0;
-                        tmp[5]=0;
-                    }
-                }
                 charge_value("0");
                 stop = 1;
             }
@@ -307,7 +304,6 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
         {
             if(tmp[3])
             {
-                snprintf(chartmp,100,"当前电量为%s%%，到达恢复充电的电量阈值，恢复充电",power);
                 printf_plus_time("电量控制关闭，恢复充电");
                 tmp[3]=0;
             }
@@ -477,6 +473,7 @@ int main()
                             {
                                 snprintf(chartmp,100,"%s值发生改变，新%s值为%d",options[opt],options[opt],opt_new[opt]);
                                 printf_plus_time(chartmp);
+                                if(opt == 5 && opt_old[5] < opt_new[5]) tmp[5]=1;
                                 if(opt == 7 && opt_old[7] < opt_new[7]) tmp[4]=1;
                                 opt_old[opt]=opt_new[opt];
                             }
