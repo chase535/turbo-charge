@@ -3,5 +3,5 @@ name=充电加速
 version=v31
 versionCode=31
 author=酷安@诺鸡鸭（QQ群：738661277）
-description=删除温控，充电时持续修改电池温度及最大电流，以达到最快充电速度。配置文件在/data/adb/turbo-charge/option.txt，可以更改一些参数，即时生效。卸载模块请务必在Magisk中卸载，或手动执行模块目录下的uninstall.sh文件后再删除模块目录。QQ群：738661277
+description=尽可能的让手机满血快充。配置文件在/data/adb/turbo-charge/option.txt，可以更改一些参数，日志文件为同目录的log.txt。QQ群：738661277
 updateJson=https://gh-proxy.chase535.xyz/https://raw.githubusercontent.com/chase535/turbo-charge/main/update_channel/turbo-charge.json
