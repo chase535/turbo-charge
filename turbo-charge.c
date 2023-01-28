@@ -211,7 +211,7 @@ int main()
             {
                 if(opt_old[opt] != opt_new[opt])
                 {
-                    printf("%s值发生改变，新%s值为%d",options[opt],options[opt],opt_new[opt]);
+                    printf("%s值发生改变，新%s值为%d\n",options[opt],options[opt],opt_new[opt]);
                     opt_old[opt]=opt_new[opt];
                 }
             }
@@ -366,7 +366,7 @@ int main()
                         {
                             if(opt_old[opt] != opt_new[opt])
                             {
-                                printf("%s值发生改变，新%s值为%d",options[opt],options[opt],opt_new[opt]);
+                                printf("%s值发生改变，新%s值为%d\n",options[opt],options[opt],opt_new[opt]);
                                 opt_old[opt]=opt_new[opt];
                             }
                         }
