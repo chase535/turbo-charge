@@ -262,7 +262,7 @@ int main()
         {
             if(!tmp[2])
             {
-                printf_plus_time("充电器连接");
+                printf_plus_time("充电器已连接");
                 tmp[1]=0;
                 tmp[2]=1;
             }
@@ -424,7 +424,7 @@ int main()
                         line_feed(charge);
                         if(strcmp(charge, "Charging") != 0 && strcmp(charge, "Full") != 0)
                         {
-                            snprintf(chartmp,100,"充电器断开，恢复充电电流为%dμA",opt_new[6]);
+                            snprintf(chartmp,100,"充电器断开连接，恢复充电电流为%dμA",opt_new[6]);
                             printf_plus_time(chartmp);
                             tmp[1]=1;
                             tmp[2]=0;
