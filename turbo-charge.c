@@ -231,7 +231,7 @@ int main()
         fclose(fd);
         fd=NULL;
         line_feed(power);
-        if(opt_new[0] == 1) (atoi(power) <= opt_new[3])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+        if(opt_new[0] == 1) (atoi(power) <= (int)opt_new[3])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
         else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
         fe = fopen("/sys/class/power_supply/battery/status", "rt");
         fgets(charge, 20, fe);
@@ -258,7 +258,7 @@ int main()
                 fclose(fd);
                 fd=NULL;
                 line_feed(power);
-                if(atoi(power) >= opt_new[5])
+                if(atoi(power) >= (int)opt_new[5])
                 {
                     if(opt_new[5] == 100)
                     {
@@ -284,7 +284,7 @@ int main()
                         qwer = 1;
                     }
                 }
-                else if(atoi(power) <= opt_new[4])
+                else if(atoi(power) <= (int)opt_new[4])
                 {
                     charge_value("1");
                     qwer = 0;
@@ -311,9 +311,9 @@ int main()
                 fm=NULL;
                 line_feed(thermal);
                 temp_int = atoi(thermal);
-                if(temp_int > opt_new[7]*1000)
+                if(temp_int > ((int)opt_new[7])*1000)
                 {
-                    while(temp_int > opt_new[9]*1000)
+                    while(temp_int > ((int)opt_new[9])*1000)
                     {
                         if(access(conn_therm, R_OK) != 0)
                         {
@@ -375,7 +375,7 @@ int main()
                         fclose(fc);
                         fc=NULL;
                         if(opt_new[1] == 0) break;
-                        if(opt_new[0] == 1) (atoi(power) <= opt_new[3])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+                        if(opt_new[0] == 1) (atoi(power) <= (int)opt_new[3])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
                         else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
                         list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, highest_temp_current_char);
                         sleep(5);
@@ -386,7 +386,7 @@ int main()
         }
         else
         {
-            if(opt_new[0] == 1) (atoi(power) <= opt_new[3])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+            if(opt_new[0] == 1) (atoi(power) <= (int)opt_new[3])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
             else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
             if(access(conn_therm, R_OK) != 0)
             {
