@@ -299,11 +299,11 @@ int main()
                         fclose(fm);
                         fm=NULL;
                         line_feed(done);
-                        if(atoi(done) == 0 && opt_new[6] != 0)
+                        if(atoi(done) == 0)
                         {
                             if(!tmp[3])
                             {
-                                snprintf(chartmp,100,"当前电量为%s%%，到达停止充电的电量阈值，且输入电流为0A，涓流充电结束，停止充电",done);
+                                snprintf(chartmp,100,"当前电量为%s%%，到达停止充电的电量阈值，且输入电流为0A，涓流充电结束，停止充电",power);
                                 printf_plus_time(chartmp);
                                 tmp[3]=1;
                                 tmp[4]=0;
@@ -316,7 +316,7 @@ int main()
                     {
                         if(!tmp[3])
                         {
-                            snprintf(chartmp,100,"当前电量为%s%%，到达停止充电的电量阈值，停止充电",done);
+                            snprintf(chartmp,100,"当前电量为%s%%，到达停止充电的电量阈值，停止充电",power);
                             printf_plus_time(chartmp);
                             tmp[3]=1;
                             tmp[4]=0;
@@ -329,7 +329,7 @@ int main()
                 {
                     if(!tmp[4])
                     {
-                        snprintf(chartmp,100,"当前电量为%s%%，到达恢复充电的电量阈值，恢复充电",done);
+                        snprintf(chartmp,100,"当前电量为%s%%，到达恢复充电的电量阈值，恢复充电",power);
                         printf_plus_time(chartmp);
                         tmp[3]=0;
                         tmp[4]=1;
@@ -344,7 +344,7 @@ int main()
                 {
                     if(tmp[3])
                     {
-                        snprintf(chartmp,100,"当前电量为%s%%，到达恢复充电的电量阈值，恢复充电",done);
+                        snprintf(chartmp,100,"当前电量为%s%%，到达恢复充电的电量阈值，恢复充电",power);
                         printf_plus_time("电量控制关闭，恢复充电");
                         tmp[3]=0;
                         tmp[4]=1;
