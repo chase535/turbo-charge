@@ -5,9 +5,9 @@ LATESTARTSERVICE=true
 
 print_modname()
 {
-    ui_print ""
+    ui_print " "
     ui_print " ********************************************************"
-    ui_print ""
+    ui_print " "
     ui_print " - 模块: $name"
     ui_print " - 模块版本: $version"
     ui_print " - 作者: $author"
@@ -20,28 +20,28 @@ print_modname()
     ui_print " - 为了避免电池过热强制关机，故有如下限制"
     ui_print "   · 若不充电时电池温度高于55℃，程序仍会强制显示28℃"
     ui_print "   · 待电池温度降至55℃以下，显示真实温度"
-    ui_print ""
+    ui_print " "
     ui_print " ！！！若手机体感温度过高，请立即拔下充电器并将手机静置在阴凉处！！！"
-    ui_print ""
+    ui_print " "
     ui_print " ********************************************************"
-    ui_print ""
+    ui_print " "
     ui_print " - 可修改/data/adb/turbo-charge/option.txt来更改一些参数，即时生效"
     ui_print " - 当然也可以通过重新刷模块来选择是否添加温控和电量控制"
-    ui_print ""
+    ui_print " "
     ui_print " - log文件为同目录的log.txt，包含配置更改、充电器拔插、撞温度墙等信息"
-    ui_print ""
+    ui_print " "
     ui_print " ********************************************************"
-    ui_print ""
+    ui_print " "
     ui_print " ！！！卸载模块请务必在Magisk中卸载！！！"
     ui_print " ！！！或手动执行模块目录下的uninstall.sh文件后再删除模块目录！！！"
-    ui_print ""
+    ui_print " "
     ui_print " ********************************************************"
-    ui_print ""
+    ui_print " "
 }
 
 check_file()
 {
-    ui_print ""
+    ui_print " "
     ui_print "--- 检查所需文件是否存在 ---"
     temp=$(ls /sys/class/power_supply/*/temp 2>/dev/null)
     constant_charge_current_max=$(ls /sys/class/power_supply/*/constant_charge_current_max 2>/dev/null)
@@ -59,7 +59,7 @@ check_file()
     done
     if [[ ! -f "/sys/class/power_supply/battery/status" || ! -f "/sys/class/power_supply/battery/current_now" || ! -f "/sys/class/power_supply/battery/capacity" || -z "$conn_therm" ]]; then
         ui_print " ！缺少必要文件，不支持此手机，安装失败！"
-        ui_print ""
+        ui_print " "
         rm -rf $MODPATH
         exit 1
     fi
@@ -102,11 +102,11 @@ run_volume_key_test()
 
 run_temp()
 {
-    ui_print ""
+    ui_print " "
     ui_print "--- 请选择是否添加温控（默认添加） ---"
     ui_print "  音量+键 = 添加温控，当温度高于52℃时限制最高充电电流为2A，低于45℃时恢复"
     ui_print "  音量-键 = 不添加温控，真·极速快充，高温伤手又伤机，谨慎选择！"
-    ui_print ""
+    ui_print " "
     if "$KEYTEST"; then
         ui_print "- 不添加温控"
         sed -i 's/TEMP_CTRL=1/TEMP_CTRL=0/g' $TMPDIR/option.txt
@@ -117,11 +117,11 @@ run_temp()
 
 run_power_ctrl()
 {
-    ui_print ""
+    ui_print " "
     ui_print "--- 请选择是否添加电量控制（默认不添加） ---"
     ui_print "  音量+键 = 不添加电量控制"
     ui_print "  音量-键 = 添加电量控制，默认为电量到达95%时断电，小于等于80%时恢复充电"
-    ui_print ""
+    ui_print " "
     if "$KEYTEST"; then
         ui_print "- 添加电量控制"
         sed -i 's/POWER_CTRL=0/POWER_CTRL=1/g' $TMPDIR/option.txt
@@ -132,11 +132,11 @@ run_power_ctrl()
 
 run_step_charge()
 {
-    ui_print ""
+    ui_print " "
     ui_print "--- 请选择是否关闭阶梯式充电（默认不关闭） ---"
     ui_print "  音量+键 = 不关闭阶梯式充电"
     ui_print "  音量-键 = 关闭阶梯式充电"
-    ui_print ""
+    ui_print " "
     if "$KEYTEST"; then
         ui_print "- 关闭阶梯式充电"
         ui_print "- 电池健康状态不好的手机关闭阶梯式充电后低电量充电时会疯狂断充"
@@ -154,7 +154,7 @@ on_install()
     run_step_charge
     run_temp
     run_power_ctrl
-    ui_print ""
+    ui_print " "
     cp -f $TMPDIR/turbo-charge $MODPATH/turbo-charge
     [[ ! -d /data/adb/turbo-charge ]] && mkdir -p /data/adb/turbo-charge
     cp -f $TMPDIR/option.txt /data/adb/turbo-charge/option.txt
