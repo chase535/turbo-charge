@@ -422,7 +422,7 @@ int main()
                         fclose(fe);
                         fe=NULL;
                         line_feed(charge);
-                        if(strcmp(charge, "Charging") != 0 || strcmp(charge, "Full") != 0)
+                        if(strcmp(charge, "Charging") != 0 && strcmp(charge, "Full") != 0)
                         {
                             snprintf(chartmp,100,"充电器断开，恢复充电电流为%dμA",opt_new[6]);
                             printf_plus_time(chartmp);
