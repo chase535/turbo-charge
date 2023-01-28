@@ -13,7 +13,7 @@ void printf_plus_time(char *dat)
     struct tm *ptm;
     time(&cur_time);
     ptm=localtime(&cur_time);
-    printf ("[ %04d.%02d.%02d %02d:%02d:%02d ] %s\n", (ptm->tm_year)+1900, (ptm->tm_mon)+1, ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec,dat);
+    printf ("[ %04d.%02d.%02d %02d:%02d:%02d ] %s\n", (ptm->tm_year)+1900, (ptm->tm_mon)+1, ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec, dat);
 }
 
 void strrpc(char *str, char *oldstr, char *newstr)
