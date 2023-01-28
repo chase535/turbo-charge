@@ -183,10 +183,10 @@ void charge_value(char *i)
 
 void check_file(char *file)
 {
-    char chartmp[100];
     if(access(file, F_OK) != 0)
     {
-        snprintf(chartmp,100,"无法找到%s文件，程序强制退出！", file);
+        char chartmp[200];
+        snprintf(chartmp,200,"无法找到%s文件，程序强制退出！", file);
         printf_plus_time(chartmp);
         exit(999);
     }
@@ -215,8 +215,8 @@ void check_read_file(char *file)
             chmod(file, 0644);
             if(access(file, R_OK) != 0)
             {
-                char chartmp[100];
-                snprintf(chartmp,100,"无法读取%s文件，程序强制退出！",file);
+                char chartmp[200];
+                snprintf(chartmp,200,"无法读取%s文件，程序强制退出！",file);
                 printf_plus_time(chartmp);
                 exit(1);
             }
@@ -224,8 +224,8 @@ void check_read_file(char *file)
     }
     else
     {
-        char chartmp[100];
-        snprintf(chartmp,100,"找不到%s文件，程序强制退出！",file);
+        char chartmp[200];
+        snprintf(chartmp,200,"找不到%s文件，程序强制退出！",file);
         printf_plus_time(chartmp);
         exit(999);
     }
@@ -259,8 +259,8 @@ void read_option(unsigned int opt_new[10], unsigned int opt_old[10], unsigned ch
         {
             if(opt_old[opt] != opt_new[opt])
             {
-                char chartmp[100];
-                snprintf(chartmp,100,"%s值发生改变，新%s值为%d",options[opt],options[opt],opt_new[opt]);
+                char chartmp[200];
+                snprintf(chartmp,200,"%s值发生改变，新%s值为%d",options[opt],options[opt],opt_new[opt]);
                 printf_plus_time(chartmp);
                 if(opt == 5 && opt_old[5] < opt_new[5]) tmp[5]=1;
                 if(is_temp_wall == 1 && (opt == 7 && opt_old[7] < opt_new[7])) tmp[4]=1;
@@ -274,7 +274,7 @@ void read_option(unsigned int opt_new[10], unsigned int opt_old[10], unsigned ch
 void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
 {
     FILE *fd,*fm;
-    char chartmp[100],power[10],done[20];
+    char power[10],done[20];
     unsigned char stop=0;
     if(opt_new[2] == 1)
     {
@@ -310,7 +310,8 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
                 {
                     if(!tmp[3])
                     {
-                        snprintf(chartmp,100,"当前电量为%s%%，到达停止充电的电量阈值，且输入电流为0A，涓流充电结束，停止充电",power);
+                        char chartmp[200];
+                        snprintf(chartmp,200,"当前电量为%s%%，到达停止充电的电量阈值，且输入电流为0A，涓流充电结束，停止充电",power);
                         printf_plus_time(chartmp);
                         tmp[3]=1;
                     }
@@ -322,7 +323,8 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
             {
                 if(!tmp[3])
                 {
-                    snprintf(chartmp,100,"当前电量为%s%%，到达停止充电的电量阈值，停止充电",power);
+                    char chartmp[200];
+                    snprintf(chartmp,200,"当前电量为%s%%，到达停止充电的电量阈值，停止充电",power);
                     printf_plus_time(chartmp);
                     tmp[3]=1;
                 }
@@ -334,7 +336,8 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
         {
             if(tmp[3])
             {
-                snprintf(chartmp,100,"当前电量为%s%%，到达恢复充电的电量阈值，恢复充电",power);
+                char chartmp[200];
+                snprintf(chartmp,200,"当前电量为%s%%，到达恢复充电的电量阈值，恢复充电",power);
                 printf_plus_time(chartmp);
                 tmp[3]=0;
             }
@@ -360,7 +363,7 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
 int main()
 {
     FILE *fq;
-    char **power_supply_dir,**thermal_dir,charge[25],power[10],chartmp[100],current_max_char[20],highest_temp_current_char[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
+    char **power_supply_dir,**thermal_dir,charge[25],power[10],chartmp[200],current_max_char[20],highest_temp_current_char[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
     int temp_int;
     unsigned char tmp[6]={0,0,0,0,0,0},num=0,fu,i,bat_temp_size,power_supply_file_num,thermal_file_num;
     unsigned int opt_old[10]={0,0,0,0,0,0,0,0,0,0},opt_new[10]={0,0,0,0,0,0,0,0,0,0};
@@ -456,7 +459,7 @@ int main()
                 {
                     if(!tmp[0])
                     {
-                        snprintf(chartmp,100,"温度高于降低充电电流的温度阈值，限制充电电流为%dμA",opt_new[8]);
+                        snprintf(chartmp,200,"温度高于降低充电电流的温度阈值，限制充电电流为%dμA",opt_new[8]);
                         printf_plus_time(chartmp);
                         tmp[0]=1;
                     }
@@ -476,13 +479,13 @@ int main()
                         {
                             if(temp_int <= ((int)opt_new[9])*1000)
                             {
-                                snprintf(chartmp,100,"新的降低充电电流的温度阈值高于旧的温度阈值，且手机温度低于新的温度阈值，恢复充电电流为%dμA",opt_new[6]);
+                                snprintf(chartmp,200,"新的降低充电电流的温度阈值高于旧的温度阈值，且手机温度低于新的温度阈值，恢复充电电流为%dμA",opt_new[6]);
                                 printf_plus_time(chartmp);
                                 break;
                             }
                             else
                             {
-                                snprintf(chartmp,100,"新的降低充电电流的温度阈值高于旧的温度阈值，但手机温度高于新的温度阈值，限制充电电流为%dμA",opt_new[6]);
+                                snprintf(chartmp,200,"新的降低充电电流的温度阈值高于旧的温度阈值，但手机温度高于新的温度阈值，限制充电电流为%dμA",opt_new[6]);
                                 printf_plus_time(chartmp);
                             }
                             tmp[4]=0;
@@ -495,7 +498,7 @@ int main()
                         line_feed(charge);
                         if(strcmp(charge, "Charging") != 0 && strcmp(charge, "Full") != 0)
                         {
-                            snprintf(chartmp,100,"充电器断开连接，恢复充电电流为%dμA",opt_new[6]);
+                            snprintf(chartmp,200,"充电器断开连接，恢复充电电流为%dμA",opt_new[6]);
                             printf_plus_time(chartmp);
                             tmp[1]=1;
                             tmp[2]=0;
@@ -503,13 +506,13 @@ int main()
                         }
                         if(temp_int <= ((int)opt_new[9])*1000)
                         {
-                            snprintf(chartmp,100,"温度低于恢复快充的温度阈值，恢复充电电流为%dμA",opt_new[6]);
+                            snprintf(chartmp,200,"温度低于恢复快充的温度阈值，恢复充电电流为%dμA",opt_new[6]);
                             printf_plus_time(chartmp);
                             break;
                         }
                         if(opt_new[1] == 0)
                         {
-                            snprintf(chartmp,100,"温控关闭，恢复充电电流为%dμA",opt_new[6]);
+                            snprintf(chartmp,200,"温控关闭，恢复充电电流为%dμA",opt_new[6]);
                             printf_plus_time(chartmp);
                             break;
                         }
