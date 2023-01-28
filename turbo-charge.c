@@ -365,7 +365,7 @@ int main()
                 fm=NULL;
                 line_feed(thermal);
                 temp_int = atoi(thermal);
-                if(temp_int > ((int)opt_new[7])*1000)
+                if(temp_int >= ((int)opt_new[7])*1000)
                 {
                     if(!tmp[0])
                     {
@@ -442,7 +442,7 @@ int main()
                         fm=NULL;
                         line_feed(thermal);
                         temp_int = atoi(thermal);
-                        if(temp_int > ((int)opt_new[9])*1000)
+                        if(temp_int <= ((int)opt_new[9])*1000)
                         {
                             snprintf(chartmp,100,"温度低于恢复快充的温度阈值，恢复充电电流为%dμA",opt_new[6]);
                             printf_plus_time(chartmp);
