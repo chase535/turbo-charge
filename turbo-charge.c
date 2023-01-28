@@ -244,8 +244,8 @@ void read_option(unsigned int opt_new[10], unsigned int opt_old[10], unsigned ch
         sscanf(option, "TEMP_CTRL=%u", &opt_new[1]);
         sscanf(option, "POWER_CTRL=%u", &opt_new[2]);
         sscanf(option, "STEP_CHARGING_DISABLED_THRESHOLD=%u", &opt_new[3]);
-        sscanf(option, "CHARGE_START=%u", &opt_new[4]);
-        sscanf(option, "CHARGE_STOP=%u", &opt_new[5]);
+        sscanf(option, "CHARGE_STOP=%u", &opt_new[4]);
+        sscanf(option, "CHARGE_START=%u", &opt_new[5]);
         sscanf(option, "CURRENT_MAX=%u", &opt_new[6]);
         sscanf(option, "TEMP_MAX=%u", &opt_new[7]);
         sscanf(option, "HIGHEST_TEMP_CURRENT=%u", &opt_new[8]);
@@ -261,7 +261,7 @@ void read_option(unsigned int opt_new[10], unsigned int opt_old[10], unsigned ch
             {
                 snprintf(chartmp,200,"%s值发生改变，新%s值为%d",options[opt],options[opt],opt_new[opt]);
                 printf_plus_time(chartmp);
-                if(opt == 5 && opt_old[5] < opt_new[5]) tmp[5]=1;
+                if(opt == 5 && opt_old[5] < opt_new[4]) tmp[5]=1;
                 if(is_temp_wall == 1 && (opt == 7 && opt_old[7] < opt_new[7])) tmp[4]=1;
                 opt_old[opt]=opt_new[opt];
             }
@@ -285,7 +285,7 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
         line_feed(power);
         if(tmp[3] == 1 && tmp[5] == 1)
         {
-            if(atoi(power) < (int)opt_new[5])
+            if(atoi(power) < (int)opt_new[4])
             {
                 snprintf(chartmp,200,"新的停止充电的电量阈值高于旧的电量阈值，且手机当前电量为%s%%，小于新的电量阈值，恢复充电",power);
                 printf_plus_time(chartmp);
@@ -300,9 +300,9 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
             }
             tmp[5]=0;
         }
-        if(atoi(power) >= (int)opt_new[5])
+        if(atoi(power) >= (int)opt_new[4])
         {
-            if(opt_new[5] == 100)
+            if(opt_new[4] == 100)
             {
                 check_read_file("/sys/class/power_supply/battery/current_now");
                 fm = fopen("/sys/class/power_supply/battery/current_now", "rt");
@@ -334,7 +334,7 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
                 stop = 1;
             }
         }
-        if(atoi(power) <= (int)opt_new[4])
+        if(atoi(power) <= (int)opt_new[5])
         {
             if(tmp[3])
             {
