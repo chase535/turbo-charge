@@ -358,7 +358,7 @@ int main()
     FILE *fq;
     char **power_supply_dir,**thermal_dir,charge[25],power[10],chartmp[100],current_max_char[20],highest_temp_current_char[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
     int temp_int;
-    unsigned char tmp[6]={0,0,0,0,0,0},num=1,fu,i,bat_temp_size,power_supply_file_num,thermal_file_num;
+    unsigned char tmp[6]={0,0,0,0,0,0},num=0,fu,i,bat_temp_size,power_supply_file_num,thermal_file_num;
     unsigned int opt_old[10]={0,0,0,0,0,0,0,0,0,0},opt_new[10]={0,0,0,0,0,0,0,0,0,0};
     check_file("/sys/class/power_supply/battery/status");
     check_file("/sys/class/power_supply/battery/current_now");
@@ -414,7 +414,7 @@ int main()
         read_option(opt_new, opt_old, tmp, num, 0);
         snprintf(current_max_char,20,"%u",opt_new[6]);
         snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
-        num=0;
+        num=1;
         check_read_file("/sys/class/power_supply/battery/status");
         fq = fopen("/sys/class/power_supply/battery/capacity", "rt");
         fgets(power, 5, fq);
