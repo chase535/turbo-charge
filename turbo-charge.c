@@ -286,10 +286,14 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
         line_feed(power);
         if(tmp[3] == 1 && tmp[5] == 1)
         {
-            printf_plus_time("新的停止充电的电量阈值高于旧的电量阈值，恢复充电");
-            charge_value("1");
-            stop=0;
-            tmp[3]=0;
+            if(atoi(power) >= (int)opt_new[5])
+            {
+                printf_plus_time("新的停止充电的电量阈值高于旧的电量阈值，且手机电量低于新的电量阈值，恢复充电");
+                charge_value("1");
+                stop=0;
+                tmp[3]=0;
+            }
+            else printf_plus_time("新的停止充电的电量阈值高于旧的电量阈值，但手机电量高于新的电量阈值，停止充电");
             tmp[5]=0;
         }
         if(atoi(power) >= (int)opt_new[5])
@@ -461,12 +465,27 @@ int main()
                         read_option(opt_new, opt_old, tmp, num, 1);
                         snprintf(current_max_char,20,"%u",opt_new[6]);
                         snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
+                        check_read_file(conn_therm);
+                        fq = fopen(conn_therm, "rt");
+                        fgets(thermal, 300, fq);
+                        fclose(fq);
+                        fq=NULL;
+                        line_feed(thermal);
+                        temp_int = atoi(thermal);
                         if(tmp[4] == 1)
                         {
-                            snprintf(chartmp,100,"新的降低充电电流的温度阈值高于旧的温度阈值，恢复充电电流为%dμA",opt_new[6]);
-                            printf_plus_time(chartmp);
+                            if(temp_int <= ((int)opt_new[9])*1000)
+                            {
+                                snprintf(chartmp,100,"新的降低充电电流的温度阈值高于旧的温度阈值，且手机温度低于新的温度阈值，恢复充电电流为%dμA",opt_new[6]);
+                                printf_plus_time(chartmp);
+                                break;
+                            }
+                            else
+                            {
+                                snprintf(chartmp,100,"新的降低充电电流的温度阈值高于旧的温度阈值，但手机温度高于新的温度阈值，限制充电电流为%dμA",opt_new[6]);
+                                printf_plus_time(chartmp);
+                            }
                             tmp[4]=0;
-                            break;
                         }
                         check_read_file("/sys/class/power_supply/battery/status");
                         fq = fopen("/sys/class/power_supply/battery/status", "rt");
@@ -482,13 +501,6 @@ int main()
                             tmp[2]=0;
                             break;
                         }
-                        check_read_file(conn_therm);
-                        fq = fopen(conn_therm, "rt");
-                        fgets(thermal, 300, fq);
-                        fclose(fq);
-                        fq=NULL;
-                        line_feed(thermal);
-                        temp_int = atoi(thermal);
                         if(temp_int <= ((int)opt_new[9])*1000)
                         {
                             snprintf(chartmp,100,"温度低于恢复快充的温度阈值，恢复充电电流为%dμA",opt_new[6]);
