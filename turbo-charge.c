@@ -183,9 +183,9 @@ void charge_value(char *i)
 
 void check_file(char *file)
 {
+    char chartmp[200];
     if(access(file, F_OK) != 0)
     {
-        char chartmp[200];
         snprintf(chartmp,200,"无法找到%s文件，程序强制退出！", file);
         printf_plus_time(chartmp);
         exit(999);
@@ -208,6 +208,7 @@ int list_dir_check_file(char *file_dir, char *file_name)
 
 void check_read_file(char *file)
 {
+    char chartmp[200];
     if(access(file, F_OK) == 0)
     {
         if(access(file, R_OK) != 0)
@@ -215,7 +216,6 @@ void check_read_file(char *file)
             chmod(file, 0644);
             if(access(file, R_OK) != 0)
             {
-                char chartmp[200];
                 snprintf(chartmp,200,"无法读取%s文件，程序强制退出！",file);
                 printf_plus_time(chartmp);
                 exit(1);
@@ -224,7 +224,6 @@ void check_read_file(char *file)
     }
     else
     {
-        char chartmp[200];
         snprintf(chartmp,200,"找不到%s文件，程序强制退出！",file);
         printf_plus_time(chartmp);
         exit(999);
@@ -234,7 +233,7 @@ void check_read_file(char *file)
 void read_option(unsigned int opt_new[10], unsigned int opt_old[10], unsigned char tmp[6], unsigned char num, unsigned char is_temp_wall)
 {
     FILE *fc;
-    char option[1510],options[10][50]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_START","CHARGE_STOP","CURRENT_MAX","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
+    char chartmp[200],option[1510],options[10][50]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_START","CHARGE_STOP","CURRENT_MAX","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
     unsigned char opt;
     check_read_file("/data/adb/turbo-charge/option.txt");
     fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
@@ -259,7 +258,6 @@ void read_option(unsigned int opt_new[10], unsigned int opt_old[10], unsigned ch
         {
             if(opt_old[opt] != opt_new[opt])
             {
-                char chartmp[200];
                 snprintf(chartmp,200,"%s值发生改变，新%s值为%d",options[opt],options[opt],opt_new[opt]);
                 printf_plus_time(chartmp);
                 if(opt == 5 && opt_old[5] < opt_new[5]) tmp[5]=1;
@@ -274,7 +272,7 @@ void read_option(unsigned int opt_new[10], unsigned int opt_old[10], unsigned ch
 void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
 {
     FILE *fd,*fm;
-    char power[10],done[20];
+    char chartmp[200],power[10],done[20];
     unsigned char stop=0;
     if(opt_new[2] == 1)
     {
@@ -286,14 +284,19 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
         line_feed(power);
         if(tmp[3] == 1 && tmp[5] == 1)
         {
-            if(atoi(power) >= (int)opt_new[5])
+            if(atoi(power) < (int)opt_new[5])
             {
-                printf_plus_time("新的停止充电的电量阈值高于旧的电量阈值，且手机电量低于新的电量阈值，恢复充电");
+                snprintf(chartmp,200,"新的停止充电的电量阈值高于旧的电量阈值，且手机当前电量为%s%%，小于新的电量阈值，恢复充电",power);
+                printf_plus_time(chartmp);
                 charge_value("1");
                 stop=0;
                 tmp[3]=0;
             }
-            else printf_plus_time("新的停止充电的电量阈值高于旧的电量阈值，但手机电量高于新的电量阈值，停止充电");
+            else
+            {
+                snprintf(chartmp,200,"新的停止充电的电量阈值高于旧的电量阈值，但手机当前电量为%s%%，大于等于新的电量阈值，停止充电",power);
+                printf_plus_time(chartmp);
+            }
             tmp[5]=0;
         }
         if(atoi(power) >= (int)opt_new[5])
@@ -310,8 +313,7 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
                 {
                     if(!tmp[3])
                     {
-                        char chartmp[200];
-                        snprintf(chartmp,200,"当前电量为%s%%，到达停止充电的电量阈值，且输入电流为0A，涓流充电结束，停止充电",power);
+                        snprintf(chartmp,200,"当前电量为%s%%，大于等于停止充电的电量阈值，且输入电流为0A，涓流充电结束，停止充电",power);
                         printf_plus_time(chartmp);
                         tmp[3]=1;
                     }
@@ -323,8 +325,7 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
             {
                 if(!tmp[3])
                 {
-                    char chartmp[200];
-                    snprintf(chartmp,200,"当前电量为%s%%，到达停止充电的电量阈值，停止充电",power);
+                    snprintf(chartmp,200,"当前电量为%s%%，大于等于停止充电的电量阈值，停止充电",power);
                     printf_plus_time(chartmp);
                     tmp[3]=1;
                 }
@@ -336,8 +337,7 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
         {
             if(tmp[3])
             {
-                char chartmp[200];
-                snprintf(chartmp,200,"当前电量为%s%%，到达恢复充电的电量阈值，恢复充电",power);
+                snprintf(chartmp,200,"当前电量为%s%%，小于等于恢复充电的电量阈值，恢复充电",power);
                 printf_plus_time(chartmp);
                 tmp[3]=0;
             }
@@ -477,15 +477,15 @@ int main()
                         temp_int = atoi(thermal);
                         if(tmp[4] == 1)
                         {
-                            if(temp_int <= ((int)opt_new[9])*1000)
+                            if(temp_int < ((int)opt_new[7])*1000)
                             {
-                                snprintf(chartmp,200,"新的降低充电电流的温度阈值高于旧的温度阈值，且手机温度低于新的温度阈值，恢复充电电流为%dμA",opt_new[6]);
+                                snprintf(chartmp,200,"新的降低充电电流的温度阈值高于旧的温度阈值，且手机温度小于新的温度阈值，恢复充电电流为%dμA",opt_new[6]);
                                 printf_plus_time(chartmp);
                                 break;
                             }
                             else
                             {
-                                snprintf(chartmp,200,"新的降低充电电流的温度阈值高于旧的温度阈值，但手机温度高于新的温度阈值，限制充电电流为%dμA",opt_new[6]);
+                                snprintf(chartmp,200,"新的降低充电电流的温度阈值高于旧的温度阈值，但手机温度大于等于新的温度阈值，限制充电电流为%dμA",opt_new[8]);
                                 printf_plus_time(chartmp);
                             }
                             tmp[4]=0;
