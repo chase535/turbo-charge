@@ -3,8 +3,18 @@
 #include "string.h"
 #include "dirent.h"
 #include "unistd.h"
+#include "time.h"
 #include "sys/types.h"
 #include "sys/stat.h"
+
+void printf_plus_time(char *dat)
+{
+    time_t cur_time;
+    time(&cur_time);
+    char *t = ctime(&cur_time);
+    if(t[strlen(t)-1] == '\n') t[strlen(t)-1]='\0';
+    printf("[ %s ] %s\n", t, dat);
+}
 
 void strrpc(char *str, char *oldstr, char *newstr)
 {
@@ -108,9 +118,11 @@ void charge_value(char *i)
 
 void check_file(char *file)
 {
+    char chartmp[100];
     if(access(file, F_OK) != 0)
     {
-        printf("无法找到%s文件，程序强制退出！\n", file);
+        snprintf(chartmp,100,"无法找到%s文件，程序强制退出！", file);
+        printf_plus_time(chartmp);
         exit(999);
     }
 }
@@ -133,15 +145,15 @@ int main()
 {
     FILE *fq,*fm,*fc,*fd,*fe;
     char options[10][50]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_START","CHARGE_STOP","CURRENT_MAX","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
-    char **power_supply_dir,**thermal_dir,done[20],charge[25],power[10],current_max_char[20],highest_temp_current_char[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],option[1010],asdf[15],bat_temp_tmp[1],bat_temp[6];
+    char **power_supply_dir,**thermal_dir,done[20],charge[25],power[10],chartmp[100],current_max_char[20],highest_temp_current_char[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],option[1010],asdf[15],bat_temp_tmp[1],bat_temp[6];
     int opt,power_supply_file_num,thermal_file_num,temp_int,bat_temp_size,asdf_int,i,fu,qwer=0,num=0;
     unsigned int opt_old[10]={0,0,0,0,0,0,0,0,0,0},opt_new[10]={0,0,0,0,0,0,0,0,0,0};
     check_file("/sys/class/power_supply/battery/status");
     check_file("/sys/class/power_supply/battery/current_now");
     check_file("/sys/class/power_supply/battery/capacity");
-    if(access("/sys/class/power_supply/battery/step_charging_enabled", F_OK) != 0) printf("由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯充电有关功能失效！\n");
-    if(list_dir_check_file("/sys/class/power_supply", "constant_charge_current_max") == 0) printf("无法在/sys/class/power_supply中的所有文件夹内找到constant_charge_current_max文件，电流调节有关功能失效！\n");
-    if(list_dir_check_file("/sys/class/power_supply", "temp") == 0) printf("无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！\n");
+    if(access("/sys/class/power_supply/battery/step_charging_enabled", F_OK) != 0) printf_plus_time("由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯充电有关功能失效！");
+    if(list_dir_check_file("/sys/class/power_supply", "constant_charge_current_max") == 0) printf_plus_time("无法在/sys/class/power_supply中的所有文件夹内找到constant_charge_current_max文件，电流调节有关功能失效！");
+    if(list_dir_check_file("/sys/class/power_supply", "temp") == 0) printf_plus_time("无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！");
     thermal_file_num=list_dir("/sys/class/thermal", &thermal_dir);
     for(i=0;i<thermal_file_num;i++)
     {
@@ -167,9 +179,15 @@ int main()
     }
     if(strcmp(conn_therm, "none") == 0 || access(conn_therm, R_OK) != 0)
     {
-        printf("获取温度失败，程序强制退出！\n");
+        printf_plus_time("获取温度失败，程序强制退出！");
         exit(2);
     }
+    if(access("/data/adb/turbo-charge/option.txt", R_OK) != 0)
+    {
+        printf_plus_time("配置文件丢失，程序强制退出！");
+        exit(1);
+    }
+    printf_plus_time("文件检测完毕，程序开始运行");
     power_supply_file_num=list_dir("/sys/class/power_supply", &power_supply_dir);
     charge_value("1");
     set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
@@ -187,7 +205,7 @@ int main()
         num++;
         if(access("/data/adb/turbo-charge/option.txt", R_OK) != 0)
         {
-            printf("配置文件丢失，程序强制退出！\n");
+            printf_plus_time("配置文件丢失，程序强制退出！");
             exit(1);
         }
         fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
@@ -211,7 +229,8 @@ int main()
             {
                 if(opt_old[opt] != opt_new[opt])
                 {
-                    printf("%s值发生改变，新%s值为%d\n",options[opt],options[opt],opt_new[opt]);
+                    snprintf(chartmp,100,"%s值发生改变，新%s值为%d",options[opt],options[opt],opt_new[opt]);
+                    printf_plus_time(chartmp);
                     opt_old[opt]=opt_new[opt];
                 }
             }
@@ -223,7 +242,7 @@ int main()
         fc=NULL;
         if(access("/sys/class/power_supply/battery/status", R_OK) != 0)
         {
-            printf("读取充电状态失败，程序强制退出！\n");
+            printf_plus_time("读取充电状态失败，程序强制退出！");
             exit(10);
         }
         fd = fopen("/sys/class/power_supply/battery/capacity", "rt");
@@ -242,7 +261,7 @@ int main()
         {
             if(access(conn_therm, R_OK) != 0)
             {
-                printf("获取温度失败，程序强制退出！\n");
+                printf_plus_time("获取温度失败，程序强制退出！");
                 exit(220);
             }
             list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
@@ -250,7 +269,7 @@ int main()
             {
                 if(access("/sys/class/power_supply/battery/capacity", R_OK) != 0)
                 {
-                    printf("获取电量信息失败，程序强制退出！\n");
+                    printf_plus_time("获取电量信息失败，程序强制退出！");
                     exit(40);
                 }
                 fd = fopen("/sys/class/power_supply/battery/capacity", "rt");
@@ -264,7 +283,7 @@ int main()
                     {
                         if(access("/sys/class/power_supply/battery/current_now", R_OK) != 0)
                         {
-                            printf("获取电流信息失败，程序强制退出！\n");
+                            printf_plus_time("获取电流信息失败，程序强制退出！");
                             exit(50);
                         }
                         fm = fopen("/sys/class/power_supply/battery/current_now", "rt");
@@ -302,7 +321,7 @@ int main()
             {
                 if(access(conn_therm, R_OK) != 0)
                 {
-                    printf("获取温度失败，程序强制退出！\n");
+                    printf_plus_time("获取温度失败，程序强制退出！");
                     exit(60);
                 }
                 fm = fopen(conn_therm, "rt");
@@ -317,12 +336,12 @@ int main()
                     {
                         if(access(conn_therm, R_OK) != 0)
                         {
-                            printf("获取温度失败，程序强制退出！\n");
+                            printf_plus_time("获取温度失败，程序强制退出！");
                             exit(70);
                         }
                         if(access("/sys/class/power_supply/battery/status", R_OK) != 0)
                         {
-                            printf("读取充电状态失败，程序强制退出！\n");
+                            printf_plus_time("读取充电状态失败，程序强制退出！");
                             exit(80);
                         }
                         fe = fopen("/sys/class/power_supply/battery/status", "rt");
@@ -334,7 +353,7 @@ int main()
                         list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
                         if(access(conn_therm, R_OK) != 0)
                         {
-                            printf("获取温度失败，程序强制退出！\n");
+                            printf_plus_time("获取温度失败，程序强制退出！");
                             exit(90);
                         }
                         fm = fopen(conn_therm, "rt");
@@ -345,7 +364,7 @@ int main()
                         temp_int = atoi(thermal);
                         if(access("/data/adb/turbo-charge/option.txt", R_OK) != 0)
                         {
-                            printf("配置文件丢失，程序强制退出！\n");
+                            printf_plus_time("配置文件丢失，程序强制退出！");
                             exit(100);
                         }
                         fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
@@ -366,7 +385,8 @@ int main()
                         {
                             if(opt_old[opt] != opt_new[opt])
                             {
-                                printf("%s值发生改变，新%s值为%d\n",options[opt],options[opt],opt_new[opt]);
+                                snprintf(chartmp,100,"%s值发生改变，新%s值为%d",options[opt],options[opt],opt_new[opt]);
+                                printf_plus_time(chartmp);
                                 opt_old[opt]=opt_new[opt];
                             }
                         }
@@ -390,7 +410,7 @@ int main()
             else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
             if(access(conn_therm, R_OK) != 0)
             {
-                printf("获取温度失败，程序强制退出！\n");
+                printf_plus_time("获取温度失败，程序强制退出！");
                 exit(110);
             }
             fm = fopen(conn_therm, "rt");
