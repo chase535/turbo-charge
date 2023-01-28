@@ -231,6 +231,46 @@ void check_read_file(char *file)
     }
 }
 
+void read_option(unsigned int opt_new[10], unsigned int opt_old[10], unsigned char tmp[6], unsigned char num, unsigned char is_temp_wall)
+{
+    FILE *fc;
+    char option[1510],options[10][50]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_START","CHARGE_STOP","CURRENT_MAX","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
+    unsigned char opt;
+    check_read_file("/data/adb/turbo-charge/option.txt");
+    fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
+    while(fgets(option, 1500, fc) != NULL)
+    {
+        sscanf(option, "STEP_CHARGING_DISABLED=%u", &opt_new[0]);
+        sscanf(option, "TEMP_CTRL=%u", &opt_new[1]);
+        sscanf(option, "POWER_CTRL=%u", &opt_new[2]);
+        sscanf(option, "STEP_CHARGING_DISABLED_THRESHOLD=%u", &opt_new[3]);
+        sscanf(option, "CHARGE_START=%u", &opt_new[4]);
+        sscanf(option, "CHARGE_STOP=%u", &opt_new[5]);
+        sscanf(option, "CURRENT_MAX=%u", &opt_new[6]);
+        sscanf(option, "TEMP_MAX=%u", &opt_new[7]);
+        sscanf(option, "HIGHEST_TEMP_CURRENT=%u", &opt_new[8]);
+        sscanf(option, "RECHARGE_TEMP=%u", &opt_new[9]);
+    }
+    fclose(fc);
+    fc=NULL;
+    if(num)
+    {
+        for(opt=0;opt<10;opt++)
+        {
+            if(opt_old[opt] != opt_new[opt])
+            {
+                char chartmp[100];
+                snprintf(chartmp,100,"%s值发生改变，新%s值为%d",options[opt],options[opt],opt_new[opt]);
+                printf_plus_time(chartmp);
+                if(opt == 5 && opt_old[5] < opt_new[5]) tmp[5]=1;
+                if(is_temp_wall == 1 && (opt == 7 && opt_old[7] < opt_new[7])) tmp[4]=1;
+                opt_old[opt]=opt_new[opt];
+            }
+        }
+    }
+    else for(opt=0;opt<10;opt++) opt_old[opt]=opt_new[opt];
+}
+
 void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
 {
     FILE *fd,*fm;
@@ -315,11 +355,11 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[6])
 
 int main()
 {
-    FILE *fq,*fm,*fc,*fd,*fe;
+    FILE *fq;
     char options[10][50]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_START","CHARGE_STOP","CURRENT_MAX","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
-    char **power_supply_dir,**thermal_dir,charge[25],power[10],chartmp[100],current_max_char[20],highest_temp_current_char[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],option[1010],bat_temp_tmp[1],bat_temp[6];
+    char **power_supply_dir,**thermal_dir,charge[25],power[10],chartmp[100],current_max_char[20],highest_temp_current_char[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
     int temp_int;
-    unsigned char tmp[6]={0,0,0,0,0,0},num=0,fu,i,bat_temp_size,power_supply_file_num,thermal_file_num,opt;
+    unsigned char tmp[6]={0,0,0,0,0,0},num=1,fu,i,bat_temp_size,power_supply_file_num,thermal_file_num,opt;
     unsigned int opt_old[10]={0,0,0,0,0,0,0,0,0,0},opt_new[10]={0,0,0,0,0,0,0,0,0,0};
     check_file("/sys/class/power_supply/battery/status");
     check_file("/sys/class/power_supply/battery/current_now");
@@ -372,53 +412,22 @@ int main()
     set_value("/sys/class/qcom-battery/restrict_chg", "0");
     while(1)
     {
-        num++;
-        check_read_file("/data/adb/turbo-charge/option.txt");
-        fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
-        while(fgets(option, 1000, fc) != NULL)
-        {
-            sscanf(option, "STEP_CHARGING_DISABLED=%u", &opt_new[0]);
-            sscanf(option, "TEMP_CTRL=%u", &opt_new[1]);
-            sscanf(option, "POWER_CTRL=%u", &opt_new[2]);
-            sscanf(option, "STEP_CHARGING_DISABLED_THRESHOLD=%u", &opt_new[3]);
-            sscanf(option, "CHARGE_START=%u", &opt_new[4]);
-            sscanf(option, "CHARGE_STOP=%u", &opt_new[5]);
-            sscanf(option, "CURRENT_MAX=%u", &opt_new[6]);
-            sscanf(option, "TEMP_MAX=%u", &opt_new[7]);
-            sscanf(option, "HIGHEST_TEMP_CURRENT=%u", &opt_new[8]);
-            sscanf(option, "RECHARGE_TEMP=%u", &opt_new[9]);
-        }
-        fclose(fc);
-        fc=NULL;
-        if(num>1)
-        {
-            if(num>10) num=1;
-            for(opt=0;opt<10;opt++)
-            {
-                if(opt_old[opt] != opt_new[opt])
-                {
-                    snprintf(chartmp,100,"%s值发生改变，新%s值为%d",options[opt],options[opt],opt_new[opt]);
-                    printf_plus_time(chartmp);
-                    if(opt == 5 && opt_old[5] < opt_new[5]) tmp[5]=1;
-                    opt_old[opt]=opt_new[opt];
-                }
-            }
-        }
-        else for(opt=0;opt<10;opt++) opt_old[opt]=opt_new[opt];
+        read_option(opt_new, opt_old, tmp, num, 0);
         snprintf(current_max_char,20,"%u",opt_new[6]);
         snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
+        num=0;
         check_read_file("/sys/class/power_supply/battery/status");
-        fd = fopen("/sys/class/power_supply/battery/capacity", "rt");
-        fgets(power, 5, fd);
-        fclose(fd);
-        fd=NULL;
+        fq = fopen("/sys/class/power_supply/battery/capacity", "rt");
+        fgets(power, 5, fq);
+        fclose(fq);
+        fq=NULL;
         line_feed(power);
         if(opt_new[0] == 1) (atoi(power) <= (int)opt_new[3])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
         else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
-        fe = fopen("/sys/class/power_supply/battery/status", "rt");
-        fgets(charge, 20, fe);
-        fclose(fe);
-        fe=NULL;
+        fq = fopen("/sys/class/power_supply/battery/status", "rt");
+        fgets(charge, 20, fq);
+        fclose(fq);
+        fq=NULL;
         line_feed(charge);
         if(strcmp(charge, "Charging") == 0 || strcmp(charge, "Full") == 0)
         {
@@ -434,10 +443,10 @@ int main()
             if(opt_new[1] == 1)
             {
                 check_read_file(conn_therm);
-                fm = fopen(conn_therm, "rt");
-                fgets(thermal, 10, fm);
-                fclose(fm);
-                fm=NULL;
+                fq = fopen(conn_therm, "rt");
+                fgets(thermal, 10, fq);
+                fclose(fq);
+                fq=NULL;
                 line_feed(thermal);
                 temp_int = atoi(thermal);
                 if(temp_int >= ((int)opt_new[7])*1000)
@@ -450,34 +459,7 @@ int main()
                     }
                     while(1)
                     {
-                        check_read_file("/data/adb/turbo-charge/option.txt");
-                        fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
-                        while(fgets(option, 1000, fc) != NULL)
-                        {
-                            sscanf(option, "STEP_CHARGING_DISABLED=%u", &opt_new[0]);
-                            sscanf(option, "TEMP_CTRL=%u", &opt_new[1]);
-                            sscanf(option, "POWER_CTRL=%u", &opt_new[2]);
-                            sscanf(option, "STEP_CHARGING_DISABLED_THRESHOLD=%u", &opt_new[3]);
-                            sscanf(option, "CHARGE_START=%u", &opt_new[4]);
-                            sscanf(option, "CHARGE_STOP=%u", &opt_new[5]);
-                            sscanf(option, "CURRENT_MAX=%u", &opt_new[6]);
-                            sscanf(option, "TEMP_MAX=%u", &opt_new[7]);
-                            sscanf(option, "HIGHEST_TEMP_CURRENT=%u", &opt_new[8]);
-                            sscanf(option, "RECHARGE_TEMP=%u", &opt_new[9]);
-                        }
-                        fclose(fc);
-                        fc=NULL;
-                        for(opt=0;opt<10;opt++)
-                        {
-                            if(opt_old[opt] != opt_new[opt])
-                            {
-                                snprintf(chartmp,100,"%s值发生改变，新%s值为%d",options[opt],options[opt],opt_new[opt]);
-                                printf_plus_time(chartmp);
-                                if(opt == 5 && opt_old[5] < opt_new[5]) tmp[5]=1;
-                                if(opt == 7 && opt_old[7] < opt_new[7]) tmp[4]=1;
-                                opt_old[opt]=opt_new[opt];
-                            }
-                        }
+                        read_option(opt_new, opt_old, tmp, num, 1);
                         snprintf(current_max_char,20,"%u",opt_new[6]);
                         snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
                         if(tmp[4] == 1)
@@ -488,10 +470,10 @@ int main()
                             break;
                         }
                         check_read_file("/sys/class/power_supply/battery/status");
-                        fe = fopen("/sys/class/power_supply/battery/status", "rt");
-                        fgets(charge, 20, fe);
-                        fclose(fe);
-                        fe=NULL;
+                        fq = fopen("/sys/class/power_supply/battery/status", "rt");
+                        fgets(charge, 20, fq);
+                        fclose(fq);
+                        fq=NULL;
                         line_feed(charge);
                         if(strcmp(charge, "Charging") != 0 && strcmp(charge, "Full") != 0)
                         {
@@ -502,10 +484,10 @@ int main()
                             break;
                         }
                         check_read_file(conn_therm);
-                        fm = fopen(conn_therm, "rt");
-                        fgets(thermal, 300, fm);
-                        fclose(fm);
-                        fm=NULL;
+                        fq = fopen(conn_therm, "rt");
+                        fgets(thermal, 300, fq);
+                        fclose(fq);
+                        fq=NULL;
                         line_feed(thermal);
                         temp_int = atoi(thermal);
                         if(temp_int <= ((int)opt_new[9])*1000)
@@ -547,10 +529,10 @@ int main()
             if(opt_new[0] == 1) (atoi(power) <= (int)opt_new[3])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
             else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
             check_read_file(conn_therm);
-            fm = fopen(conn_therm, "rt");
-            fgets(thermal, 10, fm);
-            fclose(fm);
-            fm=NULL;
+            fq = fopen(conn_therm, "rt");
+            fgets(thermal, 10, fq);
+            fclose(fq);
+            fq=NULL;
             line_feed(thermal);
             temp_int=atoi(thermal);
             fu=0;
