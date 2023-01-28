@@ -132,8 +132,10 @@ int list_dir_check_file(char *file_dir, char *file_name)
 int main()
 {
     FILE *fq,*fm,*fc,*fd,*fe;
-    char **power_supply_dir,**thermal_dir,done[20],charge[25],power[10],current_max[20],highest_temp_current[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],option[1010],asdf[15],bat_temp_tmp[1],bat_temp[6];
-    int power_supply_file_num,thermal_file_num,temp_int,bat_temp_size,asdf_int,i,fu,qwer=0,temp_ctrl,power_ctrl,charge_start,charge_stop,recharge_temp,temp_max,step_charging_disabled,step_charging_disabled_threshold;
+    char options[10][50]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_START","CHARGE_STOP","CURRENT_MAX","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
+    char **power_supply_dir,**thermal_dir,done[20],charge[25],power[10],current_max_char[20],highest_temp_current_char[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],option[1010],asdf[15],bat_temp_tmp[1],bat_temp[6];
+    int opt,power_supply_file_num,thermal_file_num,temp_int,bat_temp_size,asdf_int,i,fu,qwer=0,num=0;
+    unsigned int opt_old[10],opt_new[10];
     check_file("/sys/class/power_supply/battery/status");
     check_file("/sys/class/power_supply/battery/current_now");
     check_file("/sys/class/power_supply/battery/capacity");
@@ -182,6 +184,7 @@ int main()
     set_value("/sys/class/qcom-battery/restrict_chg", "0");
     while(1)
     {
+        num++;
         if(access("/data/adb/turbo-charge/option.txt", R_OK) != 0)
         {
             printf("配置文件丢失，程序强制退出！\n");
@@ -190,17 +193,32 @@ int main()
         fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
         while(fgets(option, 1000, fc) != NULL)
         {
-            sscanf(option, "TEMP_CTRL=%d", &temp_ctrl);
-            sscanf(option, "POWER_CTRL=%d", &power_ctrl);
-            sscanf(option, "CHARGE_START=%d", &charge_start);
-            sscanf(option, "CHARGE_STOP=%d", &charge_stop);
-            sscanf(option, "CURRENT_MAX=%s", current_max);
-            sscanf(option, "TEMP_MAX=%d", &temp_max);
-            sscanf(option, "HIGHEST_TEMP_CURRENT=%s", highest_temp_current);
-            sscanf(option, "RECHARGE_TEMP=%d", &recharge_temp);
-            sscanf(option, "STEP_CHARGING_DISABLED=%d", &step_charging_disabled);
-            sscanf(option, "STEP_CHARGING_DISABLED_THRESHOLD=%d", &step_charging_disabled_threshold);
+            sscanf(option, "STEP_CHARGING_DISABLED=%u", &opt_new[0]);
+            sscanf(option, "TEMP_CTRL=%u", &opt_new[1]);
+            sscanf(option, "POWER_CTRL=%u", &opt_new[2]);
+            sscanf(option, "STEP_CHARGING_DISABLED_THRESHOLD=%u", &opt_new[3]);
+            sscanf(option, "CHARGE_START=%u", &opt_new[4]);
+            sscanf(option, "CHARGE_STOP=%u", &opt_new[5]);
+            sscanf(option, "CURRENT_MAX=%u", &opt_new[6]);
+            sscanf(option, "TEMP_MAX=%u", &opt_new[7]);
+            sscanf(option, "HIGHEST_TEMP_CURRENT=%u", &opt_new[8]);
+            sscanf(option, "RECHARGE_TEMP=%u", &opt_new[9]);
         }
+        if(num>1)
+        {
+            if(num>10) num=1;
+            for(opt=0;opt<10;opt++)
+            {
+                if(opt_old[opt] != opt_new[opt])
+                {
+                    printf("%s值发生改变，新%s值为%d",options[opt],options[opt],opt_new[opt]);
+                    opt_old[opt]=opt_new[opt];
+                }
+            }
+        }
+        else for(opt=0;opt<10;opt++) opt_old[opt]=opt_new[opt];
+        snprintf(current_max_char,20,"%u",opt_new[6]);
+        snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
         fclose(fc);
         fc=NULL;
         if(access("/sys/class/power_supply/battery/status", R_OK) != 0)
@@ -213,7 +231,7 @@ int main()
         fclose(fd);
         fd=NULL;
         line_feed(power);
-        if(step_charging_disabled == 1) (atoi(power) <= step_charging_disabled_threshold)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+        if(opt_new[0] == 1) (atoi(power) <= opt_new[3])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
         else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
         fe = fopen("/sys/class/power_supply/battery/status", "rt");
         fgets(charge, 20, fe);
@@ -228,7 +246,7 @@ int main()
                 exit(220);
             }
             list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
-            if(power_ctrl == 1)
+            if(opt_new[2] == 1)
             {
                 if(access("/sys/class/power_supply/battery/capacity", R_OK) != 0)
                 {
@@ -240,9 +258,9 @@ int main()
                 fclose(fd);
                 fd=NULL;
                 line_feed(power);
-                if(atoi(power) >= charge_stop)
+                if(atoi(power) >= opt_new[5])
                 {
-                    if(charge_stop == 100)
+                    if(opt_new[5] == 100)
                     {
                         if(access("/sys/class/power_supply/battery/current_now", R_OK) != 0)
                         {
@@ -266,7 +284,7 @@ int main()
                         qwer = 1;
                     }
                 }
-                else if(atoi(power) <= charge_start)
+                else if(atoi(power) <= opt_new[4])
                 {
                     charge_value("1");
                     qwer = 0;
@@ -280,7 +298,7 @@ int main()
                     qwer = 0;
                 }
             }
-            if(temp_ctrl == 1)
+            if(opt_new[1] == 1)
             {
                 if(access(conn_therm, R_OK) != 0)
                 {
@@ -293,9 +311,9 @@ int main()
                 fm=NULL;
                 line_feed(thermal);
                 temp_int = atoi(thermal);
-                if(temp_int > temp_max*1000)
+                if(temp_int > opt_new[7]*1000)
                 {
-                    while(temp_int > recharge_temp*1000)
+                    while(temp_int > opt_new[9]*1000)
                     {
                         if(access(conn_therm, R_OK) != 0)
                         {
@@ -333,29 +351,42 @@ int main()
                         fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
                         while(fgets(option, 1000, fc) != NULL)
                         {
-                            sscanf(option, "TEMP_CTRL=%d", &temp_ctrl);
-                            sscanf(option, "CURRENT_MAX=%s", current_max);
-                            sscanf(option, "TEMP_MAX=%d", &temp_max);
-                            sscanf(option, "HIGHEST_TEMP_CURRENT=%s", highest_temp_current);
-                            sscanf(option, "RECHARGE_TEMP=%d", &recharge_temp);
-                            sscanf(option, "STEP_CHARGING_DISABLED=%d", &step_charging_disabled);
-                            sscanf(option, "STEP_CHARGING_DISABLED_THRESHOLD=%d", &step_charging_disabled_threshold);
+                            sscanf(option, "STEP_CHARGING_DISABLED=%u", &opt_new[0]);
+                            sscanf(option, "TEMP_CTRL=%u", &opt_new[1]);
+                            sscanf(option, "POWER_CTRL=%u", &opt_new[2]);
+                            sscanf(option, "STEP_CHARGING_DISABLED_THRESHOLD=%u", &opt_new[3]);
+                            sscanf(option, "CHARGE_START=%u", &opt_new[4]);
+                            sscanf(option, "CHARGE_STOP=%u", &opt_new[5]);
+                            sscanf(option, "CURRENT_MAX=%u", &opt_new[6]);
+                            sscanf(option, "TEMP_MAX=%u", &opt_new[7]);
+                            sscanf(option, "HIGHEST_TEMP_CURRENT=%u", &opt_new[8]);
+                            sscanf(option, "RECHARGE_TEMP=%u", &opt_new[9]);
                         }
+                        for(opt=0;opt<10;opt++)
+                        {
+                            if(opt_old[opt] != opt_new[opt])
+                            {
+                                printf("%s值发生改变，新%s值为%d",options[opt],options[opt],opt_new[opt]);
+                                opt_old[opt]=opt_new[opt];
+                            }
+                        }
+                        snprintf(current_max_char,20,"%u",opt_new[6]);
+                        snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
                         fclose(fc);
                         fc=NULL;
-                        if(temp_ctrl == 0) break;
-                        if(step_charging_disabled == 1) (atoi(power) <= step_charging_disabled_threshold)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+                        if(opt_new[1] == 0) break;
+                        if(opt_new[0] == 1) (atoi(power) <= opt_new[3])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
                         else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
-                        list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, highest_temp_current);
+                        list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, highest_temp_current_char);
                         sleep(5);
                     }
                 }
             }
-            list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, current_max);
+            list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, current_max_char);
         }
         else
         {
-            if(step_charging_disabled == 1) (atoi(power) <= step_charging_disabled_threshold)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+            if(opt_new[0] == 1) (atoi(power) <= opt_new[3])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
             else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
             if(access(conn_therm, R_OK) != 0)
             {
