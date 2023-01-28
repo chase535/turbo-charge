@@ -437,7 +437,7 @@ int main()
         line_feed(charge);
         if(strcmp(charge, "Charging") == 0 || strcmp(charge, "Full") == 0)
         {
-            if(tmp[1])
+            if(tmp[1] || !tmp[2])
             {
                 printf_plus_time("充电器已连接");
                 tmp[1]=0;
@@ -459,7 +459,7 @@ int main()
                 {
                     if(!tmp[0])
                     {
-                        snprintf(chartmp,200,"温度高于降低充电电流的温度阈值，限制充电电流为%dμA",opt_new[8]);
+                        snprintf(chartmp,200,"手机温度大于等于降低充电电流的温度阈值，限制充电电流为%dμA",opt_new[8]);
                         printf_plus_time(chartmp);
                         tmp[0]=1;
                     }
@@ -506,7 +506,7 @@ int main()
                         }
                         if(temp_int <= ((int)opt_new[9])*1000)
                         {
-                            snprintf(chartmp,200,"温度低于恢复快充的温度阈值，恢复充电电流为%dμA",opt_new[6]);
+                            snprintf(chartmp,200,"手机温度小于等于恢复快充的温度阈值，恢复充电电流为%dμA",opt_new[6]);
                             printf_plus_time(chartmp);
                             break;
                         }
