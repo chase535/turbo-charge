@@ -42,7 +42,7 @@ jobs:
           cp -avf ${{ github.workspace }}/turbo-charge.zip ./update_channel
           cat ./update_channel/changelog.md >> ${{ github.workspace }}/changelog
           cp -avf ${{ github.workspace }}/changelog ./update_channel/changelog.md
-          jq -sM '.[0] * .[1]' ${{ github.workspace }}/update_channel.json ./update_channel/turbo-charge.json > ${{ github.workspace }}/turbo-charge.json
+          jq -sM add ./update_channel/turbo-charge.json ${{ github.workspace }}/update_channel.json > ${{ github.workspace }}/turbo-charge.json
           cp -avf ${{ github.workspace }}/turbo-charge.json ./update_channel
           git add . -f
           git commit -a -m "更新${tag}版本"
