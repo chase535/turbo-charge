@@ -27,8 +27,7 @@ jobs:
           tag=$(echo ${{ github.ref }} | sed "s|refs/tags/||g")
           versioncode=$(echo ${tag} | sed "s|v||g")
           wget -P ${{ github.workspace }} https://api.github.com/repos/chase535/turbo-charge/releases/tags/${tag} -O releases.json
-          new_change=$(jq -M '.body' ${{ github.workspace }}/releases.json | sed "s|\\r||g")
-          echo -e "${new_change}" > ${{ github.workspace }}/changelog
+          jq -rM '.body' ${{ github.workspace }}/releases.json > ${{ github.workspace }}/changelog
           sed -i "1i # ${tag}" ${{ github.workspace }}/changelog
           sed -i G ${{ github.workspace }}/changelog
           echo "{\"version\": \"${tag}\",\"versionCode\": \"${versioncode}\"}" > ${{ github.workspace }}/update_channel.json
@@ -42,6 +41,8 @@ jobs:
           cd /home/runner/work/git_clone
           cp -avf ${{ github.workspace }}/turbo-charge.zip ./update_channel
           cat ./update_channel/changelog.md >> ${{ github.workspace }}/changelog
+          sed ':a;N;$!ba;s/\r\n/\n/g' ${{ github.workspace }}/changelog
+          sed ':a;N;$!ba;s/\n/\r\n/g' ${{ github.workspace }}/changelog
           cp -avf ${{ github.workspace }}/changelog ./update_channel/changelog.md
           jq -sM add ./update_channel/turbo-charge.json ${{ github.workspace }}/update_channel.json > ${{ github.workspace }}/turbo-charge.json
           cp -avf ${{ github.workspace }}/turbo-charge.json ./update_channel
