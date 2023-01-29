@@ -1,0 +1,25 @@
+name: Sync To Gitee
+
+on: 
+  push: 
+    branches:
+      - 'main'
+  delete:
+    branches:
+      - 'main'
+  create:
+    branches:
+      - 'main'
+
+env:
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync to Gitee
+        uses: wearerequired/git-mirror-action@master
+        with:
+          source-repo: "git@github.com:BeyondDimension/SteamTools.git"
+          destination-repo: "git@gitee.com:rmbgame/SteamTools"
