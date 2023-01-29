@@ -270,7 +270,7 @@ void read_option(unsigned int opt_new[10], unsigned int opt_old[10], unsigned ch
     else for(opt=0;opt<10;opt++) opt_old[opt]=opt_new[opt];
 }
 
-void powel_ctl(unsigned int opt_new[10], unsigned char tmp[5], unsigned char *stop)
+void powel_ctl(unsigned int opt_new[10], unsigned char tmp[5])
 {
     FILE *fd,*fm;
     char chartmp[200],power[10],done[20];
@@ -282,21 +282,20 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[5], unsigned char *st
         fclose(fd);
         fd=NULL;
         line_feed(power);
-        if(tmp[2] == 1 && tmp[4] == 1)
+        if(tmp[2] && tmp[4])
         {
             if(atoi(power) < (int)opt_new[5])
             {
                 snprintf(chartmp,200,"新的停止充电的电量阈值高于旧的电量阈值，且手机当前电量为%s%%，小于新的电量阈值，恢复充电",power);
                 printf_plus_time(chartmp);
                 charge_value("1");
-                *stop=0;
                 tmp[2]=0;
             }
             else
             {
                 snprintf(chartmp,200,"新的停止充电的电量阈值高于旧的电量阈值，但手机当前电量为%s%%，大于等于新的电量阈值，停止充电",power);
                 printf_plus_time(chartmp);
-                *stop=1;
+                charge_value("0");
                 tmp[2]=1;
             }
             tmp[4]=0;
@@ -320,7 +319,6 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[5], unsigned char *st
                         tmp[2]=1;
                     }
                     charge_value("0");
-                    *stop = 1;
                 }
             }
             else
@@ -332,7 +330,6 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[5], unsigned char *st
                     tmp[2]=1;
                 }
                 charge_value("0");
-                *stop = 1;
             }
         }
         if(atoi(power) <= (int)opt_new[6])
@@ -344,21 +341,16 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[5], unsigned char *st
                 tmp[2]=0;
             }
             charge_value("1");
-            *stop = 0;
         }
     }
     else
     {
-        if(*stop == 1)
+        if(tmp[2])
         {
-            if(tmp[2])
-            {
-                printf_plus_time("电量控制关闭，恢复充电");
-                tmp[2]=0;
-            }
-            charge_value("1");
-            *stop = 0;
+            printf_plus_time("电量控制关闭，恢复充电");
+            tmp[2]=0;
         }
+        charge_value("1");
     }
 }
 
@@ -367,7 +359,7 @@ int main()
     FILE *fq;
     char **power_supply_dir,**thermal_dir,charge[25],power[10],chartmp[200],current_max_char[20],highest_temp_current_char[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
     int temp_int;
-    unsigned char tmp[5]={0,0,0,0,0},num=0,stop=0,fu,i,bat_temp_size,power_supply_file_num,thermal_file_num;
+    unsigned char tmp[5]={0,0,0,0,0},num=0,fu,i,bat_temp_size,power_supply_file_num,thermal_file_num;
     unsigned int opt_old[10]={0,0,0,0,0,0,0,0,0,0},opt_new[10]={0,0,0,0,0,0,0,0,0,0};
     check_file("/sys/class/power_supply/battery/status");
     check_file("/sys/class/power_supply/battery/current_now");
@@ -447,7 +439,7 @@ int main()
             }
             check_read_file(conn_therm);
             list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
-            powel_ctl(opt_new, tmp, &stop);
+            powel_ctl(opt_new, tmp);
             if(opt_new[1] == 1)
             {
                 check_read_file(conn_therm);
@@ -518,7 +510,7 @@ int main()
                         else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
                         list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
                         list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, highest_temp_current_char);
-                        powel_ctl(opt_new, tmp, &stop);
+                        powel_ctl(opt_new, tmp);
                         sleep(5);
                     }
                 }
