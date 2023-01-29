@@ -2,11 +2,14 @@ name: Sync To Gitee
 
 on:
   push: 
-    branches: [ main ]
+    branches:
+      - 'main'
   delete:
-    branches: [ main ]
+    branches:
+      - 'main'
   create:
-    branches: [ main ]
+    branches:
+      - 'main'
 
 jobs:
   build:
