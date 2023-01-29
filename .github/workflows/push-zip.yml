@@ -32,5 +32,5 @@ jobs:
           cd /home/runner/work/git_clone
           cp -avf ${{ github.workspace }}/turbo-charge.zip ./update_channel
           git add . -f
-          git commit -as -m "上传${tag}版本turbo-charge.zip"
+          git commit -a -m "上传${tag}版本turbo-charge.zip"
           git push origin main -f
