@@ -17,7 +17,7 @@ jobs:
       - name: Install tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget jq unix2dos
+          sudo apt-get install -y wget jq dos2unix
       - name: Wget zip file
         run: |
           tag=$(echo ${{ github.ref }} | sed "s|refs/tags/||g")
