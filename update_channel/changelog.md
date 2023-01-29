@@ -1,3 +1,11 @@
+# v33
+
+### Changelog
+
+将Magisk内部更新通道切换为Gitee，极大提升更新体验。
+
+[Gitee](https://gitee.com/chase535/turbo-charge)将实时同步[GitHub](https://github.com/chase535/turbo-charge)的任何更改，但由于众所周知的原因，Gitee仅充当更新通道，我不会使用Gitee。
+
 # v32
 
 ### Changelog
