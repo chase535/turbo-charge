@@ -1,0 +1,36 @@
+name: Push module zip file
+
+on:
+  release:
+    types:
+      - 'published'
+
+env:
+  GITHUB_USER: "${{secrets.USERNAME}}"
+  GITHUB_EMAIL: "${{secrets.EMAIL}}"
+  GITHUB_TOKEN: "${{secrets.API_TOKEN_GITHUB}}"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install wget
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget
+      - name: Wget module zip file
+        run: |
+          tag=$(echo ${{ github.ref }} | sed "s|refs/tags/||g")
+          wget -P ${{ github.workspace }} https://github.com/chase535/turbo-charge/releases/download/${tag}/turbo-charge.zip
+      - name: Push module zip file
+        run: |
+          tag=$(echo ${{ github.ref }} | sed "s|refs/tags/||g")
+          git config --global user.name "${GITHUB_USER}"
+          git config --global user.email "${GITHUB_EMAIL}"
+          mkdir -vp /home/runner/work/git_clone
+          git clone https://"${GITHUB_USER}":"${GITHUB_TOKEN}"@github.com/chase535/turbo-charge /home/runner/work/git_clone -b main --depth=1
+          cd /home/runner/work/git_clone
+          cp -avf ${{ github.workspace }}/turbo-charge.zip ./update_channel
+          git add . -f
+          git commit -as -m "上传${tag}版本turbo-charge.zip"
+          git push origin main -f
