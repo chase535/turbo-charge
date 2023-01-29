@@ -1,0 +1,49 @@
+name: Upload zip file and modified files
+
+on:
+  release:
+    types:
+      - 'published'
+
+env:
+  GITHUB_USER: "${{secrets.USERNAME}}"
+  GITHUB_EMAIL: "${{secrets.EMAIL}}"
+  GITHUB_TOKEN: "${{secrets.API_TOKEN_GITHUB}}"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install wget
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget jq
+      - name: Wget zip file
+        run: |
+          tag=$(echo ${{ github.ref }} | sed "s|refs/tags/||g")
+          wget -P ${{ github.workspace }} https://github.com/chase535/turbo-charge/releases/download/${tag}/turbo-charge.zip
+      - name: Wget and parse releases json
+        run: |
+          tag=$(echo ${{ github.ref }} | sed "s|refs/tags/||g")
+          versioncode=$(echo ${tag} | sed "s|v||g")
+          wget -P ${{ github.workspace }} https://api.github.com/repos/chase535/turbo-charge/releases/tags/${tag} -O releases.json
+          new_change=$(jq -M '.body' ${{ github.workspace }}/releases.json | sed 's|"||g')
+          change=$(echo "# ${tag}\r\n${new_change}\r\n" | sed "s|\\r\\n|\\r\\n\\r\\n|g")
+          echo -e "${change}" > ${{ github.workspace }}/changelog
+          echo "{\"version\": \"${tag}\",\"versionCode\": \"${versioncode}\"}" > ${{ github.workspace }}/update_channel.json
+      - name: Push zip file and modified files
+        run: |
+          tag=$(echo ${{ github.ref }} | sed "s|refs/tags/||g")
+          git config --global user.name "${GITHUB_USER}"
+          git config --global user.email "${GITHUB_EMAIL}"
+          mkdir -vp /home/runner/work/git_clone
+          git clone https://"${GITHUB_USER}":"${GITHUB_TOKEN}"@github.com/chase535/turbo-charge /home/runner/work/git_clone -b main --depth=1
+          cd /home/runner/work/git_clone
+          cp -avf ${{ github.workspace }}/turbo-charge.zip ./update_channel
+          cat ./update_channel/changelog.md >> ${{ github.workspace }}/changelog
+          cp -avf ${{ github.workspace }}/changelog ./update_channel/changelog.md
+          jq -sM '.[0] * .[1]' ${{ github.workspace }}/update_channel.json ./update_channel/turbo-charge.json > ${{ github.workspace }}/turbo-charge.json
+          cp -avf ${{ github.workspace }}/turbo-charge.json ./update_channel
+          git add . -f
+          git commit -a -m "更新${tag}版本"
+          git push origin main -f
