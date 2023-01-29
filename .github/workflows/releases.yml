@@ -17,7 +17,7 @@ jobs:
       - name: Install wget
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget jq
+          sudo apt-get install -y wget jq unix2dos
       - name: Wget zip file
         run: |
           tag=$(echo ${{ github.ref }} | sed "s|refs/tags/||g")
@@ -41,10 +41,10 @@ jobs:
           cd /home/runner/work/git_clone
           cp -avf ${{ github.workspace }}/turbo-charge.zip ./update_channel
           cat ./update_channel/changelog.md >> ${{ github.workspace }}/changelog
-          sed ':a;N;$!ba;s/\r\n/\n/g' ${{ github.workspace }}/changelog
-          sed ':a;N;$!ba;s/\n/\r\n/g' ${{ github.workspace }}/changelog
+          unix2dos ${{ github.workspace }}/changelog
           cp -avf ${{ github.workspace }}/changelog ./update_channel/changelog.md
           jq -sM add ./update_channel/turbo-charge.json ${{ github.workspace }}/update_channel.json > ${{ github.workspace }}/turbo-charge.json
+          unix2dos ${{ github.workspace }}/turbo-charge.json
           cp -avf ${{ github.workspace }}/turbo-charge.json ./update_channel
           git add . -f
           git commit -a -m "更新${tag}版本"
