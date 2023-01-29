@@ -447,7 +447,7 @@ int main()
             }
             check_read_file(conn_therm);
             list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
-            powel_ctl(opt_new, tmp, stop);
+            powel_ctl(opt_new, tmp, &stop);
             if(opt_new[1] == 1)
             {
                 check_read_file(conn_therm);
@@ -518,7 +518,7 @@ int main()
                         else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
                         list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
                         list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, highest_temp_current_char);
-                        powel_ctl(opt_new, tmp, stop);
+                        powel_ctl(opt_new, tmp, &stop);
                         sleep(5);
                     }
                 }
