@@ -27,9 +27,9 @@ jobs:
           tag=$(echo ${{ github.ref }} | sed "s|refs/tags/||g")
           versioncode=$(echo ${tag} | sed "s|v||g")
           wget -P ${{ github.workspace }} https://api.github.com/repos/chase535/turbo-charge/releases/tags/${tag} -O releases.json
-          new_change=$(jq -M '.body' ${{ github.workspace }}/releases.json | sed 's|"||g')
-          change=$(echo "# ${tag}\r\n${new_change}\r\n" | sed "s|\\r\\n|\\r\\n\\r\\n|g")
-          echo -e "${change}" > ${{ github.workspace }}/changelog
+          jq -rM '.body' ${{ github.workspace }}/releases.json > ${{ github.workspace }}/changelog
+          sed -i "1i # ${tag}" ${{ github.workspace }}/changelog
+          sed G ${{ github.workspace }}/changelog
           echo "{\"version\": \"${tag}\",\"versionCode\": \"${versioncode}\"}" > ${{ github.workspace }}/update_channel.json
       - name: Push zip file and modified files
         run: |
