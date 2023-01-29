@@ -1,14 +1,19 @@
 name: CMake
+
 on:
   push:
+    branches:
+      - 'main'
     paths-ignore:
       - '**.md'
       - '**.json'
+  delete:
     branches:
       - 'main'
-  pull_request:
+  create:
     branches:
       - 'main'
+
 jobs:
   build:
     runs-on: ubuntu-latest
