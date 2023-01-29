@@ -8,12 +8,6 @@ on:
       - '**.md'
       - '**.zip'
       - '**.json'
-  delete:
-    branches:
-      - 'main'
-  create:
-    branches:
-      - 'main'
 
 jobs:
   build:
