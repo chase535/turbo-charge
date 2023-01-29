@@ -4,4 +4,4 @@ version=v32
 versionCode=32
 author=酷安@诺鸡鸭（QQ群：738661277）
 description=尽可能的让手机满血快充。配置文件在/data/adb/turbo-charge/option.txt，可以更改一些参数，日志文件为同目录的log.txt。QQ群：738661277
-updateJson=https://gh-proxy.chase535.xyz/https://raw.githubusercontent.com/chase535/turbo-charge/main/update_channel/turbo-charge.json
+updateJson=https://gitee.com/chase535/turbo-charge/raw/main/update_channel/turbo-charge.json
