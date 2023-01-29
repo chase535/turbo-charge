@@ -1,4 +1,4 @@
-name: Upload zip file and modified files
+name: Update Magisk Channel Data
 
 on:
   release:
