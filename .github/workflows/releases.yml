@@ -27,23 +27,23 @@ jobs:
           tag=$(echo ${{ github.ref }} | sed "s|refs/tags/||g")
           versioncode=$(echo ${tag} | sed "s|v||g")
           wget -P ${{ github.workspace }} https://api.github.com/repos/chase535/turbo-charge/releases/tags/${tag} -O releases.json
-          jq -rM '.body' ${{ github.workspace }}/releases.json > ${{ github.workspace }}/changelog
-          sed -i "1i # ${tag}" ${{ github.workspace }}/changelog
-          sed -i G ${{ github.workspace }}/changelog
-          echo "{\"version\": \"${tag}\",\"versionCode\": \"${versioncode}\"}" > ${{ github.workspace }}/update_channel.json
+          jq -rM '.body' ${{ github.workspace }}/releases.json > ${{ github.workspace }}/changelog.md
+          sed -i "1i # ${tag}" ${{ github.workspace }}/changelog.md
+          sed -i G ${{ github.workspace }}/changelog.md
+          echo "{\"version\": \"${tag}\",\"versionCode\": \"${versioncode}\"}" > ${{ github.workspace }}/version.json
       - name: Push zip file and modified files
         run: |
           tag=$(echo ${{ github.ref }} | sed "s|refs/tags/||g")
           git config --global user.name "${GITHUB_USER}"
           git config --global user.email "${GITHUB_EMAIL}"
-          mkdir -vp /home/runner/work/git_clone
-          git clone https://"${GITHUB_USER}":"${GITHUB_TOKEN}"@github.com/chase535/turbo-charge /home/runner/work/git_clone -b main --depth=1
-          cd /home/runner/work/git_clone
+          mkdir -vp ${{ github.workspace }}/git_clone
+          git clone https://"${GITHUB_USER}":"${GITHUB_TOKEN}"@github.com/chase535/turbo-charge.git ${{ github.workspace }}/git_clone -b main --depth=1
+          cd ${{ github.workspace }}/git_clone
           cp -avf ${{ github.workspace }}/turbo-charge.zip ./update_channel
-          cat ./update_channel/changelog.md >> ${{ github.workspace }}/changelog
-          unix2dos ${{ github.workspace }}/changelog
-          cp -avf ${{ github.workspace }}/changelog ./update_channel/changelog.md
-          jq -sM add ./update_channel/turbo-charge.json ${{ github.workspace }}/update_channel.json > ${{ github.workspace }}/turbo-charge.json
+          cat ./update_channel/changelog.md >> ${{ github.workspace }}/changelog.md
+          unix2dos ${{ github.workspace }}/changelog.md
+          cp -avf ${{ github.workspace }}/changelog.md ./update_channel
+          jq -sM add ./update_channel/turbo-charge.json ${{ github.workspace }}/version.json > ${{ github.workspace }}/turbo-charge.json
           unix2dos ${{ github.workspace }}/turbo-charge.json
           cp -avf ${{ github.workspace }}/turbo-charge.json ./update_channel
           git add . -f
