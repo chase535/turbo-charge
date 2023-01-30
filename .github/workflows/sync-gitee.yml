@@ -17,6 +17,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_rsa
           sudo chmod 0600 ~/.ssh/id_rsa
+          sudo chmod 0644 /etc/ssh/ssh_config
           sudo echo "StrictHostKeyChecking no" >> /etc/ssh/ssh_config
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_rsa
