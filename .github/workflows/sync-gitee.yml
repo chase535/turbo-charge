@@ -19,6 +19,7 @@ jobs:
           sudo chmod 0600 ~/.ssh/id_rsa
           eval `ssh-agent -s`
           ssh-add ~/.ssh/id_rsa
+          ssh -v -o "IdentitiesOnly=yes" -i ~/.ssh/id_rsa git@github.com
           git clone --mirror "git@github.com:chase535/turbo-charge.git" ${{ github.workspace }}/turbo-charge && cd ${{ github.workspace }}/turbo-charge
           git remote set-url --push origin "git@gitee.com:chase535/turbo-charge"
           git fetch -p origin
