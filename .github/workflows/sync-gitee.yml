@@ -13,7 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Sync to Gitee
-        uses: wearerequired/git-mirror-action@master
-        with:
-          source-repo: "git@github.com:chase535/turbo-charge.git"
-          destination-repo: "git@gitee.com:chase535/turbo-charge"
+        run: |
+          mkdir -vp /root/.ssh ~/.ssh
+          echo "${SSH_PRIVATE_KEY}" > /root/.ssh/id_rsa
+          chmod 0600 /root/.ssh/id_rsa
+          git clone --mirror "https://github.com/chase535/turbo-charge.git" "" && cd "$SOURCE_DIR"
+          git remote set-url --push origin "https://gitee.com/chase535/turbo-charge"
+          git fetch -p origin
+          git for-each-ref --format 'delete %(refname)' refs/pull | git update-ref --stdin
+          git push --mirror
