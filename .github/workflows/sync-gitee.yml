@@ -17,8 +17,8 @@ jobs:
           mkdir -p ~/.ssh
           echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_rsa
           sudo chmod -R 0600 ~/.ssh
-          git clone --mirror "https://github.com/chase535/turbo-charge.git" ${{ github.workspace }}/turbo-charge && cd ${{ github.workspace }}/turbo-charge
-          git remote set-url --push origin "https://gitee.com/chase535/turbo-charge"
+          git clone --mirror "git@github.com:chase535/turbo-charge.git" ${{ github.workspace }}/turbo-charge && cd ${{ github.workspace }}/turbo-charge
+          git remote set-url --push origin "git@gitee.com:chase535/turbo-charge"
           git fetch -p origin
           git for-each-ref --format 'delete %(refname)' refs/pull | git update-ref --stdin
           git push --mirror
