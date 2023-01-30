@@ -15,12 +15,10 @@ jobs:
       - name: Sync to Gitee
         run: |
           mkdir -p ~/.ssh
-          OLD_FILES=`find ~/.ssh -maxdepth 1 -type f -name "id_.*"`
-          [ -n "${OLD_FILES}" ] && rm -rvf ${OLD_FILES}
+          rm -vf ~/.ssh/*
           echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_rsa
           echo "PubkeyAcceptedKeyTypes +ssh-rsa" >> ~/.ssh/config
           sudo chmod -R 0600 ~/.ssh
-          sudo cat ~/.ssh/id_rsa
           sudo ssh -vT git@github.com
           git clone --mirror "git@github.com:chase535/turbo-charge.git" ${{ github.workspace }}/turbo-charge && cd ${{ github.workspace }}/turbo-charge
           git remote set-url --push origin "git@gitee.com:chase535/turbo-charge"
