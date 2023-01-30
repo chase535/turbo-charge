@@ -16,7 +16,7 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_rsa
-          chmod -R 0600 ~/.ssh
+          chmod -R 0700 ~/.ssh
           git clone --mirror "https://github.com/chase535/turbo-charge.git" "" && cd "$SOURCE_DIR"
           git remote set-url --push origin "https://gitee.com/chase535/turbo-charge"
           git fetch -p origin
