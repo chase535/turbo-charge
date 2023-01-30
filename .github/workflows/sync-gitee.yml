@@ -16,13 +16,9 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_rsa
-          sudo chmod 0755 ~/.ssh
           sudo chmod 0600 ~/.ssh/id_rsa
-          ls -al ~/.ssh
           eval `ssh-agent -s`
           ssh-add ~/.ssh/id_rsa
-          ssh-add -l -E sha256
-          ssh -vT git@github.com
           git clone --mirror "git@github.com:chase535/turbo-charge.git" ${{ github.workspace }}/turbo-charge && cd ${{ github.workspace }}/turbo-charge
           git remote set-url --push origin "git@gitee.com:chase535/turbo-charge"
           git fetch -p origin
