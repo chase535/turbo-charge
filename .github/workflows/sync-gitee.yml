@@ -19,6 +19,7 @@ jobs:
           sudo chmod 0600 ~/.ssh/id_rsa
           sudo chmod 0777 /etc/ssh/ssh_config
           sudo echo "StrictHostKeyChecking no" >> /etc/ssh/ssh_config
+          sudo chmod 0644 /etc/ssh/ssh_config
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_rsa
           git clone --mirror "git@github.com:chase535/turbo-charge.git" ${{ github.workspace }}/turbo-charge && cd ${{ github.workspace }}/turbo-charge
