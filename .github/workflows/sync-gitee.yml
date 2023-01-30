@@ -22,7 +22,8 @@ jobs:
           sudo chmod 0644 /etc/ssh/ssh_config
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_rsa
-          git clone --mirror "git@github.com:chase535/turbo-charge.git" ${{ github.workspace }}/turbo-charge && cd ${{ github.workspace }}/turbo-charge
+          git clone --mirror "git@github.com:chase535/turbo-charge.git" ${{ github.workspace }}/git_clone
+          cd ${{ github.workspace }}/git_clone
           git remote set-url --push origin "git@gitee.com:chase535/turbo-charge"
           git fetch -p origin
           git for-each-ref --format 'delete %(refname)' refs/pull | git update-ref --stdin
