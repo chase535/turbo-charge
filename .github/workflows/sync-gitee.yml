@@ -14,11 +14,11 @@ jobs:
     steps:
       - name: Sync to Gitee
         run: |
-          mkdir -p ~/.ssh
-          echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_rsa
-          echo "PubkeyAcceptedKeyTypes +ssh-rsa" >> ~/.ssh/config
-          sudo chown -R runner ~/.ssh
-          sudo chmod -R 0600 ~/.ssh
+          mkdir -p /home/runner/.ssh
+          echo "${SSH_PRIVATE_KEY}" > /home/runner/.ssh/id_rsa
+          echo "PubkeyAcceptedKeyTypes +ssh-rsa" >> /home/runner/.ssh/config
+          sudo chown -R runner /home/runner/.ssh
+          sudo chmod -R 0600 /home/runner/.ssh
           ssh -vT git@github.com
           git clone --mirror "git@github.com:chase535/turbo-charge.git" ${{ github.workspace }}/turbo-charge && cd ${{ github.workspace }}/turbo-charge
           git remote set-url --push origin "git@gitee.com:chase535/turbo-charge"
