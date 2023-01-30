@@ -15,6 +15,8 @@ jobs:
       - name: Sync to Gitee
         run: |
           mkdir -p ~/.ssh
+          OLD_FILES=`find ~/.ssh -maxdepth 1 -type f -name "id_.*"`
+          [ -n "${OLD_FILES}" ] && rm -rvf ${OLD_FILES}
           echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_rsa
           echo "PubkeyAcceptedKeyTypes +ssh-rsa" >> ~/.ssh/config
           sudo chmod -R 0600 ~/.ssh
