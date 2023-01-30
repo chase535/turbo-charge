@@ -19,7 +19,7 @@ jobs:
           sudo chmod 0755 ~/.ssh
           sudo chmod 0600 ~/.ssh/id_rsa
           ls -al ~/.ssh
-          ssh-agent bash
+          eval `ssh-agent -s`
           ssh-add -l -E sha256
           ssh -vT git@github.com
           git clone --mirror "git@github.com:chase535/turbo-charge.git" ${{ github.workspace }}/turbo-charge && cd ${{ github.workspace }}/turbo-charge
