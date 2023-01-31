@@ -433,7 +433,7 @@ int main()
     set_value("/sys/class/power_supply/battery/input_current_limited", "0");
     set_value("/sys/class/power_supply/battery/input_current_settled", "1");
     set_value("/sys/class/qcom-battery/restrict_chg", "0");
-    while(0)
+    while(1)
     {
         read_option(opt_new, opt_old, tmp, num, 0);
         snprintf(current_max_char,20,"%u",opt_new[3]);
