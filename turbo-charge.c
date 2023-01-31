@@ -4,6 +4,8 @@
 #include "dirent.h"
 #include "unistd.h"
 #include "time.h"
+#include "regex.h"
+#include "malloc.h"
 #include "sys/types.h"
 #include "sys/stat.h"
 
@@ -104,20 +106,19 @@ int list_dir(char *path, char ***ppp)
     DIR *pDir;
     struct dirent *ent;
     int file_num=0;
-    char childpath[600];
-    *ppp=(char**)malloc(sizeof(char *) * 1000);
     pDir = opendir(path);
     if(pDir != NULL)
     {
+        *ppp=(char**)malloc(sizeof(char *)*500);
         while ((ent = readdir(pDir)) != NULL)
         {
             if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
-            sprintf(childpath,"%s/%s",path,ent->d_name);
-            (*ppp)[file_num]=(char *)malloc(sizeof(char) * (strlen(childpath) + 1));
-            strcpy((*ppp)[file_num],childpath);
+            (*ppp)[file_num]=(char *)malloc(sizeof(char)*((strlen(path)+strlen(ent->d_name))+2));
+            sprintf((*ppp)[file_num],"%s/%s",path,ent->d_name);
             file_num++;
         }
         closedir(pDir);
+        *ppp=(char**)realloc(*ppp,sizeof(char *)*file_num);
     }
     return file_num;
 }
@@ -357,10 +358,15 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[5])
 int main()
 {
     FILE *fq;
-    char **power_supply_dir,**thermal_dir,charge[25],power[10],chartmp[200],current_max_char[20],highest_temp_current_char[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
+    char **power_supply_dir_list,**power_supply_dir,**thermal_dir,charge[25],power[10],chartmp[200],current_max_char[20];
+    char **current_max_file;
+    unsigned char current_max_file_num=0;
+    char highest_temp_current_char[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
     int temp_int;
-    unsigned char tmp[5]={0,0,0,0,0},num=0,fu,i,bat_temp_size,power_supply_file_num,thermal_file_num;
+    unsigned char tmp[5]={0,0,0,0,0},num=0,fu,i,j,bat_temp_size,power_supply_file_num,thermal_file_num,power_supply_dir_list_num;
     unsigned int opt_old[10]={0,0,0,0,0,0,0,0,0,0},opt_new[10]={0,0,0,0,0,0,0,0,0,0};
+    regex_t re;
+    regmatch_t pmatch;
     check_file("/sys/class/power_supply/battery/status");
     check_file("/sys/class/power_supply/battery/current_now");
     check_file("/sys/class/power_supply/battery/capacity");
@@ -390,6 +396,8 @@ int main()
             }
         }
     }
+    free(thermal_dir);
+    thermal_dir=NULL;
     if(strcmp(conn_therm, "none") == 0)
     {
         printf_plus_time("获取温度失败，程序强制退出！");
@@ -398,9 +406,24 @@ int main()
     else check_read_file(conn_therm);
     check_read_file("/data/adb/turbo-charge/option.txt");
     printf_plus_time("文件检测完毕，程序开始运行");
+    regcomp(&re,".*current_max.*",REG_EXTENDED|REG_NOSUB);
     power_supply_file_num=list_dir("/sys/class/power_supply", &power_supply_dir);
+    current_max_file=(char**)malloc(sizeof(char *)*100);
+    for(i=0;i<power_supply_file_num;i++)
+    {
+        power_supply_dir_list_num=list_dir(power_supply_dir[i], &power_supply_dir_list);
+        for(j=0;j<power_supply_dir_list_num;j++)
+        {
+            if(regexec(&re, power_supply_dir_list[j],1,&pmatch,0)==0)
+            {
+                current_max_file[current_max_file_num]=(char *)malloc(sizeof(char)*(strlen(power_supply_dir_list[j])+1));
+                strcpy(current_max_file[current_max_file_num],power_supply_dir_list[j]);
+                current_max_file_num++;
+            }
+        }
+    }
+    current_max_file=(char**)realloc(current_max_file, sizeof(char *)*current_max_file_num);
     charge_value("1");
-    set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
     set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
     set_value("/sys/class/power_supply/battery/system_temp_level", "1");
     set_value("/sys/kernel/fast_charge/failsafe", "1");
