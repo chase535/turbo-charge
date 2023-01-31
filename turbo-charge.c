@@ -109,11 +109,11 @@ int list_dir(char *path, char ***ppp)
     pDir = opendir(path);
     if(pDir != NULL)
     {
-        *ppp=(char**)malloc(sizeof(char *)*500);
+        *ppp=(char**)calloc(1,sizeof(char *)*500);
         while ((ent = readdir(pDir)) != NULL)
         {
             if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
-            (*ppp)[file_num]=(char *)malloc(sizeof(char)*((strlen(path)+strlen(ent->d_name))+2));
+            (*ppp)[file_num]=(char *)calloc(1,sizeof(char)*((strlen(path)+strlen(ent->d_name))+2));
             sprintf((*ppp)[file_num],"%s/%s",path,ent->d_name);
             file_num++;
         }
@@ -408,7 +408,7 @@ int main()
     printf_plus_time("文件检测完毕，程序开始运行");
     regcomp(&re,".*current_max.*",REG_EXTENDED|REG_NOSUB);
     power_supply_file_num=list_dir("/sys/class/power_supply", &power_supply_dir);
-    current_max_file=(char**)malloc(sizeof(char *)*100);
+    current_max_file=(char**)calloc(1,sizeof(char *)*100);
     for(i=0;i<power_supply_file_num;i++)
     {
         power_supply_dir_list_num=list_dir(power_supply_dir[i], &power_supply_dir_list);
@@ -416,7 +416,7 @@ int main()
         {
             if(regexec(&re, power_supply_dir_list[j],1,&pmatch,0)==0)
             {
-                current_max_file[current_max_file_num]=(char *)malloc(sizeof(char)*(strlen(power_supply_dir_list[j])+1));
+                current_max_file[current_max_file_num]=(char *)calloc(1,sizeof(char)*(strlen(power_supply_dir_list[j])+1));
                 strcpy(current_max_file[current_max_file_num],power_supply_dir_list[j]);
                 current_max_file_num++;
             }
@@ -433,7 +433,7 @@ int main()
     set_value("/sys/class/power_supply/battery/input_current_limited", "0");
     set_value("/sys/class/power_supply/battery/input_current_settled", "1");
     set_value("/sys/class/qcom-battery/restrict_chg", "0");
-    while(1)
+    while(0)
     {
         read_option(opt_new, opt_old, tmp, num, 0);
         snprintf(current_max_char,20,"%u",opt_new[3]);
