@@ -396,8 +396,19 @@ int main()
             }
         }
     }
-    free(thermal_dir);
-    thermal_dir=NULL;
+    if(thermal_dir != NULL)
+    {
+        for(i=0;i<thermal_file_num;i++)
+        {
+            if(thermal_dir[i] != NULL)
+            {
+                free(thermal_dir[i]);
+                thermal_dir[i]=NULL;
+            }
+        }
+        free(thermal_dir);
+        thermal_dir=NULL;
+    }
     if(strcmp(conn_therm, "none") == 0)
     {
         printf_plus_time("获取温度失败，程序强制退出！");
