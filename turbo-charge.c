@@ -229,9 +229,12 @@ void check_read_file(char *file,char chartmp[200])
 void read_option(unsigned int opt_new[10], unsigned int opt_old[10], unsigned char tmp[5], unsigned char num, char chartmp[200], unsigned char is_temp_wall)
 {
     FILE *fc;
-    char option[2010],options[10][50]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","CURRENT_MAX","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_STOP","CHARGE_START","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
+    char options[10][40]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","CURRENT_MAX","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_STOP","CHARGE_START","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
     unsigned char opt;
+    struct stat statbuf;
     check_read_file("/data/adb/turbo-charge/option.txt",chartmp);
+    stat("/data/adb/turbo-charge/option.txt",&statbuf);
+    char option[statbuf.st_size];
     fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
     while(fgets(option, 2000, fc) != NULL)
     {
