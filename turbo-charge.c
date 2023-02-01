@@ -373,7 +373,7 @@ int main()
         }
     }
     regcomp(&current_max_re,".*_current_max$|.*fast_charge_current$|.*thermal_input_current$",REG_EXTENDED|REG_NOSUB);
-    regcomp(&temp_re,".*/temp$",REG_EXTENDED|REG_NOSUB);
+    regcomp(&temp_re,".*temp$",REG_EXTENDED|REG_NOSUB);
     power_supply_file_num=list_dir("/sys/class/power_supply", &power_supply_dir);
     current_max_file=(char**)calloc(1,sizeof(char *)*100);
     temp_file=(char**)calloc(1,sizeof(char *)*100);
@@ -403,7 +403,7 @@ int main()
     if(!current_max_file_num)
     {
         current_change=0;
-        printf_plus_time("无法在/sys/class/power_supply中的所有文件夹内找到文件名包含current_max的文件、thermal_input_current文件、fast_charge_current文件，有关电流的所有功能失效！");
+        printf_plus_time("无法在/sys/class/power_supply中的所有文件夹内找到文件名包含_current_max的文件、thermal_input_current文件、fast_charge_current文件，有关电流的所有功能失效！");
     }
     if(!battery_status || !temp_file_num)
     {
