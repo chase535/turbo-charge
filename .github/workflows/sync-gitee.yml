@@ -12,6 +12,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ssh git
       - name: Sync to Gitee
         run: |
           mkdir -p ~/.ssh
