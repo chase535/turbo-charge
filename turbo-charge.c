@@ -189,6 +189,12 @@ void charge_value(char *i)
 
 void check_read_file(char *file,char chartmp[chartmp_size])
 {
+    if(file == NULL)
+    {
+        snprintf(chartmp,chartmp_size,"指针为空，出现异常错误，程序强制退出！",file);
+        printf_plus_time(chartmp);
+        exit(789);
+    }
     if(access(file, F_OK) == 0)
     {
         if(access(file, R_OK) != 0)
