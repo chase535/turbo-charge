@@ -497,6 +497,17 @@ int main()
     }
     check_read_file("/data/adb/turbo-charge/option.txt",chartmp);
     printf_plus_time("文件检测完毕，程序开始运行");
+    set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
+    set_value("/sys/class/power_supply/battery/system_temp_level", "1");
+    set_value("/sys/class/power_supply/usb/boost_current", "1");
+    set_value("/sys/class/power_supply/battery/safety_timer_enabled", "0");
+    set_value("/sys/kernel/fast_charge/failsafe", "1");
+    set_value("/sys/class/power_supply/battery/allow_hvdcp3", "1");
+    set_value("/sys/class/power_supply/usb/pd_allowed", "1");
+    set_value("/sys/class/power_supply/battery/subsystem/usb/pd_allowed", "1");
+    set_value("/sys/class/power_supply/battery/input_current_limited", "0");
+    set_value("/sys/class/power_supply/battery/input_current_settled", "1");
+    set_value("/sys/class/qcom-battery/restrict_chg", "0");
     charge_value("1");
     while(1)
     {
@@ -504,17 +515,6 @@ int main()
         snprintf(current_max_char,20,"%u",opt_new[3]);
         snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
         if(!num) num=1;
-        set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
-        set_value("/sys/class/power_supply/battery/system_temp_level", "1");
-        set_value("/sys/class/power_supply/usb/boost_current", "1");
-        set_value("/sys/class/power_supply/battery/safety_timer_enabled", "0");
-        set_value("/sys/kernel/fast_charge/failsafe", "1");
-        set_value("/sys/class/power_supply/battery/allow_hvdcp3", "1");
-        set_value("/sys/class/power_supply/usb/pd_allowed", "1");
-        set_value("/sys/class/power_supply/battery/subsystem/usb/pd_allowed", "1");
-        set_value("/sys/class/power_supply/battery/input_current_limited", "0");
-        set_value("/sys/class/power_supply/battery/input_current_settled", "1");
-        set_value("/sys/class/qcom-battery/restrict_chg", "0");
         if(!battery_status)
         {
             if(current_change) set_array_value(current_max_file,current_max_file_num,current_max_char);
