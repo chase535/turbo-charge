@@ -387,16 +387,12 @@ int main()
                 current_max_file[current_max_file_num]=(char *)calloc(1,sizeof(char)*(strlen(power_supply_dir_list[j])+1));
                 strcpy(current_max_file[current_max_file_num],power_supply_dir_list[j]);
                 current_max_file_num++;
-                snprintf(chartmp,chartmp_size,"找到电流文件：%s",power_supply_dir_list[j]);
-                printf_plus_time(chartmp);
             }
             if(regexec(&temp_re, power_supply_dir_list[j],1,&temp_pmatch,0)==0)
             {
                 temp_file[temp_file_num]=(char *)calloc(1,sizeof(char)*(strlen(power_supply_dir_list[j])+1));
                 strcpy(temp_file[temp_file_num],power_supply_dir_list[j]);
                 temp_file_num++;
-                snprintf(chartmp,chartmp_size,"找到温度文件：%s",power_supply_dir_list[j]);
-                printf_plus_time(chartmp);
             }
         }
         free_celloc_memory(&power_supply_dir_list,power_supply_dir_list_num);
@@ -418,6 +414,22 @@ int main()
             printf_plus_time("由于找不到/sys/class/power_supply/battery/status文件，充电时强制显示28℃功能失效！");
         else
             printf_plus_time("由于找不到/sys/class/power_supply/battery/status文件以及无法在/sys/class/power_supply中的所有文件夹内找到文件名以temp结尾的文件，充电时强制显示28℃功能失效！");
+    }
+    if(current_change)
+    {
+        for(i=0;i<current_max_file_num;i++)
+        {
+            snprintf(chartmp,chartmp_size,"找到电流文件：%s",current_max_file[i]);
+            printf_plus_time(chartmp);
+        }
+    }
+    if(force_temp)
+    {
+        for(i=0;i<temp_file_num;i++)
+        {
+            snprintf(chartmp,chartmp_size,"找到电流文件：%s",temp_file[i]);
+            printf_plus_time(chartmp);
+        }
     }
     if(!step_charge && !power_control && !force_temp && !current_change)
     {
