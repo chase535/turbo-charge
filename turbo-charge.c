@@ -334,7 +334,9 @@ int main()
     regmatch_t temp_pmatch,current_max_pmatch;
     struct stat statbuf;
     printf("作者：酷安@诺鸡鸭\n");
+    fflush(stdout);
     printf("QQ群：738661277\n");
+    fflush(stdout);
     printf("GitHub开源地址：https://github.com/chase535/turbo-charge\n");
     fflush(stdout);
     if(access("/sys/class/power_supply/battery/status", F_OK) != 0) battery_status=0;
@@ -427,7 +429,7 @@ int main()
     {
         for(i=0;i<temp_file_num;i++)
         {
-            snprintf(chartmp,chartmp_size,"找到电流文件：%s",temp_file[i]);
+            snprintf(chartmp,chartmp_size,"找到温度文件：%s",temp_file[i]);
             printf_plus_time(chartmp);
         }
     }
