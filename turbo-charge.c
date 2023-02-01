@@ -149,22 +149,15 @@ void set_value(char *file, char *numb)
     }
 }
 
+void set_array_value(char **file, char *num)
+{
+    for(int i=0;i<num;i++) set_value(file[i],num);
+}
+
 void line_feed(char *line)
 {
     char *p;
     if((p = strchr(line, '\n')) != NULL) *p = '\0';
-}
-
-void list_dir_set_value(char **file_dir, char *file_name, int file_num, char *value)
-{
-    int i;
-    char file[100];
-    for(i=0;i<file_num;i++)
-    {
-        sprintf(file, "%s/%s", file_dir[i], file_name);
-        if(access(file, F_OK) != 0) continue;
-        set_value(file, value);
-    }
 }
 
 void charge_value(char *i)
@@ -355,24 +348,71 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[5])
     }
 }
 
+void free_celloc_memory(char ***addr,unsigned char num)
+{
+    if(addr != NULL && *addr != NULL)
+    {
+        for(int i=0;i<num;i++)
+        {
+            if((*addr)[i] != NULL)
+            {
+                free((*addr)[i]);
+                (*addr)[i]=NULL;
+            }
+        }
+        free(*addr);
+        *addr=NULL;
+    }
+}
+
 int main()
 {
     FILE *fq;
-    char **power_supply_dir_list,**power_supply_dir,**thermal_dir,charge[25],power[10],chartmp[200],current_max_char[20];
-    char **current_max_file;
-    unsigned char current_max_file_num=0;
+    char **power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10],chartmp[200],current_max_char[20];
     char highest_temp_current_char[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
-    int temp_int;
-    unsigned char tmp[5]={0,0,0,0,0},num=0,fu,i,j,bat_temp_size,power_supply_file_num,thermal_file_num,power_supply_dir_list_num;
+    unsigned char tmp[5]={0,0,0,0,0},num=0,fu=0,bat_temp_size=0;
+    int i=0,j=0,temp_int=0,power_supply_file_num=0,thermal_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;;
     unsigned int opt_old[10]={0,0,0,0,0,0,0,0,0,0},opt_new[10]={0,0,0,0,0,0,0,0,0,0};
-    regex_t re;
-    regmatch_t pmatch;
+    regex_t temp_re,current_max_re;
+    regmatch_t temp_pmatch,current_max_pmatch;
     check_file("/sys/class/power_supply/battery/status");
     check_file("/sys/class/power_supply/battery/current_now");
     check_file("/sys/class/power_supply/battery/capacity");
     if(access("/sys/class/power_supply/battery/step_charging_enabled", F_OK) != 0) printf_plus_time("由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯充电有关功能失效！");
-    if(list_dir_check_file("/sys/class/power_supply", "constant_charge_current_max") == 0) printf_plus_time("无法在/sys/class/power_supply中的所有文件夹内找到constant_charge_current_max文件，电流调节有关功能失效！");
-    if(list_dir_check_file("/sys/class/power_supply", "temp") == 0) printf_plus_time("无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！");
+    regcomp(&current_max_re,".*current_max.*|.*fast_charge_current|.*thermal_input_current",REG_EXTENDED|REG_NOSUB);
+    regcomp(&temp_re,".*temp",REG_EXTENDED|REG_NOSUB);
+    power_supply_file_num=list_dir("/sys/class/power_supply", &power_supply_dir);
+    current_max_file=(char**)calloc(1,sizeof(char *)*100);
+    temp_file=(char**)calloc(1,sizeof(char *)*100);
+    for(i=0;i<power_supply_file_num;i++)
+    {
+        power_supply_dir_list_num=list_dir(power_supply_dir[i], &power_supply_dir_list);
+        for(j=0;j<power_supply_dir_list_num;j++)
+        {
+            if(regexec(&current_max_re, power_supply_dir_list[j],1,&current_max_pmatch,0)==0)
+            {
+                current_max_file[current_max_file_num]=(char *)calloc(1,sizeof(char)*(strlen(power_supply_dir_list[j])+1));
+                strcpy(current_max_file[current_max_file_num],power_supply_dir_list[j]);
+                current_max_file_num++;
+                snprintf(chartmp,200,"找到电流文件：%s",power_supply_dir_list[j]);
+                printf_plus_time(chartmp);
+            }
+            if(regexec(&temp_re, power_supply_dir_list[j],1,&temp_pmatch,0)==0)
+            {
+                temp_file[temp_file_num]=(char *)calloc(1,sizeof(char)*(strlen(power_supply_dir_list[j])+1));
+                strcpy(temp_file[temp_file_num],power_supply_dir_list[j]);
+                temp_file_num++;
+                snprintf(chartmp,200,"找到温度文件：%s",power_supply_dir_list[j]);
+                printf_plus_time(chartmp);
+            }
+        }
+        free_celloc_memory(&power_supply_dir_list,power_supply_dir_list_num);
+    }
+    current_max_file=(char**)realloc(current_max_file, sizeof(char *)*current_max_file_num);
+    temp_file=(char**)realloc(temp_file, sizeof(char *)*temp_file_num);
+    free_celloc_memory(&power_supply_dir,power_supply_file_num);
+    if(current_max_file_num == 0) printf_plus_time("无法在/sys/class/power_supply中的所有文件夹内找到文件名包含current_max的文件、thermal_input_current文件、fast_charge_current文件，电流调节有关功能失效！");
+    if(temp_file_num == 0) printf_plus_time("无法在/sys/class/power_supply中的所有文件夹内找到文件名以temp结尾的文件，充电时强制显示28℃功能失效！");
     thermal_file_num=list_dir("/sys/class/thermal", &thermal_dir);
     for(i=0;i<thermal_file_num;i++)
     {
@@ -396,19 +436,7 @@ int main()
             }
         }
     }
-    if(thermal_dir != NULL)
-    {
-        for(i=0;i<thermal_file_num;i++)
-        {
-            if(thermal_dir[i] != NULL)
-            {
-                free(thermal_dir[i]);
-                thermal_dir[i]=NULL;
-            }
-        }
-        free(thermal_dir);
-        thermal_dir=NULL;
-    }
+    free_celloc_memory(&thermal_dir,thermal_file_num);
     if(strcmp(conn_therm, "none") == 0)
     {
         printf_plus_time("获取温度失败，程序强制退出！");
@@ -417,23 +445,6 @@ int main()
     else check_read_file(conn_therm);
     check_read_file("/data/adb/turbo-charge/option.txt");
     printf_plus_time("文件检测完毕，程序开始运行");
-    regcomp(&re,".*current_max.*",REG_EXTENDED|REG_NOSUB);
-    power_supply_file_num=list_dir("/sys/class/power_supply", &power_supply_dir);
-    current_max_file=(char**)calloc(1,sizeof(char *)*100);
-    for(i=0;i<power_supply_file_num;i++)
-    {
-        power_supply_dir_list_num=list_dir(power_supply_dir[i], &power_supply_dir_list);
-        for(j=0;j<power_supply_dir_list_num;j++)
-        {
-            if(regexec(&re, power_supply_dir_list[j],1,&pmatch,0)==0)
-            {
-                current_max_file[current_max_file_num]=(char *)calloc(1,sizeof(char)*(strlen(power_supply_dir_list[j])+1));
-                strcpy(current_max_file[current_max_file_num],power_supply_dir_list[j]);
-                current_max_file_num++;
-            }
-        }
-    }
-    current_max_file=(char**)realloc(current_max_file, sizeof(char *)*current_max_file_num);
     charge_value("1");
     set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
     set_value("/sys/class/power_supply/battery/system_temp_level", "1");
@@ -472,7 +483,7 @@ int main()
                 tmp[1]=1;
             }
             check_read_file(conn_therm);
-            list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
+            set_array_value(temp_file,"280");
             powel_ctl(opt_new, tmp);
             if(opt_new[1] == 1)
             {
@@ -542,14 +553,14 @@ int main()
                         }
                         if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
                         else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
-                        list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280");
-                        list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, highest_temp_current_char);
+                        set_array_value(temp_file,"280");
+                        set_array_value(current_max_file,highest_temp_current_char);
                         powel_ctl(opt_new, tmp);
                         sleep(5);
                     }
                 }
             }
-            list_dir_set_value(power_supply_dir, "constant_charge_current_max", power_supply_file_num, current_max_char);
+            set_array_value(current_max_file,current_max_char);
         }
         else
         {
@@ -591,9 +602,9 @@ int main()
             if(fu)
             {
                 sprintf(bat_temp,"-%s",bat_temp);
-                list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, bat_temp);
+                set_array_value(temp_file,bat_temp);
             }
-            else (temp_int >= 55000)?list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, "280"):list_dir_set_value(power_supply_dir, "temp", power_supply_file_num, bat_temp);
+            else (temp_int >= 55000)?set_array_value(temp_file,"280"):set_array_value(temp_file,bat_temp);
         }
         sleep(5);
     }
