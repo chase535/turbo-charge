@@ -84,6 +84,23 @@ void printf_plus_time(char *dat)
     fflush(stdout);
 }
 
+void free_celloc_memory(char ***addr,int num)
+{
+    if(addr != NULL && *addr != NULL)
+    {
+        for(int i=0;i<num;i++)
+        {
+            if((*addr)[i] != NULL)
+            {
+                free((*addr)[i]);
+                (*addr)[i]=NULL;
+            }
+        }
+        free(*addr);
+        *addr=NULL;
+    }
+}
+
 void strrpc(char *str, char *oldstr, char *newstr)
 {
     char bstr[strlen(str)];
@@ -176,9 +193,8 @@ void charge_value(char *i)
     }
 }
 
-void check_file(char *file)
+void check_file(char *file,char chartmp[200])
 {
-    char chartmp[200];
     if(access(file, F_OK) != 0)
     {
         snprintf(chartmp,200,"无法找到%s文件，程序强制退出！", file);
@@ -187,23 +203,8 @@ void check_file(char *file)
     }
 }
 
-int list_dir_check_file(char *file_dir, char *file_name)
+void check_read_file(char *file,char chartmp[200])
 {
-    int i,j=0,k,file_num;
-    char file[100], **dir;
-    file_num=list_dir(file_dir, &dir);
-    for(i=0;i<file_num;i++)
-    {
-        sprintf(file, "%s/%s", dir[i], file_name);
-        if(access(file, F_OK) == 0) j++;
-    }
-    k=(j == 0)?0:1;
-    return k;
-}
-
-void check_read_file(char *file)
-{
-    char chartmp[200];
     if(access(file, F_OK) == 0)
     {
         if(access(file, R_OK) != 0)
@@ -225,12 +226,12 @@ void check_read_file(char *file)
     }
 }
 
-void read_option(unsigned int opt_new[10], unsigned int opt_old[10], unsigned char tmp[5], unsigned char num, unsigned char is_temp_wall)
+void read_option(unsigned int opt_new[10], unsigned int opt_old[10], unsigned char tmp[5], unsigned char num, char chartmp[200], unsigned char is_temp_wall)
 {
     FILE *fc;
-    char chartmp[200],option[2010],options[10][50]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","CURRENT_MAX","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_STOP","CHARGE_START","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
+    char option[2010],options[10][50]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","CURRENT_MAX","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_STOP","CHARGE_START","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
     unsigned char opt;
-    check_read_file("/data/adb/turbo-charge/option.txt");
+    check_read_file("/data/adb/turbo-charge/option.txt",chartmp);
     fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
     while(fgets(option, 2000, fc) != NULL)
     {
@@ -264,13 +265,13 @@ void read_option(unsigned int opt_new[10], unsigned int opt_old[10], unsigned ch
     else for(opt=0;opt<10;opt++) opt_old[opt]=opt_new[opt];
 }
 
-void powel_ctl(unsigned int opt_new[10], unsigned char tmp[5])
+void powel_ctl(unsigned int opt_new[10], unsigned char tmp[5], char chartmp[200])
 {
     FILE *fd,*fm;
-    char chartmp[200],power[10],done[20];
+    char power[10],done[20];
     if(opt_new[2] == 1)
     {
-        check_read_file("/sys/class/power_supply/battery/capacity");
+        check_read_file("/sys/class/power_supply/battery/capacity",chartmp);
         fd = fopen("/sys/class/power_supply/battery/capacity", "rt");
         fgets(power, 5, fd);
         fclose(fd);
@@ -298,7 +299,7 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[5])
         {
             if(opt_new[5] == 100)
             {
-                check_read_file("/sys/class/power_supply/battery/current_now");
+                check_read_file("/sys/class/power_supply/battery/current_now",chartmp);
                 fm = fopen("/sys/class/power_supply/battery/current_now", "rt");
                 fgets(done, 15, fm);
                 fclose(fm);
@@ -348,23 +349,6 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[5])
     }
 }
 
-void free_celloc_memory(char ***addr,unsigned char num)
-{
-    if(addr != NULL && *addr != NULL)
-    {
-        for(int i=0;i<num;i++)
-        {
-            if((*addr)[i] != NULL)
-            {
-                free((*addr)[i]);
-                (*addr)[i]=NULL;
-            }
-        }
-        free(*addr);
-        *addr=NULL;
-    }
-}
-
 int main()
 {
     FILE *fq;
@@ -375,9 +359,9 @@ int main()
     unsigned int opt_old[10]={0,0,0,0,0,0,0,0,0,0},opt_new[10]={0,0,0,0,0,0,0,0,0,0};
     regex_t temp_re,current_max_re;
     regmatch_t temp_pmatch,current_max_pmatch;
-    check_file("/sys/class/power_supply/battery/status");
-    check_file("/sys/class/power_supply/battery/current_now");
-    check_file("/sys/class/power_supply/battery/capacity");
+    check_file("/sys/class/power_supply/battery/status",chartmp);
+    check_file("/sys/class/power_supply/battery/current_now",chartmp);
+    check_file("/sys/class/power_supply/battery/capacity",chartmp);
     if(access("/sys/class/power_supply/battery/step_charging_enabled", F_OK) != 0) printf_plus_time("由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯充电有关功能失效！");
     regcomp(&current_max_re,".*current_max.*|.*fast_charge_current|.*thermal_input_current",REG_EXTENDED|REG_NOSUB);
     regcomp(&temp_re,".*temp",REG_EXTENDED|REG_NOSUB);
@@ -442,8 +426,8 @@ int main()
         printf_plus_time("获取温度失败，程序强制退出！");
         exit(2);
     }
-    else check_read_file(conn_therm);
-    check_read_file("/data/adb/turbo-charge/option.txt");
+    else check_read_file(conn_therm,chartmp);
+    check_read_file("/data/adb/turbo-charge/option.txt",chartmp);
     printf_plus_time("文件检测完毕，程序开始运行");
     charge_value("1");
     set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
@@ -457,11 +441,11 @@ int main()
     set_value("/sys/class/qcom-battery/restrict_chg", "0");
     while(1)
     {
-        read_option(opt_new, opt_old, tmp, num, 0);
+        read_option(opt_new, opt_old, tmp, num, chartmp, 0);
         snprintf(current_max_char,20,"%u",opt_new[3]);
         snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
         num=1;
-        check_read_file("/sys/class/power_supply/battery/status");
+        check_read_file("/sys/class/power_supply/battery/status",chartmp);
         fq = fopen("/sys/class/power_supply/battery/capacity", "rt");
         fgets(power, 5, fq);
         fclose(fq);
@@ -482,12 +466,12 @@ int main()
                 tmp[0]=0;
                 tmp[1]=1;
             }
-            check_read_file(conn_therm);
+            check_read_file(conn_therm,chartmp);
             set_array_value(temp_file,temp_file_num,"280");
-            powel_ctl(opt_new, tmp);
+            powel_ctl(opt_new, tmp, chartmp);
             if(opt_new[1] == 1)
             {
-                check_read_file(conn_therm);
+                check_read_file(conn_therm,chartmp);
                 fq = fopen(conn_therm, "rt");
                 fgets(thermal, 10, fq);
                 fclose(fq);
@@ -500,10 +484,10 @@ int main()
                     printf_plus_time(chartmp);
                     while(1)
                     {
-                        read_option(opt_new, opt_old, tmp, num, 1);
+                        read_option(opt_new, opt_old, tmp, num, chartmp, 1);
                         snprintf(current_max_char,20,"%u",opt_new[3]);
                         snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
-                        check_read_file(conn_therm);
+                        check_read_file(conn_therm,chartmp);
                         fq = fopen(conn_therm, "rt");
                         fgets(thermal, 300, fq);
                         fclose(fq);
@@ -525,7 +509,7 @@ int main()
                             }
                             tmp[3]=0;
                         }
-                        check_read_file("/sys/class/power_supply/battery/status");
+                        check_read_file("/sys/class/power_supply/battery/status",chartmp);
                         fq = fopen("/sys/class/power_supply/battery/status", "rt");
                         fgets(charge, 20, fq);
                         fclose(fq);
@@ -555,7 +539,7 @@ int main()
                         else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
                         set_array_value(temp_file,temp_file_num,"280");
                         set_array_value(current_max_file,current_max_file_num,highest_temp_current_char);
-                        powel_ctl(opt_new, tmp);
+                        powel_ctl(opt_new, tmp, chartmp);
                         sleep(5);
                     }
                 }
@@ -576,7 +560,7 @@ int main()
             }
             if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
             else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
-            check_read_file(conn_therm);
+            check_read_file(conn_therm,chartmp);
             fq = fopen(conn_therm, "rt");
             fgets(thermal, 10, fq);
             fclose(fq);
