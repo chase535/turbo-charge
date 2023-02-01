@@ -406,14 +406,14 @@ int main()
     {
         if(strstr(thermal_dir[i],"thermal_zone")!=NULL)
         {
-            *buffer=(char *)calloc(1,sizeof(char)*(strlen(thermal_dir[i])+6));
+            buffer=(char *)calloc(1,sizeof(char)*(strlen(thermal_dir[i])+6));
             sprintf(buffer, "%s/type", thermal_dir[i]);
             if(access(buffer, R_OK) != 0) continue;
             stat(buffer,&statbuf);
             fq = fopen(buffer, "rt");
             if(fq != NULL)
             {
-                *msg=(char *)calloc(1,sizeof(char)*(strlen(statbuf.st_size)+1));
+                msg=(char *)calloc(1,sizeof(char)*(strlen(statbuf.st_size)+1));
                 fgets(msg, statbuf.st_size, fq);
                 fclose(fq);
                 fq=NULL;
@@ -423,7 +423,7 @@ int main()
             if(strcmp(msg, "conn_therm") == 0)
             {
                 strrpc(buffer, "type", "temp");
-                *conn_therm=(char *)calloc(1,sizeof(char)*(strlen(buffer)+1));
+                conn_therm=(char *)calloc(1,sizeof(char)*(strlen(buffer)+1));
                 strcpy(conn_therm, buffer);
             }
             free(msg);
