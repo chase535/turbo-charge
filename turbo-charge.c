@@ -356,12 +356,13 @@ int main()
 {
     FILE *fq;
     char **power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10],chartmp[200],current_max_char[20];
-    char highest_temp_current_char[20],buffer[100],conn_therm[100]="none",msg[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
+    char *conn_therm,*buffer,*msg,highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
     unsigned char tmp[5]={0,0,0,0,0},num=0,fu=0,bat_temp_size=0;
     int i=0,j=0,temp_int=0,power_supply_file_num=0,thermal_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;;
     unsigned int opt_old[10]={0,0,0,0,0,0,0,0,0,0},opt_new[10]={0,0,0,0,0,0,0,0,0,0};
     regex_t temp_re,current_max_re;
     regmatch_t temp_pmatch,current_max_pmatch;
+    struct stat statbuf;
     check_file("/sys/class/power_supply/battery/status",chartmp);
     check_file("/sys/class/power_supply/battery/current_now",chartmp);
     check_file("/sys/class/power_supply/battery/capacity",chartmp);
@@ -405,12 +406,15 @@ int main()
     {
         if(strstr(thermal_dir[i],"thermal_zone")!=NULL)
         {
+            *buffer=(char *)calloc(1,sizeof(char)*(strlen(thermal_dir[i])+6));
             sprintf(buffer, "%s/type", thermal_dir[i]);
             if(access(buffer, R_OK) != 0) continue;
+            stat(buffer,&statbuf);
             fq = fopen(buffer, "rt");
             if(fq != NULL)
             {
-                fgets(msg, 100, fq);
+                *msg=(char *)calloc(1,sizeof(char)*(strlen(statbuf.st_size)+1));
+                fgets(msg, statbuf.st_size, fq);
                 fclose(fq);
                 fq=NULL;
             }
@@ -419,14 +423,20 @@ int main()
             if(strcmp(msg, "conn_therm") == 0)
             {
                 strrpc(buffer, "type", "temp");
+                *conn_therm=(char *)calloc(1,sizeof(char)*(strlen(buffer)+1));
                 strcpy(conn_therm, buffer);
             }
+            free(msg);
+            free(buffer);
+            msg=NULL;
+            buffer=NULL;
+            if(conn_therm != NULL) break;
         }
     }
     free_celloc_memory(&thermal_dir,thermal_file_num);
-    if(strcmp(conn_therm, "none") == 0)
+    if(conn_therm == NULL)
     {
-        printf_plus_time("获取温度失败，程序强制退出！");
+        printf_plus_time("获取手机温度失败，程序强制退出！");
         exit(2);
     }
     else check_read_file(conn_therm,chartmp);
