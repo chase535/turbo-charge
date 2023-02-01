@@ -343,25 +343,25 @@ int main()
     {
         power_control=0;
         if(battery_status && !battery_capacity)
-            printf_plus_time("由于找不到/sys/class/power_supply/battery/capacity文件，电量控制的所有功能失效！");
+            printf_plus_time("由于找不到/sys/class/power_supply/battery/capacity文件，电量控制功能失效！");
         else if(!battery_status && battery_capacity)
-            printf_plus_time("由于找不到/sys/class/power_supply/battery/status文件，电量控制的所有功能失效！");
+            printf_plus_time("由于找不到/sys/class/power_supply/battery/status文件，电量控制功能失效！");
         else
-            printf_plus_time("由于找不到/sys/class/power_supply/battery/status和/sys/class/power_supply/battery/capacity文件，电量控制的所有功能失效！");
+            printf_plus_time("由于找不到/sys/class/power_supply/battery/status和/sys/class/power_supply/battery/capacity文件，电量控制功能失效！");
     }
     if(power_control)
     {
         if(access("/sys/class/power_supply/battery/charging_enabled", F_OK) != 0 && access("/sys/class/power_supply/battery/battery_charging_enabled", F_OK) != 0 && access("/sys/class/power_supply/battery/input_suspend", F_OK) != 0 && access("/sys/class/qcom-battery/restricted_charging", F_OK) != 0)
         {
             power_control=0;
-            printf_plus_time("由于找不到控制手机暂停充电的文件，电量控制的所有功能失效！");
+            printf_plus_time("由于找不到控制手机暂停充电的文件，电量控制功能失效！");
             printf_plus_time("目前已知的有关文件有：/sys/class/power_supply/battery/charging_enabled、/sys/class/power_supply/battery/battery_charging_enabled、/sys/class/power_supply/battery/input_suspend、/sys/class/qcom-battery/restricted_charging");
             printf_plus_time("如果您知道其他的有关文件，请联系模块制作者！");
         }
     }
     if(access("/sys/class/power_supply/battery/step_charging_enabled", F_OK) != 0 || !battery_capacity)
     {
-        if(access("/sys/class/power_supply/battery/step_charging_enabled", F_OK) == 0 || !battery_capacity)
+        if(access("/sys/class/power_supply/battery/step_charging_enabled", F_OK) == 0 && !battery_capacity)
         {
             step_charge=2;
             printf_plus_time("由于找不到/sys/class/power_supply/battery/capacity文件，阶梯式充电无法根据电量进行开关，此时若在配置中关闭阶梯式充电，则无论电量多少，阶梯式充电都会关闭！");
@@ -369,10 +369,10 @@ int main()
         else
         {
             step_charge=0;
-            printf_plus_time("由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯式充电的所有功能失效！");
+            printf_plus_time("由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯式充电控制的所有功能失效！");
         }
     }
-    regcomp(&current_max_re,".*current_max.*|.*fast_charge_current|.*thermal_input_current",REG_EXTENDED|REG_NOSUB);
+    regcomp(&current_max_re,".*current_max.*|.*fast_charge_current$|.*thermal_input_current$",REG_EXTENDED|REG_NOSUB);
     regcomp(&temp_re,".*temp$",REG_EXTENDED|REG_NOSUB);
     power_supply_file_num=list_dir("/sys/class/power_supply", &power_supply_dir);
     current_max_file=(char**)calloc(1,sizeof(char *)*100);
@@ -403,38 +403,17 @@ int main()
     if(!current_max_file_num)
     {
         current_change=0;
-        printf_plus_time("无法在/sys/class/power_supply中的所有文件夹内找到文件名包含current_max的文件、thermal_input_current文件、fast_charge_current文件，电流调节的所有功能失效！");
+        printf_plus_time("无法在/sys/class/power_supply中的所有文件夹内找到文件名包含current_max的文件、thermal_input_current文件、fast_charge_current文件，有关电流的所有功能失效！");
     }
     if(!battery_status || !temp_file_num)
     {
         force_temp=0;
-        if(battery_status || !temp_file_num)
+        if(battery_status && !temp_file_num)
             printf_plus_time("无法在/sys/class/power_supply中的所有文件夹内找到文件名以temp结尾的文件，充电时强制显示28℃功能失效！");
-        else if(!battery_status || temp_file_num)
+        else if(!battery_status && temp_file_num)
             printf_plus_time("由于找不到/sys/class/power_supply/battery/status文件，充电时强制显示28℃功能失效！");
         else
             printf_plus_time("由于找不到/sys/class/power_supply/battery/status文件以及无法在/sys/class/power_supply中的所有文件夹内找到文件名以temp结尾的文件，充电时强制显示28℃功能失效！");
-    }
-    if(current_change)
-    {
-        for(i=0;i<current_max_file_num;i++)
-        {
-            snprintf(chartmp,chartmp_size,"找到电流文件：%s",current_max_file[i]);
-            printf_plus_time(chartmp);
-        }
-    }
-    if(force_temp)
-    {
-        for(i=0;i<temp_file_num;i++)
-        {
-            snprintf(chartmp,chartmp_size,"找到温度文件：%s",temp_file[i]);
-            printf_plus_time(chartmp);
-        }
-    }
-    if(!step_charge && !power_control && !force_temp && !current_change)
-    {
-        printf_plus_time("所有的所需文件均不存在，完全不适配此手机，程序强制退出！");
-        exit(1000);
     }
     conn_therm=(char *)calloc(1,5);
     strcpy(conn_therm,"none");
@@ -478,10 +457,43 @@ int main()
         free_celloc_memory(&thermal_dir,thermal_file_num);
         if(strcmp(conn_therm,"none") == 0)
         {
-            printf_plus_time("获取手机温度失败，程序强制退出！");
-            exit(2);
+            if(force_temp)
+            {
+                printf_plus_time("由于找不到conn_therm温度传感器，温度控制及充电时强制显示28℃功能失效！");
+                force_temp=0;
+            }
+            else printf_plus_time("由于找不到conn_therm温度传感器，温度控制功能失效！");
+            if(!step_charge && !power_control && !force_temp && !current_change)
+            {
+                printf_plus_time("所有的所需文件均不存在，完全不适配此手机，程序强制退出！");
+                exit(800);
+            }
         }
         else check_read_file(conn_therm,chartmp);
+    }
+    else
+    {
+        if(!step_charge && !power_control && !force_temp && !current_change)
+        {
+            printf_plus_time("所有的所需文件均不存在，完全不适配此手机，程序强制退出！");
+            exit(1000);
+        }
+    }
+    if(current_change)
+    {
+        for(i=0;i<current_max_file_num;i++)
+        {
+            snprintf(chartmp,chartmp_size,"找到电流文件：%s",current_max_file[i]);
+            printf_plus_time(chartmp);
+        }
+    }
+    if(force_temp)
+    {
+        for(i=0;i<temp_file_num;i++)
+        {
+            snprintf(chartmp,chartmp_size,"找到温度文件：%s",temp_file[i]);
+            printf_plus_time(chartmp);
+        }
     }
     check_read_file("/data/adb/turbo-charge/option.txt",chartmp);
     printf_plus_time("文件检测完毕，程序开始运行");
@@ -546,81 +558,84 @@ int main()
             if(power_control) powel_ctl(opt_new, tmp, chartmp);
             if(opt_new[1] == 1 && current_change)
             {
-                check_read_file(conn_therm,chartmp);
-                fq = fopen(conn_therm, "rt");
-                fgets(thermal, 10, fq);
-                fclose(fq);
-                fq=NULL;
-                line_feed(thermal);
-                temp_int = atoi(thermal);
-                if(temp_int >= ((int)opt_new[7])*1000)
+                if(strcmp(conn_therm,"none") != 0)
                 {
-                    snprintf(chartmp,chartmp_size,"手机温度大于等于降低充电电流的温度阈值，限制充电电流为%dμA",opt_new[8]);
-                    printf_plus_time(chartmp);
-                    while(1)
+                    check_read_file(conn_therm,chartmp);
+                    fq = fopen(conn_therm, "rt");
+                    fgets(thermal, 10, fq);
+                    fclose(fq);
+                    fq=NULL;
+                    line_feed(thermal);
+                    temp_int = atoi(thermal);
+                    if(temp_int >= ((int)opt_new[7])*1000)
                     {
-                        read_option(opt_new, opt_old, tmp, num, chartmp, 1);
-                        snprintf(current_max_char,20,"%u",opt_new[3]);
-                        snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
-                        check_read_file(conn_therm,chartmp);
-                        fq = fopen(conn_therm, "rt");
-                        fgets(thermal, 300, fq);
-                        fclose(fq);
-                        fq=NULL;
-                        line_feed(thermal);
-                        temp_int = atoi(thermal);
-                        if(tmp[3] == 1)
+                        snprintf(chartmp,chartmp_size,"手机温度大于等于降低充电电流的温度阈值，限制充电电流为%dμA",opt_new[8]);
+                        printf_plus_time(chartmp);
+                        while(1)
                         {
-                            if(temp_int < ((int)opt_new[7])*1000)
+                            read_option(opt_new, opt_old, tmp, num, chartmp, 1);
+                            snprintf(current_max_char,20,"%u",opt_new[3]);
+                            snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
+                            check_read_file(conn_therm,chartmp);
+                            fq = fopen(conn_therm, "rt");
+                            fgets(thermal, 300, fq);
+                            fclose(fq);
+                            fq=NULL;
+                            line_feed(thermal);
+                            temp_int = atoi(thermal);
+                            if(tmp[3] == 1)
                             {
-                                snprintf(chartmp,chartmp_size,"新的降低充电电流的温度阈值高于旧的温度阈值，且手机温度小于新的温度阈值，恢复充电电流为%dμA",opt_new[3]);
+                                if(temp_int < ((int)opt_new[7])*1000)
+                                {
+                                    snprintf(chartmp,chartmp_size,"新的降低充电电流的温度阈值高于旧的温度阈值，且手机温度小于新的温度阈值，恢复充电电流为%dμA",opt_new[3]);
+                                    printf_plus_time(chartmp);
+                                    break;
+                                }
+                                else
+                                {
+                                    snprintf(chartmp,chartmp_size,"新的降低充电电流的温度阈值高于旧的温度阈值，但手机温度大于等于新的温度阈值，限制充电电流为%dμA",opt_new[8]);
+                                    printf_plus_time(chartmp);
+                                }
+                                tmp[3]=0;
+                            }
+                            check_read_file("/sys/class/power_supply/battery/status",chartmp);
+                            fq = fopen("/sys/class/power_supply/battery/status", "rt");
+                            fgets(charge, 20, fq);
+                            fclose(fq);
+                            fq=NULL;
+                            line_feed(charge);
+                            if(strcmp(charge, "Discharging") == 0)
+                            {
+                                snprintf(chartmp,chartmp_size,"充电器断开连接，恢复充电电流为%dμA",opt_new[3]);
+                                printf_plus_time(chartmp);
+                                tmp[0]=1;
+                                tmp[1]=0;
+                                break;
+                            }
+                            if(temp_int <= ((int)opt_new[9])*1000)
+                            {
+                                snprintf(chartmp,chartmp_size,"手机温度小于等于恢复快充的温度阈值，恢复充电电流为%dμA",opt_new[3]);
                                 printf_plus_time(chartmp);
                                 break;
                             }
-                            else
+                            if(opt_new[1] == 0)
                             {
-                                snprintf(chartmp,chartmp_size,"新的降低充电电流的温度阈值高于旧的温度阈值，但手机温度大于等于新的温度阈值，限制充电电流为%dμA",opt_new[8]);
+                                snprintf(chartmp,chartmp_size,"温控关闭，恢复充电电流为%dμA",opt_new[3]);
                                 printf_plus_time(chartmp);
+                                break;
                             }
-                            tmp[3]=0;
+                            if(step_charge == 1)
+                            {
+                                if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+                                else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+                            }
+                            else if(step_charge == 2)
+                                (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+                            set_array_value(current_max_file,current_max_file_num,highest_temp_current_char);
+                            if(force_temp) set_array_value(temp_file,temp_file_num,"280");
+                            if(power_control) powel_ctl(opt_new, tmp, chartmp);
+                            sleep(5);
                         }
-                        check_read_file("/sys/class/power_supply/battery/status",chartmp);
-                        fq = fopen("/sys/class/power_supply/battery/status", "rt");
-                        fgets(charge, 20, fq);
-                        fclose(fq);
-                        fq=NULL;
-                        line_feed(charge);
-                        if(strcmp(charge, "Discharging") == 0)
-                        {
-                            snprintf(chartmp,chartmp_size,"充电器断开连接，恢复充电电流为%dμA",opt_new[3]);
-                            printf_plus_time(chartmp);
-                            tmp[0]=1;
-                            tmp[1]=0;
-                            break;
-                        }
-                        if(temp_int <= ((int)opt_new[9])*1000)
-                        {
-                            snprintf(chartmp,chartmp_size,"手机温度小于等于恢复快充的温度阈值，恢复充电电流为%dμA",opt_new[3]);
-                            printf_plus_time(chartmp);
-                            break;
-                        }
-                        if(opt_new[1] == 0)
-                        {
-                            snprintf(chartmp,chartmp_size,"温控关闭，恢复充电电流为%dμA",opt_new[3]);
-                            printf_plus_time(chartmp);
-                            break;
-                        }
-                        if(step_charge == 1)
-                        {
-                            if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
-                            else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
-                        }
-                        else if(step_charge == 2)
-                            (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
-                        set_array_value(current_max_file,current_max_file_num,highest_temp_current_char);
-                        if(force_temp) set_array_value(temp_file,temp_file_num,"280");
-                        if(power_control) powel_ctl(opt_new, tmp, chartmp);
-                        sleep(5);
                     }
                 }
             }
