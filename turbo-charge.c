@@ -149,9 +149,9 @@ void set_value(char *file, char *numb)
     }
 }
 
-void set_array_value(char **file, char *num)
+void set_array_value(char **file, int num, char *value)
 {
-    for(int i=0;i<num;i++) set_value(file[i],num);
+    for(int i=0;i<num;i++) set_value(file[i],value);
 }
 
 void line_feed(char *line)
@@ -483,7 +483,7 @@ int main()
                 tmp[1]=1;
             }
             check_read_file(conn_therm);
-            set_array_value(temp_file,"280");
+            set_array_value(temp_file,temp_file_num,"280");
             powel_ctl(opt_new, tmp);
             if(opt_new[1] == 1)
             {
@@ -553,14 +553,14 @@ int main()
                         }
                         if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
                         else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
-                        set_array_value(temp_file,"280");
-                        set_array_value(current_max_file,highest_temp_current_char);
+                        set_array_value(temp_file,temp_file_num,"280");
+                        set_array_value(current_max_file,current_max_file_num,highest_temp_current_char);
                         powel_ctl(opt_new, tmp);
                         sleep(5);
                     }
                 }
             }
-            set_array_value(current_max_file,current_max_char);
+            set_array_value(current_max_file,current_max_file_num,current_max_char);
         }
         else
         {
@@ -602,9 +602,9 @@ int main()
             if(fu)
             {
                 sprintf(bat_temp,"-%s",bat_temp);
-                set_array_value(temp_file,bat_temp);
+                set_array_value(temp_file,temp_file_num,bat_temp);
             }
-            else (temp_int >= 55000)?set_array_value(temp_file,"280"):set_array_value(temp_file,bat_temp);
+            else (temp_int >= 55000)?set_array_value(temp_file,temp_file_num,"280"):set_array_value(temp_file,temp_file_num,bat_temp);
         }
         sleep(5);
     }
