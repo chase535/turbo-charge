@@ -418,7 +418,7 @@ int main()
         printf_plus_time("所有的所需文件均不存在，完全不适配此手机，程序强制退出！");
         exit(1000);
     }
-    if(force_temp)
+    if(force_temp || current_change)
     {
         thermal_file_num=list_dir("/sys/class/thermal", &thermal_dir);
         for(i=0;i<thermal_file_num;i++)
@@ -509,7 +509,7 @@ int main()
         fclose(fq);
         fq=NULL;
         line_feed(charge);
-        if(strcmp(charge, "Charging") == 0 || strcmp(charge, "Full") == 0)
+        if(strcmp(charge, "Discharging") != 0)
         {
             if(tmp[0] || !tmp[1])
             {
@@ -517,10 +517,9 @@ int main()
                 tmp[0]=0;
                 tmp[1]=1;
             }
-            check_read_file(conn_therm,chartmp);
             if(force_temp) set_array_value(temp_file,temp_file_num,"280");
             if(power_control) powel_ctl(opt_new, tmp, chartmp);
-            if(opt_new[1] == 1)
+            if(opt_new[1] == 1 && current_change)
             {
                 check_read_file(conn_therm,chartmp);
                 fq = fopen(conn_therm, "rt");
@@ -566,7 +565,7 @@ int main()
                         fclose(fq);
                         fq=NULL;
                         line_feed(charge);
-                        if(strcmp(charge, "Charging") != 0 && strcmp(charge, "Full") != 0)
+                        if(strcmp(charge, "Discharging") == 0)
                         {
                             snprintf(chartmp,chartmp_size,"充电器断开连接，恢复充电电流为%dμA",opt_new[3]);
                             printf_plus_time(chartmp);
@@ -593,8 +592,8 @@ int main()
                         }
                         else if(step_charge == 2)
                             (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+                        set_array_value(current_max_file,current_max_file_num,highest_temp_current_char);
                         if(force_temp) set_array_value(temp_file,temp_file_num,"280");
-                        if(current_change) set_array_value(current_max_file,current_max_file_num,highest_temp_current_char);
                         if(power_control) powel_ctl(opt_new, tmp, chartmp);
                         sleep(5);
                     }
