@@ -191,7 +191,7 @@ void check_read_file(char *file,char chartmp[chartmp_size])
 {
     if(file == NULL)
     {
-        snprintf(chartmp,chartmp_size,"指针为空，程序出现异常错误，强制退出，请联系模块作者！");
+        snprintf(chartmp,chartmp_size,"指针为空，出现异常错误，程序强制退出！");
         printf_plus_time(chartmp);
         exit(789);
     }
@@ -424,6 +424,8 @@ int main()
         printf_plus_time("所有的所需文件均不存在，完全不适配此手机，程序强制退出！");
         exit(1000);
     }
+    conn_therm=(char *)calloc(1,5);
+    strcpy(conn_therm,"none");
     if(force_temp || current_change)
     {
         thermal_file_num=list_dir("/sys/class/thermal", &thermal_dir);
@@ -444,22 +446,25 @@ int main()
                     fq=NULL;
                 }
                 else continue;
-                line_feed(msg);
-                if(strcmp(msg, "conn_therm") == 0)
+                if(msg != NULL)
                 {
-                    strrpc(buffer, "type", "temp");
-                    conn_therm=(char *)calloc(1,sizeof(char)*(strlen(buffer)+1));
-                    strcpy(conn_therm, buffer);
+                    line_feed(msg);
+                    if(strcmp(msg, "conn_therm") == 0)
+                    {
+                        strrpc(buffer, "type", "temp");
+                        conn_therm=(char *)realloc(conn_therm,sizeof(char)*(strlen(buffer)+1));
+                        strcpy(conn_therm, buffer);
+                    }
+                    free(msg);
+                    free(buffer);
+                    msg=NULL;
+                    buffer=NULL;
+                    if(strcmp(conn_therm,"none") != 0) break;
                 }
-                free(msg);
-                free(buffer);
-                msg=NULL;
-                buffer=NULL;
-                if(conn_therm != NULL) break;
             }
         }
         free_celloc_memory(&thermal_dir,thermal_file_num);
-        if(conn_therm == NULL)
+        if(strcmp(conn_therm,"none") == 0)
         {
             printf_plus_time("获取手机温度失败，程序强制退出！");
             exit(2);
