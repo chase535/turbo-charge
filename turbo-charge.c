@@ -191,7 +191,7 @@ void check_read_file(char *file,char chartmp[chartmp_size])
 {
     if(file == NULL)
     {
-        snprintf(chartmp,chartmp_size,"指针为空，出现异常错误，程序强制退出！",file);
+        snprintf(chartmp,chartmp_size,"指针为空，程序出现异常错误，强制退出，请联系模块作者！");
         printf_plus_time(chartmp);
         exit(789);
     }
