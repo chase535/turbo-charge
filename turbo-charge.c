@@ -234,7 +234,7 @@ void read_option(unsigned int opt_new[10], unsigned int opt_old[10], unsigned ch
     struct stat statbuf;
     check_read_file("/data/adb/turbo-charge/option.txt",chartmp);
     stat("/data/adb/turbo-charge/option.txt",&statbuf);
-    char option[statbuf.st_size];
+    char option[statbuf.st_size+1];
     fc = fopen("/data/adb/turbo-charge/option.txt", "rt");
     while(fgets(option, 2000, fc) != NULL)
     {
@@ -413,8 +413,8 @@ int main()
             fq = fopen(buffer, "rt");
             if(fq != NULL)
             {
-                msg=(char *)calloc(1,sizeof(char)*(strlen(statbuf.st_size)+1));
-                fgets(msg, statbuf.st_size, fq);
+                msg=(char *)calloc(1,sizeof(char)*(statbuf.st_size+1));
+                fgets(msg, statbuf.st_size+1, fq);
                 fclose(fq);
                 fq=NULL;
             }
