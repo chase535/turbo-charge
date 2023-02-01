@@ -89,7 +89,7 @@ check_file()
         rm -rf $MODPATH
         exit 1
     fi
-    ui_print "- 开始安装"
+    ui_print "- 检查完成，开始安装"
 }
 
 volume_keytest()
