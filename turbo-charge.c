@@ -193,16 +193,6 @@ void charge_value(char *i)
     }
 }
 
-void check_file(char *file,char chartmp[200])
-{
-    if(access(file, F_OK) != 0)
-    {
-        snprintf(chartmp,200,"无法找到%s文件，程序强制退出！", file);
-        printf_plus_time(chartmp);
-        exit(999);
-    }
-}
-
 void check_read_file(char *file,char chartmp[200])
 {
     if(access(file, F_OK) == 0)
@@ -300,35 +290,13 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[5], char chartmp[200]
         }
         if(atoi(power) >= (int)opt_new[5])
         {
-            if(opt_new[5] == 100)
+            if(!tmp[2])
             {
-                check_read_file("/sys/class/power_supply/battery/current_now",chartmp);
-                fm = fopen("/sys/class/power_supply/battery/current_now", "rt");
-                fgets(done, 15, fm);
-                fclose(fm);
-                fm=NULL;
-                line_feed(done);
-                if(atoi(done) == 0)
-                {
-                    if(!tmp[2])
-                    {
-                        snprintf(chartmp,200,"当前电量为%s%%，大于等于停止充电的电量阈值，且输入电流为0A，涓流充电结束，停止充电",power);
-                        printf_plus_time(chartmp);
-                        tmp[2]=1;
-                    }
-                    charge_value("0");
-                }
+                snprintf(chartmp,200,"当前电量为%s%%，大于等于停止充电的电量阈值，停止充电",power);
+                printf_plus_time(chartmp);
+                tmp[2]=1;
             }
-            else
-            {
-                if(!tmp[2])
-                {
-                    snprintf(chartmp,200,"当前电量为%s%%，大于等于停止充电的电量阈值，停止充电",power);
-                    printf_plus_time(chartmp);
-                    tmp[2]=1;
-                }
-                charge_value("0");
-            }
+            charge_value("0");
         }
         if(atoi(power) <= (int)opt_new[6])
         {
@@ -357,16 +325,37 @@ int main()
     FILE *fq;
     char **power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10],chartmp[200],current_max_char[20];
     char *conn_therm,*buffer,*msg,highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
-    unsigned char tmp[5]={0,0,0,0,0},num=0,fu=0,bat_temp_size=0;
+    unsigned char tmp[5]={0,0,0,0,0},num=0,fu=0,bat_temp_size=0,step_charge=1,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1;
     int i=0,j=0,temp_int=0,power_supply_file_num=0,thermal_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;;
     unsigned int opt_old[10]={0,0,0,0,0,0,0,0,0,0},opt_new[10]={0,0,0,0,0,0,0,0,0,0};
     regex_t temp_re,current_max_re;
     regmatch_t temp_pmatch,current_max_pmatch;
     struct stat statbuf;
-    check_file("/sys/class/power_supply/battery/status",chartmp);
-    check_file("/sys/class/power_supply/battery/current_now",chartmp);
-    check_file("/sys/class/power_supply/battery/capacity",chartmp);
-    if(access("/sys/class/power_supply/battery/step_charging_enabled", F_OK) != 0) printf_plus_time("由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯充电有关功能失效！");
+    if(access("/sys/class/power_supply/battery/status", F_OK) != 0) battery_status=0;
+    if(access("/sys/class/power_supply/battery/capacity", F_OK) != 0) battery_capacity=0;
+    if(!battery_status || !battery_capacity)
+    {
+        power_control=0;
+        if(battery_status && !battery_capacity)
+            printf_plus_time("由于找不到/sys/class/power_supply/battery/capacity文件，电量控制的所有功能失效！");
+        else if(!battery_status && battery_capacity)
+            printf_plus_time("由于找不到/sys/class/power_supply/battery/status文件，电量控制的所有功能失效！");
+        else
+            printf_plus_time("由于找不到/sys/class/power_supply/battery/status和/sys/class/power_supply/battery/capacity文件，电量控制的所有功能失效！");
+    }
+    if(access("/sys/class/power_supply/battery/step_charging_enabled", F_OK) != 0 || !battery_capacity)
+    {
+        if(access("/sys/class/power_supply/battery/step_charging_enabled", F_OK) == 0 || !battery_capacity)
+        {
+            step_charge=2;
+            printf_plus_time("由于找不到/sys/class/power_supply/battery/capacity文件，阶梯式充电无法根据电量进行开关，此时若在配置中关闭阶梯式充电，则无论电量多少，阶梯式充电都会关闭！");
+        }
+        else
+        {
+            step_charge=0;
+            printf_plus_time("由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯充电所有功能失效！");
+        }
+    }
     regcomp(&current_max_re,".*current_max.*|.*fast_charge_current|.*thermal_input_current",REG_EXTENDED|REG_NOSUB);
     regcomp(&temp_re,".*temp",REG_EXTENDED|REG_NOSUB);
     power_supply_file_num=list_dir("/sys/class/power_supply", &power_supply_dir);
@@ -399,47 +388,68 @@ int main()
     current_max_file=(char**)realloc(current_max_file, sizeof(char *)*current_max_file_num);
     temp_file=(char**)realloc(temp_file, sizeof(char *)*temp_file_num);
     free_celloc_memory(&power_supply_dir,power_supply_file_num);
-    if(current_max_file_num == 0) printf_plus_time("无法在/sys/class/power_supply中的所有文件夹内找到文件名包含current_max的文件、thermal_input_current文件、fast_charge_current文件，电流调节有关功能失效！");
-    if(temp_file_num == 0) printf_plus_time("无法在/sys/class/power_supply中的所有文件夹内找到文件名以temp结尾的文件，充电时强制显示28℃功能失效！");
-    thermal_file_num=list_dir("/sys/class/thermal", &thermal_dir);
-    for(i=0;i<thermal_file_num;i++)
+    if(!current_max_file_num)
     {
-        if(strstr(thermal_dir[i],"thermal_zone")!=NULL)
+        current_change=0;
+        printf_plus_time("无法在/sys/class/power_supply中的所有文件夹内找到文件名包含current_max的文件、thermal_input_current文件、fast_charge_current文件，电流调节有关功能失效！");
+    }
+    if(!battery_status || !temp_file_num)
+    {
+        force_temp=0;
+        if(battery_status || !temp_file_num)
+            printf_plus_time("无法在/sys/class/power_supply中的所有文件夹内找到文件名以temp结尾的文件，充电时强制显示28℃功能失效！");
+        else if(!battery_status || temp_file_num)
+            printf_plus_time("由于找不到/sys/class/power_supply/battery/status文件，充电时强制显示28℃功能失效！");
+        else
+            printf_plus_time("由于找不到/sys/class/power_supply/battery/status文件以及无法在/sys/class/power_supply中的所有文件夹内找到文件名以temp结尾的文件，充电时强制显示28℃功能失效！");
+    }
+    if(!step_charge && !power_control && !force_temp && !current_change)
+    {
+        printf_plus_time("所有的所需文件均不存在，完全不适配此手机，程序强制退出！");
+        exti(1000);
+    }
+    if(force_temp)
+    {
+        thermal_file_num=list_dir("/sys/class/thermal", &thermal_dir);
+        for(i=0;i<thermal_file_num;i++)
         {
-            buffer=(char *)calloc(1,sizeof(char)*(strlen(thermal_dir[i])+6));
-            sprintf(buffer, "%s/type", thermal_dir[i]);
-            if(access(buffer, R_OK) != 0) continue;
-            stat(buffer,&statbuf);
-            fq = fopen(buffer, "rt");
-            if(fq != NULL)
+            if(strstr(thermal_dir[i],"thermal_zone")!=NULL)
             {
-                msg=(char *)calloc(1,sizeof(char)*(statbuf.st_size+1));
-                fgets(msg, statbuf.st_size+1, fq);
-                fclose(fq);
-                fq=NULL;
+                buffer=(char *)calloc(1,sizeof(char)*(strlen(thermal_dir[i])+6));
+                sprintf(buffer, "%s/type", thermal_dir[i]);
+                if(access(buffer, R_OK) != 0) continue;
+                stat(buffer,&statbuf);
+                fq = fopen(buffer, "rt");
+                if(fq != NULL)
+                {
+                    msg=(char *)calloc(1,sizeof(char)*(statbuf.st_size+1));
+                    fgets(msg, statbuf.st_size+1, fq);
+                    fclose(fq);
+                    fq=NULL;
+                }
+                else continue;
+                line_feed(msg);
+                if(strcmp(msg, "conn_therm") == 0)
+                {
+                    strrpc(buffer, "type", "temp");
+                    conn_therm=(char *)calloc(1,sizeof(char)*(strlen(buffer)+1));
+                    strcpy(conn_therm, buffer);
+                }
+                free(msg);
+                free(buffer);
+                msg=NULL;
+                buffer=NULL;
+                if(conn_therm != NULL) break;
             }
-            else continue;
-            line_feed(msg);
-            if(strcmp(msg, "conn_therm") == 0)
-            {
-                strrpc(buffer, "type", "temp");
-                conn_therm=(char *)calloc(1,sizeof(char)*(strlen(buffer)+1));
-                strcpy(conn_therm, buffer);
-            }
-            free(msg);
-            free(buffer);
-            msg=NULL;
-            buffer=NULL;
-            if(conn_therm != NULL) break;
         }
+        free_celloc_memory(&thermal_dir,thermal_file_num);
+        if(conn_therm == NULL)
+        {
+            printf_plus_time("获取手机温度失败，程序强制退出！");
+            exit(2);
+        }
+        else check_read_file(conn_therm,chartmp);
     }
-    free_celloc_memory(&thermal_dir,thermal_file_num);
-    if(conn_therm == NULL)
-    {
-        printf_plus_time("获取手机温度失败，程序强制退出！");
-        exit(2);
-    }
-    else check_read_file(conn_therm,chartmp);
     check_read_file("/data/adb/turbo-charge/option.txt",chartmp);
     printf_plus_time("文件检测完毕，程序开始运行");
     charge_value("1");
@@ -458,14 +468,32 @@ int main()
         snprintf(current_max_char,20,"%u",opt_new[3]);
         snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
         num=1;
+        if(!battery_status)
+        {
+            if(current_change) set_array_value(current_max_file,current_max_file_num,current_max_char);
+            if(step_charge == 1)
+            {
+                if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+                else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+            }
+            else if(step_charge == 2)
+                (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+            sleep(5);
+            continue;
+        }
         check_read_file("/sys/class/power_supply/battery/status",chartmp);
         fq = fopen("/sys/class/power_supply/battery/capacity", "rt");
         fgets(power, 5, fq);
         fclose(fq);
         fq=NULL;
         line_feed(power);
-        if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
-        else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+        if(step_charge == 1)
+        {
+            if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+            else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+        }
+        else if(step_charge == 2)
+            (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
         fq = fopen("/sys/class/power_supply/battery/status", "rt");
         fgets(charge, 20, fq);
         fclose(fq);
@@ -480,8 +508,8 @@ int main()
                 tmp[1]=1;
             }
             check_read_file(conn_therm,chartmp);
-            set_array_value(temp_file,temp_file_num,"280");
-            powel_ctl(opt_new, tmp, chartmp);
+            if(force_temp) set_array_value(temp_file,temp_file_num,"280");
+            if(power_control) powel_ctl(opt_new, tmp, chartmp);
             if(opt_new[1] == 1)
             {
                 check_read_file(conn_therm,chartmp);
@@ -548,16 +576,21 @@ int main()
                             printf_plus_time(chartmp);
                             break;
                         }
-                        if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
-                        else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
-                        set_array_value(temp_file,temp_file_num,"280");
-                        set_array_value(current_max_file,current_max_file_num,highest_temp_current_char);
-                        powel_ctl(opt_new, tmp, chartmp);
+                        if(step_charge == 1)
+                        {
+                            if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+                            else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+                        }
+                        else if(step_charge == 2)
+                            (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+                        if(force_temp) set_array_value(temp_file,temp_file_num,"280");
+                        if(current_change) set_array_value(current_max_file,current_max_file_num,highest_temp_current_char);
+                        if(power_control) powel_ctl(opt_new, tmp, chartmp);
                         sleep(5);
                     }
                 }
             }
-            set_array_value(current_max_file,current_max_file_num,current_max_char);
+            if(current_change) set_array_value(current_max_file,current_max_file_num,current_max_char);
         }
         else
         {
@@ -571,37 +604,45 @@ int main()
                 printf_plus_time("充电器断开连接");
                 tmp[0]=1;
             }
-            if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
-            else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
-            check_read_file(conn_therm,chartmp);
-            fq = fopen(conn_therm, "rt");
-            fgets(thermal, 10, fq);
-            fclose(fq);
-            fq=NULL;
-            line_feed(thermal);
-            temp_int=atoi(thermal);
-            fu=0;
-            if(temp_int<0)
+            if(step_charge == 1)
             {
-                temp_int=abs(temp_int);
-                fu=1;
+                if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+                else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
             }
-            snprintf(bat_temp,4,"%05d",temp_int);
-            if(strcmp(bat_temp,"000")==0) sprintf(bat_temp,"0");
-            else
+            else if(step_charge == 2)
+                (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+            if(force_temp)
             {
-                for(bat_temp_tmp[0]=bat_temp[0];atoi(bat_temp_tmp)==0;bat_temp_tmp[0]=bat_temp[0])
+                check_read_file(conn_therm,chartmp);
+                fq = fopen(conn_therm, "rt");
+                fgets(thermal, 10, fq);
+                fclose(fq);
+                fq=NULL;
+                line_feed(thermal);
+                temp_int=atoi(thermal);
+                fu=0;
+                if(temp_int<0)
                 {
-                    for(bat_temp_size=0;bat_temp_size<5;bat_temp_size++) bat_temp[bat_temp_size]=bat_temp[bat_temp_size+1];
-                    bat_temp[5]='\0';
+                    temp_int=abs(temp_int);
+                    fu=1;
                 }
+                snprintf(bat_temp,4,"%05d",temp_int);
+                if(strcmp(bat_temp,"000")==0) sprintf(bat_temp,"0");
+                else
+                {
+                    for(bat_temp_tmp[0]=bat_temp[0];atoi(bat_temp_tmp)==0;bat_temp_tmp[0]=bat_temp[0])
+                    {
+                        for(bat_temp_size=0;bat_temp_size<5;bat_temp_size++) bat_temp[bat_temp_size]=bat_temp[bat_temp_size+1];
+                        bat_temp[5]='\0';
+                    }
+                }
+                if(fu)
+                {
+                    sprintf(bat_temp,"-%s",bat_temp);
+                    set_array_value(temp_file,temp_file_num,bat_temp);
+                }
+                else (temp_int >= 55000)?set_array_value(temp_file,temp_file_num,"280"):set_array_value(temp_file,temp_file_num,bat_temp);
             }
-            if(fu)
-            {
-                sprintf(bat_temp,"-%s",bat_temp);
-                set_array_value(temp_file,temp_file_num,bat_temp);
-            }
-            else (temp_int >= 55000)?set_array_value(temp_file,temp_file_num,"280"):set_array_value(temp_file,temp_file_num,bat_temp);
         }
         sleep(5);
     }
