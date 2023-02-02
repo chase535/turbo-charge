@@ -189,10 +189,10 @@ on_install()
     cp -f $TMPDIR/turbo-charge $MODPATH/turbo-charge
     [[ ! -d /data/adb/turbo-charge ]] && mkdir -p /data/adb/turbo-charge
     cp -f $TMPDIR/option.txt /data/adb/turbo-charge/option.txt
-    thermals=`ls /system/bin/*thermal* /system/etc/init/*thermal* /system/etc/perf/*thermal* /system/vendor/bin/*thermal* /system/vendor/etc/*thermal* /system/vendor/etc/powerhint* /system/vendor/etc/init/*thermal* /system/vendor/etc/perf/*thermal* /system/vendor/lib/hw/thermal* /system/vendor/lib64/hw/thermal* 2>/dev/null`
-    for thermal in $thermals; do
-        [[ ! -d $MODPATH/${thermal%/*} ]] && mkdir -p $MODPATH/${thermal%/*}
-        touch $MODPATH/$thermal
+    all_thermal=$(ls /system/bin/*thermal* /system/etc/init/*thermal* /system/etc/perf/*thermal* /system/vendor/bin/*thermal* /system/vendor/etc/*thermal* /system/vendor/etc/powerhint* /system/vendor/etc/init/*thermal* /system/vendor/etc/perf/*thermal* /system/vendor/lib/hw/thermal* /system/vendor/lib64/hw/thermal* 2>/dev/null)
+    for thermal in "$all_thermal"; do
+        [[ ! -d $MODPATH${thermal%/*} ]] && mkdir -p $MODPATH${thermal%/*}
+        touch $MODPATH$thermal
     done
     chattr -i /data/vendor/thermal
     chattr -i /data/vendor/thermal/config
