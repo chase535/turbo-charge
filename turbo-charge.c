@@ -172,8 +172,16 @@ void charge_value(char *i)
 {
     set_value("/sys/class/power_supply/battery/charging_enabled", i);
     set_value("/sys/class/power_supply/battery/battery_charging_enabled", i);
-    (atoi(i))?set_value("/sys/class/power_supply/battery/input_suspend", "0"):set_value("/sys/class/power_supply/battery/input_suspend", "1");
-    (atoi(i))?set_value("/sys/class/qcom-battery/restricted_charging", "0"):set_value("/sys/class/qcom-battery/restricted_charging", "1");
+    if(atoi(i))
+    {
+        set_value("/sys/class/power_supply/battery/input_suspend", "0");
+        set_value("/sys/class/qcom-battery/restricted_charging", "0");
+    }
+    else
+    {
+        set_value("/sys/class/power_supply/battery/input_suspend", "1");
+        set_value("/sys/class/qcom-battery/restricted_charging", "1");
+    }
 }
 
 void check_read_file(char *file,char chartmp[chartmp_size])
@@ -314,10 +322,10 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[5], char chartmp[char
 int main()
 {
     FILE *fq;
-    char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10],chartmp[chartmp_size],current_max_char[20];
-    char *conn_therm,*buffer,*msg,highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
+    char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10];
+    char *conn_therm,*buffer,*msg,chartmp[chartmp_size],current_max_char[20],highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
     unsigned char tmp[5]={0,0,0,0,0},num=0,fu=0,bat_temp_size=0,step_charge=1,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1;
-    int i=0,j=0,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;;
+    int i=0,j=0,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
     unsigned int opt_old[10]={0,0,0,0,0,0,0,0,0,0},opt_new[10]={0,0,0,0,0,0,0,0,0,0};
     regex_t temp_re,current_max_re,current_limit_re;
     regmatch_t temp_pmatch,current_max_pmatch,current_limit_pmatch;
