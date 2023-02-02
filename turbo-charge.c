@@ -423,7 +423,7 @@ int main()
                 if(msg != NULL)
                 {
                     line_feed(msg);
-                    for(i=0;i<sizeof(temp_sensors);i++)
+                    for(i=0;i<(int)sizeof(temp_sensors);i++)
                     {
                         if(strcmp(msg, temp_sensors[i]) == 0 && k<i)
                         {
@@ -443,7 +443,8 @@ int main()
         if(k >= 0)
         {
             temp_sensor=(char *)calloc(1,sizeof(char)*(strlen(temp_sensor_dir)+6));
-            snprintf(temp_sensor,malloc_usable_size(temp_sensor),"%s/temp",temp_sensor_dir);  
+            snprintf(temp_sensor,malloc_usable_size(temp_sensor),"%s/temp",temp_sensor_dir);
+            check_read_file(temp_sensor,chartmp);
         }
         else
         {
@@ -459,7 +460,6 @@ int main()
                 exit(800);
             }
         }
-        else check_read_file(temp_sensor,chartmp);
         free(temp_sensor_dir);
         temp_sensor_dir=NULL;
     }
