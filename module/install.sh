@@ -50,9 +50,10 @@ check_file()
         if [[ -f "/sys/class/thermal/${i}/type" ]]; then
             temp_sensor=$(cat /sys/class/thermal/${i}/type 2>/dev/null)
             for j in lcd_therm quiet_therm modem_therm wifi_therm mtktsbtsnrpa mtktsbtsmdpa mtktsAP modem-0-usr modem1_wifi conn_therm ddr-usr cwlan-usr; do
-                [[ "${temp_sensor}" == "${j}" ]] && have_temp_sensor=1
+                [[ "${temp_sensor}" == "${j}" ]] && have_temp_sensor=1 && break
             done
         fi
+        [[ -n "${have_temp_sensor}" ]] && break
     done
     if [[ ! -f "/sys/class/power_supply/battery/status" ]]; then
         no_battery_status=1
@@ -101,19 +102,19 @@ volume_keytest()
 {
     ui_print "--- 音量键测试 ---"
     ui_print "  请按音量+或-键"
-    (/system/bin/getevent -lc 1 2>&1 | /system/bin/grep VOLUME | /system/bin/grep " DOWN" > ${TMPDIR}/events) || return 1
+    (getevent -lc 1 2>&1 | grep VOLUME | grep " DOWN" > ${TMPDIR}/events) || return 1
     return 0
 }
 
 volume_choose()
 {
     while true; do
-        /system/bin/getevent -lc 1 2>&1 | /system/bin/grep VOLUME | /system/bin/grep " DOWN" > ${TMPDIR}/events
-        if (`cat ${TMPDIR}/events 2>/dev/null | /system/bin/grep VOLUME >/dev/null`); then
+        getevent -lc 1 2>&1 | grep VOLUME | grep " DOWN" > ${TMPDIR}/events
+        if (`cat ${TMPDIR}/events 2>/dev/null | grep VOLUME >/dev/null`); then
             break
         fi
     done
-    if (`cat ${TMPDIR}/events 2>/dev/null | /system/bin/grep VOLUMEUP >/dev/null`); then
+    if (`cat ${TMPDIR}/events 2>/dev/null | grep VOLUMEUP >/dev/null`); then
         return 1
     else
         return 0
@@ -190,7 +191,7 @@ on_install()
     [[ ! -d /data/adb/turbo-charge ]] && mkdir -p /data/adb/turbo-charge
     cp -f ${TMPDIR}/option.txt /data/adb/turbo-charge
     all_thermal=$(ls /system/bin/*thermal* /system/etc/init/*thermal* /system/etc/perf/*thermal* /system/vendor/bin/*thermal* /system/vendor/etc/*thermal* /system/vendor/etc/powerhint* /system/vendor/etc/init/*thermal* /system/vendor/etc/perf/*thermal* /system/vendor/lib/hw/thermal* /system/vendor/lib64/hw/thermal* 2>/dev/null)
-    for thermal in $all_thermal; do
+    for thermal in ${all_thermal}; do
         [[ ! -d ${MODPATH}${thermal%/*} ]] && mkdir -p ${MODPATH}${thermal%/*}
         touch ${MODPATH}${thermal}
     done
