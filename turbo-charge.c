@@ -92,37 +92,20 @@ void free_celloc_memory(char ***addr,int num)
     }
 }
 
-void strrpc(char *str, char *oldstr, char *newstr)
-{
-    char bstr[strlen(str)];
-    int i=0;
-    memset(bstr,0,sizeof(bstr));
-    for(i=0;i<(int)strlen(str);i++)
-    {
-        if(!strncmp(str+i, oldstr, strlen(oldstr)))
-        {
-            strcat(bstr,newstr);
-            i+=(int)strlen(oldstr)-1;
-        }
-        else strncat(bstr,str+i,1);
-    }
-    strcpy(str,bstr);
-}
-
 int list_dir(char *path, char ***ppp)
 {
     DIR *pDir;
     struct dirent *ent;
     int file_num=0;
-    pDir = opendir(path);
+    pDir=opendir(path);
     if(pDir != NULL)
     {
         *ppp=(char **)calloc(1,sizeof(char *)*500);
-        while ((ent = readdir(pDir)) != NULL)
+        while((ent=readdir(pDir)) != NULL)
         {
-            if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
+            if(strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
             (*ppp)[file_num]=(char *)calloc(1,sizeof(char)*((strlen(path)+strlen(ent->d_name))+2));
-            sprintf((*ppp)[file_num],"%s/%s",path,ent->d_name);
+            snprintf((*ppp)[file_num],malloc_usable_size((*ppp)[file_num]),"%s/%s",path,ent->d_name);
             file_num++;
         }
         closedir(pDir);
@@ -315,9 +298,10 @@ int main()
 {
     FILE *fq;
     char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10];
-    char *conn_therm,*buffer,*msg,chartmp[chartmp_size],current_max_char[20],highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
+    char *temp_sensor,*temp_sensor_dir,*buffer,*msg,chartmp[chartmp_size],current_max_char[20],highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
+    char temp_sensors[8][15]={"conn_therm","modem1_wifi","modem-0-usr","cp_master","wifi_therm","modem_therm","mtktsbtsmdpa","lcd_therm"};
     unsigned char tmp[5]={0,0,0,0,0},num=0,fu=0,bat_temp_size=0,step_charge=1,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1;
-    int i=0,j=0,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
+    int i=0,j=0,k=-1,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
     unsigned int opt_old[10]={0,0,0,0,0,0,0,0,0,0},opt_new[10]={0,0,0,0,0,0,0,0,0,0};
     regex_t temp_re,current_max_re,current_limit_re;
     regmatch_t temp_pmatch,current_max_pmatch,current_limit_pmatch;
@@ -394,10 +378,10 @@ int main()
         }
         free_celloc_memory(&power_supply_dir_list,power_supply_dir_list_num);
     }
+    free_celloc_memory(&power_supply_dir,power_supply_file_num);
     current_limit_file=(char **)realloc(current_limit_file, sizeof(char *)*current_limit_file_num);
     current_max_file=(char **)realloc(current_max_file, sizeof(char *)*current_max_file_num);
     temp_file=(char **)realloc(temp_file, sizeof(char *)*temp_file_num);
-    free_celloc_memory(&power_supply_dir,power_supply_file_num);
     if(!current_max_file_num)
     {
         current_change=0;
@@ -413,23 +397,24 @@ int main()
         else
             printf_plus_time("由于找不到/sys/class/power_supply/battery/status文件以及无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！");
     }
-    conn_therm=(char *)calloc(1,5);
-    strcpy(conn_therm,"none");
     if(force_temp || current_change)
     {
+        temp_sensor_dir=(char *)calloc(1,1);
+        buffer=(char *)calloc(1,1);
+        msg=(char *)calloc(1,1);
         thermal_file_num=list_dir("/sys/class/thermal", &thermal_dir);
         for(i=0;i<thermal_file_num;i++)
         {
             if(strstr(thermal_dir[i],"thermal_zone")!=NULL)
             {
-                buffer=(char *)calloc(1,sizeof(char)*(strlen(thermal_dir[i])+6));
-                sprintf(buffer, "%s/type", thermal_dir[i]);
+                buffer=(char *)realloc(buffer,sizeof(char)*(strlen(thermal_dir[i])+6));
+                snprintf(buffer, malloc_usable_size(buffer), "%s/type", thermal_dir[i]);
                 if(access(buffer, R_OK) != 0) continue;
                 stat(buffer,&statbuf);
                 fq = fopen(buffer, "rt");
                 if(fq != NULL)
                 {
-                    msg=(char *)calloc(1,sizeof(char)*(statbuf.st_size+1));
+                    msg=(char *)realloc(msg,sizeof(char)*(statbuf.st_size+1));
                     fgets(msg, statbuf.st_size+1, fq);
                     fclose(fq);
                     fq=NULL;
@@ -438,36 +423,45 @@ int main()
                 if(msg != NULL)
                 {
                     line_feed(msg);
-                    if(strcmp(msg, "conn_therm") == 0)
+                    for(i=0;i<sizeof(temp_sensors);i++)
                     {
-                        strrpc(buffer, "type", "temp");
-                        conn_therm=(char *)realloc(conn_therm,sizeof(char)*(strlen(buffer)+1));
-                        strcpy(conn_therm, buffer);
+                        if(strcmp(msg, temp_sensors[i]) == 0 && k<i)
+                        {
+                            k=i;
+                            temp_sensor_dir=(char *)realloc(temp_sensor_dir,sizeof(char)*(strlen(thermal_dir[i])+1));
+                            strcpy(temp_sensor_dir,thermal_dir[i]);
+                        }
                     }
                     free(msg);
-                    free(buffer);
                     msg=NULL;
-                    buffer=NULL;
-                    if(strcmp(conn_therm,"none") != 0) break;
                 }
+                free(buffer);
+                buffer=NULL;
             }
         }
         free_celloc_memory(&thermal_dir,thermal_file_num);
-        if(strcmp(conn_therm,"none") == 0)
+        if(k >= 0)
+        {
+            temp_sensor=(char *)calloc(1,sizeof(char)*(strlen(temp_sensor_dir)+6));
+            snprintf(temp_sensor,malloc_usable_size(temp_sensor),"%s/temp",temp_sensor_dir);  
+        }
+        else
         {
             if(force_temp)
             {
-                printf_plus_time("由于找不到conn_therm温度传感器，温度控制及充电时强制显示28℃功能失效！");
+                printf_plus_time("由于找不到温度传感器，温度控制及充电时强制显示28℃功能失效！");
                 force_temp=0;
             }
-            else printf_plus_time("由于找不到conn_therm温度传感器，温度控制功能失效！");
+            else printf_plus_time("由于找不到温度传感器，温度控制功能失效！");
             if(!step_charge && !power_control && !force_temp && !current_change)
             {
                 printf_plus_time("所有的所需文件均不存在，完全不适配此手机，程序强制退出！");
                 exit(800);
             }
         }
-        else check_read_file(conn_therm,chartmp);
+        else check_read_file(temp_sensor,chartmp);
+        free(temp_sensor_dir);
+        temp_sensor_dir=NULL;
     }
     else
     {
@@ -558,10 +552,10 @@ int main()
             if(power_control) powel_ctl(opt_new, tmp, chartmp);
             if(opt_new[1] == 1 && current_change)
             {
-                if(strcmp(conn_therm,"none") != 0)
+                if(k >= 0)
                 {
-                    check_read_file(conn_therm,chartmp);
-                    fq = fopen(conn_therm, "rt");
+                    check_read_file(temp_sensor,chartmp);
+                    fq = fopen(temp_sensor, "rt");
                     fgets(thermal, 10, fq);
                     fclose(fq);
                     fq=NULL;
@@ -576,8 +570,8 @@ int main()
                             read_option(opt_new, opt_old, tmp, num, chartmp, 1);
                             snprintf(current_max_char,20,"%u",opt_new[3]);
                             snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
-                            check_read_file(conn_therm,chartmp);
-                            fq = fopen(conn_therm, "rt");
+                            check_read_file(temp_sensor,chartmp);
+                            fq = fopen(temp_sensor, "rt");
                             fgets(thermal, 300, fq);
                             fclose(fq);
                             fq=NULL;
@@ -662,8 +656,8 @@ int main()
                 (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
             if(force_temp)
             {
-                check_read_file(conn_therm,chartmp);
-                fq = fopen(conn_therm, "rt");
+                check_read_file(temp_sensor,chartmp);
+                fq = fopen(temp_sensor, "rt");
                 fgets(thermal, 10, fq);
                 fclose(fq);
                 fq=NULL;
@@ -676,7 +670,7 @@ int main()
                     fu=1;
                 }
                 snprintf(bat_temp,4,"%05d",temp_int);
-                if(strcmp(bat_temp,"000")==0) sprintf(bat_temp,"0");
+                if(strcmp(bat_temp,"000")==0) snprintf(bat_temp,sizeof(bat_temp),"0");
                 else
                 {
                     for(bat_temp_tmp[0]=bat_temp[0];atoi(bat_temp_tmp)==0;bat_temp_tmp[0]=bat_temp[0])
@@ -687,7 +681,7 @@ int main()
                 }
                 if(fu)
                 {
-                    sprintf(bat_temp,"-%s",bat_temp);
+                    snprintf(bat_temp,sizeof(bat_temp),"-%s",bat_temp);
                     set_array_value(temp_file,temp_file_num,bat_temp);
                 }
                 else (temp_int >= 55000)?set_array_value(temp_file,temp_file_num,"280"):set_array_value(temp_file,temp_file_num,bat_temp);
