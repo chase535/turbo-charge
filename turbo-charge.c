@@ -429,11 +429,11 @@ int main()
                 if(msg != NULL)
                 {
                     line_feed(msg);
-                    for(i=0;i<(int)sizeof(temp_sensors);i++)
+                    for(j=0;j<(int)sizeof(temp_sensors);j++)
                     {
-                        if(strcmp(msg, temp_sensors[i]) == 0 && k<i)
+                        if(strcmp(msg, temp_sensors[j]) == 0 && k<j)
                         {
-                            k=i;
+                            k=j;
                             temp_sensor_dir=(char *)realloc(temp_sensor_dir,sizeof(char)*(strlen(thermal_dir[i])+1));
                             strcpy(temp_sensor_dir,thermal_dir[i]);
                         }
