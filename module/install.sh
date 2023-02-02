@@ -43,8 +43,8 @@ check_file()
 {
     ui_print " "
     ui_print "--- 检查所需文件是否存在 ---"
-    temp_file=$(ls /sys/class/power_supply/*/*temp 2>/dev/null)
-    current_max_file=$(ls /sys/class/power_supply/*/*constant_charge_current_max /sys/class/power_supply/*/*fast_charge_current /sys/class/power_supply/*/*thermal_input_current 2>/dev/null)
+    temp_file=$(ls /sys/class/power_supply/*/temp 2>/dev/null)
+    current_max_file=$(ls /sys/class/power_supply/*/constant_charge_current_max /sys/class/power_supply/*/fast_charge_current /sys/class/power_supply/*/thermal_input_current 2>/dev/null)
     for i in $(ls /sys/class/thermal 2>/dev/null); do
         [[ -f "/sys/class/thermal/$i/type" && "$(cat /sys/class/thermal/$i/type 2>/dev/null)" == "conn_therm" ]] && conn_therm_file="$i"
     done
