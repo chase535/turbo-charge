@@ -314,13 +314,13 @@ void powel_ctl(unsigned int opt_new[10], unsigned char tmp[5], char chartmp[char
 int main()
 {
     FILE *fq;
-    char **thermal_remove_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10],chartmp[chartmp_size],current_max_char[20];
-    char *tmp_char,*conn_therm,*buffer,*msg,highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
+    char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10],chartmp[chartmp_size],current_max_char[20];
+    char *conn_therm,*buffer,*msg,highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
     unsigned char tmp[5]={0,0,0,0,0},num=0,fu=0,bat_temp_size=0,step_charge=1,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1;
-    int i=0,j=0,temp_int=0,power_supply_file_num=0,thermal_file_num=0,power_supply_dir_list_num=0,thermal_remove_num=0,current_max_file_num=0,temp_file_num=0;;
+    int i=0,j=0,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;;
     unsigned int opt_old[10]={0,0,0,0,0,0,0,0,0,0},opt_new[10]={0,0,0,0,0,0,0,0,0,0};
-    regex_t temp_re,current_max_re;
-    regmatch_t temp_pmatch,current_max_pmatch;
+    regex_t temp_re,current_max_re,current_limit_re;
+    regmatch_t temp_pmatch,current_max_pmatch,current_limit_pmatch;
     struct stat statbuf;
     printf("作者：酷安@诺鸡鸭\r\n");
     printf("QQ群：738661277\r\n");
@@ -361,46 +361,40 @@ int main()
             printf_plus_time("由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯式充电控制的所有功能失效！");
         }
     }
-    regcomp(&current_max_re,".*constant_charge_current_max.*|.*fast_charge_current.*|.*thermal_input_current.*",REG_EXTENDED|REG_NOSUB);
+    regcomp(&current_max_re,".*/constant_charge_current_max$|.*/fast_charge_current$|.*/thermal_input_current$",REG_EXTENDED|REG_NOSUB);
+    regcomp(&current_limit_re,".*/thermal_input_current_limit$",REG_EXTENDED|REG_NOSUB);
     regcomp(&temp_re,".*temp$",REG_EXTENDED|REG_NOSUB);
     power_supply_file_num=list_dir("/sys/class/power_supply", &power_supply_dir);
+    current_limit_file=(char **)calloc(1,sizeof(char *)*100);
     current_max_file=(char **)calloc(1,sizeof(char *)*100);
     temp_file=(char **)calloc(1,sizeof(char *)*100);
-    thermal_remove_file=(char **)calloc(1,sizeof(char *)*100);
-    tmp_char=(char *)calloc(1,sizeof(char)*100);
     for(i=0;i<power_supply_file_num;i++)
     {
-        tmp_char=(char *)realloc(tmp_char,sizeof(char)*(strlen(power_supply_dir[i])+23));
-        snprintf(tmp_char,malloc_usable_size(tmp_char),"%s/device/thermal_remove",power_supply_dir[i]);
-        if(access(tmp_char, F_OK) == 0)
-        {
-            thermal_remove_file[thermal_remove_num]=(char *)calloc(1,sizeof(char)*(strlen(tmp_char)+1));
-            strcpy(thermal_remove_file[thermal_remove_num],tmp_char);
-            thermal_remove_num++;
-        }
-        free(tmp_char);
-        tmp_char=NULL;
         power_supply_dir_list_num=list_dir(power_supply_dir[i], &power_supply_dir_list);
         for(j=0;j<power_supply_dir_list_num;j++)
         {
-            if(regexec(&current_max_re, power_supply_dir_list[j],1,&current_max_pmatch,0)==0)
+            if(regexec(&current_limit_re, power_supply_dir_list[j],1,&current_limit_pmatch,0) == 0)
+            {
+                current_limit_file[current_limit_file_num]=(char *)calloc(1,sizeof(char)*(strlen(power_supply_dir_list[j])+1));
+                strcpy(current_limit_file[current_limit_file_num],power_supply_dir_list[j]);
+                current_limit_file_num++;
+            }
+            if(regexec(&current_max_re, power_supply_dir_list[j],1,&current_max_pmatch,0) == 0)
             {
                 current_max_file[current_max_file_num]=(char *)calloc(1,sizeof(char)*(strlen(power_supply_dir_list[j])+1));
                 strcpy(current_max_file[current_max_file_num],power_supply_dir_list[j]);
                 current_max_file_num++;
             }
-            if(regexec(&temp_re, power_supply_dir_list[j],1,&temp_pmatch,0)==0)
+            if(regexec(&temp_re, power_supply_dir_list[j],1,&temp_pmatch,0) == 0)
             {
                 temp_file[temp_file_num]=(char *)calloc(1,sizeof(char)*(strlen(power_supply_dir_list[j])+1));
                 strcpy(temp_file[temp_file_num],power_supply_dir_list[j]);
                 temp_file_num++;
             }
-            
-            
         }
         free_celloc_memory(&power_supply_dir_list,power_supply_dir_list_num);
     }
-    thermal_remove_file=(char **)realloc(thermal_remove_file, sizeof(char *)*thermal_remove_num);
+    current_limit_file=(char **)realloc(current_limit_file, sizeof(char *)*current_limit_file_num);
     current_max_file=(char **)realloc(current_max_file, sizeof(char *)*current_max_file_num);
     temp_file=(char **)realloc(temp_file, sizeof(char *)*temp_file_num);
     free_celloc_memory(&power_supply_dir,power_supply_file_num);
@@ -519,7 +513,6 @@ int main()
         set_value("/sys/class/power_supply/battery/input_current_limited", "0");
         set_value("/sys/class/power_supply/battery/input_current_settled", "1");
         set_value("/sys/class/qcom-battery/restrict_chg", "0");
-        set_array_value(thermal_remove_file,thermal_remove_num,"1");
         if(!battery_status)
         {
             if(current_change) set_array_value(current_max_file,current_max_file_num,current_max_char);
