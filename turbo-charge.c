@@ -361,7 +361,7 @@ int main()
             printf_plus_time("由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯式充电控制的所有功能失效！");
         }
     }
-    regcomp(&current_max_re,".*/usb/.*current_max$|.*constant_charge_current_max$|.*constant_charge_current$|.*fast_charge_current$|.*thermal_input_current$|.*input_current_settled$",REG_EXTENDED|REG_NOSUB);
+    regcomp(&current_max_re,".*/bms/.*current_max$|.*/dc/.*current_max$|.*/pc_port/.*current_max$|.*/cp_slave/.*current_max$|.*/usb/.*current_max$|.*constant_charge_current_max$|.*constant_charge_current$|.*fast_charge_current$|.*thermal_input_current$|.*input_current_settled$",REG_EXTENDED|REG_NOSUB);
     regcomp(&temp_re,".*temp$",REG_EXTENDED|REG_NOSUB);
     power_supply_file_num=list_dir("/sys/class/power_supply", &power_supply_dir);
     current_max_file=(char **)calloc(1,sizeof(char *)*100);
@@ -514,7 +514,7 @@ int main()
             }
             else if(step_charge == 2)
                 (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
-            sleep(1);
+            sleep(5);
             continue;
         }
         check_read_file("/sys/class/power_supply/battery/capacity",chartmp);
@@ -624,7 +624,7 @@ int main()
                             set_array_value(current_max_file,current_max_file_num,highest_temp_current_char);
                             if(force_temp) set_array_value(temp_file,temp_file_num,"280");
                             if(power_control) powel_ctl(opt_new, tmp, chartmp);
-                            sleep(1);
+                            sleep(5);
                         }
                     }
                 }
@@ -683,7 +683,7 @@ int main()
                 else (temp_int >= 55000)?set_array_value(temp_file,temp_file_num,"280"):set_array_value(temp_file,temp_file_num,bat_temp);
             }
         }
-        sleep(1);
+        sleep(5);
     }
     return 0;
 }
