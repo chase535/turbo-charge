@@ -5,6 +5,7 @@ LATESTARTSERVICE=true
 
 print_modname()
 {
+    source $TMPDIR/module.prop
     ui_print " "
     ui_print " ********************************************************"
     ui_print " "
@@ -189,10 +190,10 @@ on_install()
         [[ ! -d $MODPATH/${thermal%/*} ]] && mkdir -p $MODPATH/${thermal%/*}
         touch $MODPATH/$thermal
     done
-    [[ -f /data/current ]] && rm -rf /data/current
     chattr -i /data/vendor/thermal
     chattr -i /data/vendor/thermal/config
-    rm -rf /data/vendor/thermal/config/*
+    rm -rf /data/vendor/thermal/*
+    mkdir -p /data/vendor/thermal/config
     chattr +i /data/vendor/thermal/config
     chattr +i /data/vendor/thermal
 }
@@ -205,4 +206,3 @@ set_permissions()
 }
 
 check_file
-source $TMPDIR/module.prop
