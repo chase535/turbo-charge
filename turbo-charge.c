@@ -23,52 +23,42 @@ struct tm *get_time(int timezone)
     ptm->tm_hour+=timezone;
     if(ptm->tm_hour > 23)
     {
+        ptm->tm_hour-=24;
+        ptm->tm_mday+=1;
         switch(ptm->tm_mon)
         {
             case 1: case 3: case 5: case 7: case 8: case 10: case 12:
-                tmp=1;
+                if(ptm->tm_mday > 31)
+                {
+                    ptm->tm_mday-=31;
+                    ptm->tm_mon+=1;
+                }
                 break;
             case 2:
-                if(((ptm->tm_year%4 == 0) && (ptm->tm_year%100 != 0)) || (ptm->tm_year%400 == 0)) tmp=3;
-                else tmp=2;
+                if(((ptm->tm_year%4 == 0) && (ptm->tm_year%100 != 0)) || (ptm->tm_year%400 == 0))
+                {
+                    if(ptm->tm_mday > 29)
+                    {
+                        ptm->tm_mday-=29;
+                        ptm->tm_mon+=1;
+                    }
+                }
+                else
+                {
+                    f(ptm->tm_mday > 28)
+                    {
+                        ptm->tm_mday-=28;
+                        ptm->tm_mon+=1;
+                    }
+                }
                 break;
             default:
-                tmp=0;
+                if(ptm->tm_mday > 30)
+                {
+                    ptm->tm_mday-=30;
+                    ptm->tm_mon+=1;
+                }
                 break;
-        }
-        ptm->tm_hour-=24;
-        ptm->tm_mday+=1;
-        if(tmp == 0)
-        {
-            if(ptm->tm_mday > 30)
-            {
-                ptm->tm_mday-=30;
-                ptm->tm_mon+=1;
-            }
-        }
-        else if(tmp == 1)
-        {
-            if(ptm->tm_mday > 31)
-            {
-                ptm->tm_mday-=31;
-                ptm->tm_mon+=1;
-            }
-        }
-        else if(tmp == 2)
-        {
-            if(ptm->tm_mday > 28)
-            {
-                ptm->tm_mday-=28;
-                ptm->tm_mon+=1;
-            }
-        }
-        else if(tmp == 3)
-        {
-            if(ptm->tm_mday > 29)
-            {
-                ptm->tm_mday-=29;
-                ptm->tm_mon+=1;
-            }
         }
         if(ptm->tm_mon > 12)
         {
@@ -128,7 +118,7 @@ int list_dir(char *path, char ***ppp)
     pDir = opendir(path);
     if(pDir != NULL)
     {
-        *ppp=(char**)calloc(1,sizeof(char *)*500);
+        *ppp=(char **)calloc(1,sizeof(char *)*500);
         while ((ent = readdir(pDir)) != NULL)
         {
             if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
@@ -137,7 +127,7 @@ int list_dir(char *path, char ***ppp)
             file_num++;
         }
         closedir(pDir);
-        *ppp=(char**)realloc(*ppp,sizeof(char *)*file_num);
+        *ppp=(char **)realloc(*ppp,sizeof(char *)*file_num);
     }
     return file_num;
 }
@@ -349,7 +339,7 @@ int main()
         else
             printf_plus_time("由于找不到/sys/class/power_supply/battery/status和/sys/class/power_supply/battery/capacity文件，电量控制功能失效！");
     }
-    if(power_control)
+    else
     {
         if(access("/sys/class/power_supply/battery/charging_enabled", F_OK) != 0 && access("/sys/class/power_supply/battery/battery_charging_enabled", F_OK) != 0 && access("/sys/class/power_supply/battery/input_suspend", F_OK) != 0 && access("/sys/class/qcom-battery/restricted_charging", F_OK) != 0)
         {
@@ -375,8 +365,8 @@ int main()
     regcomp(&current_max_re,".*_current_max$|.*fast_charge_current$|.*thermal_input_current$",REG_EXTENDED|REG_NOSUB);
     regcomp(&temp_re,".*temp$",REG_EXTENDED|REG_NOSUB);
     power_supply_file_num=list_dir("/sys/class/power_supply", &power_supply_dir);
-    current_max_file=(char**)calloc(1,sizeof(char *)*100);
-    temp_file=(char**)calloc(1,sizeof(char *)*100);
+    current_max_file=(char **)calloc(1,sizeof(char *)*100);
+    temp_file=(char **)calloc(1,sizeof(char *)*100);
     for(i=0;i<power_supply_file_num;i++)
     {
         power_supply_dir_list_num=list_dir(power_supply_dir[i], &power_supply_dir_list);
@@ -397,8 +387,8 @@ int main()
         }
         free_celloc_memory(&power_supply_dir_list,power_supply_dir_list_num);
     }
-    current_max_file=(char**)realloc(current_max_file, sizeof(char *)*current_max_file_num);
-    temp_file=(char**)realloc(temp_file, sizeof(char *)*temp_file_num);
+    current_max_file=(char **)realloc(current_max_file, sizeof(char *)*current_max_file_num);
+    temp_file=(char **)realloc(temp_file, sizeof(char *)*temp_file_num);
     free_celloc_memory(&power_supply_dir,power_supply_file_num);
     if(!current_max_file_num)
     {
@@ -497,17 +487,6 @@ int main()
     }
     check_read_file("/data/adb/turbo-charge/option.txt",chartmp);
     printf_plus_time("文件检测完毕，程序开始运行");
-    set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
-    set_value("/sys/class/power_supply/battery/system_temp_level", "1");
-    set_value("/sys/class/power_supply/usb/boost_current", "1");
-    set_value("/sys/class/power_supply/battery/safety_timer_enabled", "0");
-    set_value("/sys/kernel/fast_charge/failsafe", "1");
-    set_value("/sys/class/power_supply/battery/allow_hvdcp3", "1");
-    set_value("/sys/class/power_supply/usb/pd_allowed", "1");
-    set_value("/sys/class/power_supply/battery/subsystem/usb/pd_allowed", "1");
-    set_value("/sys/class/power_supply/battery/input_current_limited", "0");
-    set_value("/sys/class/power_supply/battery/input_current_settled", "1");
-    set_value("/sys/class/qcom-battery/restrict_chg", "0");
     charge_value("1");
     while(1)
     {
@@ -515,6 +494,17 @@ int main()
         snprintf(current_max_char,20,"%u",opt_new[3]);
         snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
         if(!num) num=1;
+        set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
+        set_value("/sys/class/power_supply/battery/system_temp_level", "1");
+        set_value("/sys/class/power_supply/usb/boost_current", "1");
+        set_value("/sys/class/power_supply/battery/safety_timer_enabled", "0");
+        set_value("/sys/kernel/fast_charge/failsafe", "1");
+        set_value("/sys/class/power_supply/battery/allow_hvdcp3", "1");
+        set_value("/sys/class/power_supply/usb/pd_allowed", "1");
+        set_value("/sys/class/power_supply/battery/subsystem/usb/pd_allowed", "1");
+        set_value("/sys/class/power_supply/battery/input_current_limited", "0");
+        set_value("/sys/class/power_supply/battery/input_current_settled", "1");
+        set_value("/sys/class/qcom-battery/restrict_chg", "0");
         if(!battery_status)
         {
             if(current_change) set_array_value(current_max_file,current_max_file_num,current_max_char);
@@ -528,7 +518,7 @@ int main()
             sleep(5);
             continue;
         }
-        check_read_file("/sys/class/power_supply/battery/status",chartmp);
+        check_read_file("/sys/class/power_supply/battery/capacity",chartmp);
         fq = fopen("/sys/class/power_supply/battery/capacity", "rt");
         fgets(power, 5, fq);
         fclose(fq);
@@ -541,12 +531,13 @@ int main()
         }
         else if(step_charge == 2)
             (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+        check_read_file("/sys/class/power_supply/battery/status",chartmp);
         fq = fopen("/sys/class/power_supply/battery/status", "rt");
         fgets(charge, 20, fq);
         fclose(fq);
         fq=NULL;
         line_feed(charge);
-        if(strcmp(charge, "Discharging") != 0)
+        if(strcmp(charge, "Charging") == 0 || strcmp(charge, "Full") == 0)
         {
             if(tmp[0] || !tmp[1])
             {
