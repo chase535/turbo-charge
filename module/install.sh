@@ -46,8 +46,13 @@ check_file()
     ui_print "--- 检查所需文件是否存在 ---"
     temp_file=$(ls /sys/class/power_supply/*/temp 2>/dev/null)
     current_max_file=$(ls /sys/class/power_supply/*/constant_charge_current_max /sys/class/power_supply/*/fast_charge_current /sys/class/power_supply/*/thermal_input_current 2>/dev/null)
-    for i in $(ls /sys/class/thermal 2>/dev/null); do
-        [[ -f "/sys/class/thermal/$i/type" && "$(cat /sys/class/thermal/$i/type 2>/dev/null)" == "conn_therm" ]] && conn_therm_file="$i"
+    for i in $(find /sys/class/thermal -type l -name "thermal_zone* -o -type d -name "thermal_zone*" 2>/dev/null); do
+        if [[ -f "$i/type" ]]; then
+            temp_sensor=$(cat $i/type 2>/dev/null)
+            for j in "lcd_therm quiet_therm modem_therm wifi_therm mtktsbtsnrpa mtktsbtsmdpa mtktsAP modem-0-usr modem1_wifi conn_therm ddr-usr cwlan-usr"; do
+                [[ "$temp_sensor" = "$j" ]] && have_temp_sensor=1
+            done
+        fi
     done
     if [[ ! -f "/sys/class/power_supply/battery/status" ]]; then
         no_battery_status=1
@@ -76,15 +81,14 @@ check_file()
         ui_print " ！由于找不到有关文件，充电时强制显示28℃功能失效，详情请看程序运行时的log文件！"
         no_force_temp=1
     fi
-    if [[ -z "$conn_therm_file" ]]; then
+    if [[ -z "$have_temp_sensor" ]]; then
         if [[ -n "$no_force_temp" ]]; then
             ui_print " ！由于找不到有关温度传感器，温度控制功能失效，详情请看程序运行时的log文件！"
         else
             ui_print " ！由于找不到有关温度传感器，温度控制及充电时强制显示28℃功能失效，详情请看程序运行时的log文件！"
         fi
-        no_conn_therm=1
     fi
-    if [[ -n "$no_power_control" && -n "$no_step_charging" && -n "$no_force_temp" && -n "$no_current_change" && -n "$no_conn_therm" ]]; then
+    if [[ -n "$no_power_control" && -n "$no_step_charging" && -n "$no_force_temp" && -n "$no_current_change" && -z "$have_temp_sensor" ]]; then
         ui_print " ！所有的所需文件均不存在，完全不适配此手机，安装失败！"
         ui_print " "
         rm -rf $MODPATH
