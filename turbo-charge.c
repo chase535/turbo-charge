@@ -458,10 +458,10 @@ int main()
         {
             if(force_temp)
             {
-                printf_with_time("由于找不到温度传感器，温度控制及充电时强制显示28℃功能失效！");
+                printf_with_time("由于找不到程序支持的温度传感器，温度控制及充电时强制显示28℃功能失效！");
                 force_temp=0;
             }
-            else printf_with_time("由于找不到温度传感器，温度控制功能失效！");
+            else printf_with_time("由于找不到程序支持的温度传感器，温度控制功能失效！");
             if(!step_charge && !power_control && !force_temp && !current_change)
             {
                 printf_with_time("所有的所需文件均不存在，完全不适配此手机，程序强制退出！");
