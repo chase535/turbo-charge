@@ -13,7 +13,6 @@
 
 struct tm *get_time(int timezone)
 {
-    unsigned char tmp=0;
     time_t cur_time;
     struct tm *ptm;
     time(&cur_time);
@@ -45,7 +44,7 @@ struct tm *get_time(int timezone)
                 }
                 else
                 {
-                    f(ptm->tm_mday > 28)
+                    if(ptm->tm_mday > 28)
                     {
                         ptm->tm_mday-=28;
                         ptm->tm_mon+=1;
