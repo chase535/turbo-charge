@@ -46,11 +46,11 @@ check_file()
     ui_print "--- 检查所需文件是否存在 ---"
     temp_file=$(ls /sys/class/power_supply/*/temp 2>/dev/null)
     current_max_file=$(ls /sys/class/power_supply/*/constant_charge_current_max /sys/class/power_supply/*/fast_charge_current /sys/class/power_supply/*/thermal_input_current 2>/dev/null)
-    for i in $(find /sys/class/thermal -type l -name "thermal_zone* -o -type d -name "thermal_zone*" 2>/dev/null); do
-        if [[ -f "$i/type" ]]; then
-            temp_sensor=$(cat $i/type 2>/dev/null)
+    for i in $(ls /sys/class/thermal | grep "thermal_zone"); do
+        if [[ -f "/sys/class/thermal/$i/type" ]]; then
+            temp_sensor=$(cat /sys/class/thermal/$i/type 2>/dev/null)
             for j in "lcd_therm quiet_therm modem_therm wifi_therm mtktsbtsnrpa mtktsbtsmdpa mtktsAP modem-0-usr modem1_wifi conn_therm ddr-usr cwlan-usr"; do
-                [[ "$temp_sensor" = "$j" ]] && have_temp_sensor=1
+                [[ "$temp_sensor" == "$j" ]] && have_temp_sensor=1
             done
         fi
     done
