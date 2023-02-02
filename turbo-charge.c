@@ -363,7 +363,7 @@ int main()
     }
     regcomp(&current_max_re,".*/constant_charge_current_max$|.*/fast_charge_current$|.*/thermal_input_current$",REG_EXTENDED|REG_NOSUB);
     regcomp(&current_limit_re,".*/thermal_input_current_limit$",REG_EXTENDED|REG_NOSUB);
-    regcomp(&temp_re,".*temp$",REG_EXTENDED|REG_NOSUB);
+    regcomp(&temp_re,".*/temp$",REG_EXTENDED|REG_NOSUB);
     power_supply_file_num=list_dir("/sys/class/power_supply", &power_supply_dir);
     current_limit_file=(char **)calloc(1,sizeof(char *)*100);
     current_max_file=(char **)calloc(1,sizeof(char *)*100);
@@ -513,6 +513,7 @@ int main()
         set_value("/sys/class/power_supply/battery/input_current_limited", "0");
         set_value("/sys/class/power_supply/battery/input_current_settled", "1");
         set_value("/sys/class/qcom-battery/restrict_chg", "0");
+        set_array_value(current_limit_file,current_limit_file_num,"-1");
         if(!battery_status)
         {
             if(current_change) set_array_value(current_max_file,current_max_file_num,current_max_char);
