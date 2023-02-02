@@ -15,15 +15,14 @@
 typedef unsigned char uchar;
 typedef unsigned int uint;
 
-struct tm *get_time(int timezone)
+void get_utc8_time(struct tm *ptm)
 {
     time_t cur_time;
-    struct tm *ptm;
     time(&cur_time);
     ptm=gmtime(&cur_time);
     ptm->tm_year+=1900;
     ptm->tm_mon+=1;
-    ptm->tm_hour+=timezone;
+    ptm->tm_hour+=8;
     if(ptm->tm_hour > 23)
     {
         ptm->tm_hour-=24;
@@ -69,12 +68,12 @@ struct tm *get_time(int timezone)
             ptm->tm_year+=1;
         }
     }
-    return ptm;
 }
 
 void printf_with_time(char *dat)
 {
-    struct tm *time_get=get_time(8);
+    struct tm *time_get;
+    get_utc8_time(time_get);
     printf("[ %04d.%02d.%02d %02d:%02d:%02d UTC+8 ] %s\r\n", time_get->tm_year, time_get->tm_mon, time_get->tm_mday, time_get->tm_hour, time_get->tm_min, time_get->tm_sec, dat);
     fflush(stdout);
 }
