@@ -82,14 +82,20 @@ check_file()
         ui_print " ！由于找不到有关文件，充电时强制显示28℃功能失效，详情请看程序运行时的log文件！"
         no_force_temp=1
     fi
-    if [[ -z "${have_temp_sensor}" ]]; then
-        if [[ -n "${no_force_temp}" ]]; then
-            ui_print " ！由于找不到有关温度传感器，温度控制功能失效，详情请看程序运行时的log文件！"
-        else
-            ui_print " ！由于找不到有关温度传感器，温度控制及充电时强制显示28℃功能失效，详情请看程序运行时的log文件！"
+    if [[ -z "${no_force_temp}" || -z "${no_current_change}" ]]; then
+        if [[ -z "${have_temp_sensor}" ]]; then
+            if [[ -n "${no_force_temp}" ]]; then
+                ui_print " ！由于找不到有关温度传感器，温度控制功能失效，详情请看程序运行时的log文件！"
+            else
+                ui_print " ！由于找不到有关温度传感器，温度控制及充电时强制显示28℃功能失效，详情请看程序运行时的log文件！"
+                no_force_temp=1
+            fi
         fi
+        [[ -n "${no_step_charging}" && -n "${no_power_control}" && -n "${no_force_temp}" && -n "${no_current_change}" && -z "${have_temp_sensor}" ]] && force_exit=1
+    else
+        [[ -n "${no_step_charging}" && -n "${no_power_control}" && -n "${no_force_temp}" && -n "${no_current_change}" ]] && force_exit=1
     fi
-    if [[ -n "${no_power_control}" && -n "${no_step_charging}" && -n "${no_force_temp}" && -n "${no_current_change}" && -z "${have_temp_sensor}" ]]; then
+    if [[ -n "${force_exit}" ]]; then
         ui_print " ！所有的所需文件均不存在，完全不适配此手机，安装失败！"
         ui_print " "
         rm -rf ${MODPATH}
