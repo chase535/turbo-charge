@@ -109,7 +109,7 @@ int list_dir(char *path, char ***ppp)
         {
             if(strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
             (*ppp)[file_num]=(char *)calloc(1,sizeof(char)*((strlen(path)+strlen(ent->d_name))+2));
-            snprintf((*ppp)[file_num],malloc_usable_size((*ppp)[file_num]),"%s/%s",path,ent->d_name);
+            sprintf((*ppp)[file_num],"%s/%s",path,ent->d_name);
             file_num++;
         }
         closedir(pDir);
@@ -414,7 +414,7 @@ int main()
             if(strstr(thermal_dir[i],"thermal_zone")!=NULL)
             {
                 buffer=(char *)realloc(buffer,sizeof(char)*(strlen(thermal_dir[i])+6));
-                snprintf(buffer, malloc_usable_size(buffer), "%s/type", thermal_dir[i]);
+                sprintf(buffer, "%s/type", thermal_dir[i]);
                 if(access(buffer, R_OK) != 0) continue;
                 stat(buffer,&statbuf);
                 fq = fopen(buffer, "rt");
@@ -449,7 +449,7 @@ int main()
         if(k >= 0)
         {
             temp_sensor=(char *)realloc(temp_sensor,sizeof(char)*(strlen(temp_sensor_dir)+6));
-            snprintf(temp_sensor,malloc_usable_size(temp_sensor),"%s/temp",temp_sensor_dir);
+            sprintf(temp_sensor,"%s/temp",temp_sensor_dir);
             check_read_file(temp_sensor,chartmp);
         }
         else
