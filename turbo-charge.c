@@ -450,6 +450,8 @@ int main()
         {
             temp_sensor=(char *)realloc(temp_sensor,sizeof(char)*(strlen(temp_sensor_dir)+6));
             sprintf(temp_sensor,"%s/temp",temp_sensor_dir);
+            snprintf(chartmp,PRINTF_WITH_TIME_MAX_SIZE,"将使用%s温度传感器作为手机温度的获取源",temp_sensors[k]);
+            printf_with_time(chartmp);
             check_read_file(temp_sensor,chartmp);
         }
         else
