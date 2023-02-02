@@ -71,7 +71,7 @@ struct tm *get_time(int timezone)
 void printf_plus_time(char *dat)
 {
     struct tm *time_get=get_time(8);
-    printf("[ %04d.%02d.%02d %02d:%02d:%02d UTC+8 ] %s\n", time_get->tm_year, time_get->tm_mon, time_get->tm_mday, time_get->tm_hour, time_get->tm_min, time_get->tm_sec, dat);
+    printf("[ %04d.%02d.%02d %02d:%02d:%02d UTC+8 ] %s\r\n", time_get->tm_year, time_get->tm_mon, time_get->tm_mday, time_get->tm_hour, time_get->tm_min, time_get->tm_sec, dat);
     fflush(stdout);
 }
 
@@ -322,9 +322,9 @@ int main()
     regex_t temp_re,current_max_re;
     regmatch_t temp_pmatch,current_max_pmatch;
     struct stat statbuf;
-    printf("作者：酷安@诺鸡鸭\n");
-    printf("QQ群：738661277\n");
-    printf("GitHub开源地址：https://github.com/chase535/turbo-charge\n");
+    printf("作者：酷安@诺鸡鸭\r\n");
+    printf("QQ群：738661277\r\n");
+    printf("GitHub开源地址：https://github.com/chase535/turbo-charge\r\n\r\n");
     fflush(stdout);
     if(access("/sys/class/power_supply/battery/status", F_OK) != 0) battery_status=0;
     if(access("/sys/class/power_supply/battery/capacity", F_OK) != 0) battery_capacity=0;
