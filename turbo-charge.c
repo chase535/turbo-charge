@@ -370,6 +370,16 @@ int main()
     tmp_char=(char *)calloc(1,sizeof(char)*100);
     for(i=0;i<power_supply_file_num;i++)
     {
+        tmp_char=(char *)realloc(tmp_char,sizeof(char)*(strlen(power_supply_dir[i])+23));
+        snprintf(tmp_char,malloc_usable_size(tmp_char),"%s/device/thermal_remove",power_supply_dir[i]);
+        if(access(tmp_char, F_OK) == 0)
+        {
+            thermal_remove_file[thermal_remove_num]=(char *)calloc(1,sizeof(char)*(strlen(tmp_char)+1));
+            strcpy(thermal_remove_file[thermal_remove_num],tmp_char);
+            thermal_remove_num++;
+        }
+        free(tmp_char);
+        tmp_char=NULL;
         power_supply_dir_list_num=list_dir(power_supply_dir[i], &power_supply_dir_list);
         for(j=0;j<power_supply_dir_list_num;j++)
         {
@@ -385,16 +395,8 @@ int main()
                 strcpy(temp_file[temp_file_num],power_supply_dir_list[j]);
                 temp_file_num++;
             }
-            tmp_char=(char *)realloc(tmp_char,sizeof(char)*(strlen(power_supply_dir_list[j])+23));
-            snprintf(tmp_char,malloc_usable_size(tmp_char),"%s/device/thermal_remove",power_supply_dir_list[j]);
-            if(access(tmp_char, F_OK) == 0)
-            {
-                thermal_remove_file[thermal_remove_num]=(char *)calloc(1,sizeof(char)*(strlen(tmp_char)+1));
-                strcpy(thermal_remove_file[thermal_remove_num],tmp_char);
-                thermal_remove_num++;
-            }
-            free(tmp_char);
-            tmp_char=NULL;
+            
+            
         }
         free_celloc_memory(&power_supply_dir_list,power_supply_dir_list_num);
     }
