@@ -305,7 +305,7 @@ int main()
     char *temp_sensor,*temp_sensor_dir,*buffer,*msg,chartmp[PRINTF_WITH_TIME_MAX_SIZE],current_max_char[20],highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
     char temp_sensors[12][15]={"lcd_therm","quiet_therm","modem_therm","wifi_therm","mtktsbtsnrpa","mtktsbtsmdpa","mtktsAP","modem-0-usr","modem1_wifi","conn_therm","ddr-usr","cwlan-usr"};
     uchar tmp[5]={0,0,0,0,0},num=0,fu=0,bat_temp_size=0,step_charge=1,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1;
-    int i=0,j=0,k=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
+    int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
     uint opt_old[OPTION_QUANTITY]={0,0,0,0,0,0,0,0,0,0},opt_new[OPTION_QUANTITY]={0,0,0,0,0,0,0,0,0,0};
     regex_t temp_re,current_max_re,current_limit_re;
     regmatch_t temp_pmatch,current_max_pmatch,current_limit_pmatch;
@@ -431,9 +431,9 @@ int main()
                     line_feed(msg);
                     for(j=0;j<(int)sizeof(temp_sensors);j++)
                     {
-                        if(strcmp(msg, temp_sensors[j]) == 0 && k>j)
+                        if(strcmp(msg, temp_sensors[j]) == 0 && temp_sensor_num>j)
                         {
-                            k=j;
+                            temp_sensor_num=j;
                             temp_sensor_dir=(char *)realloc(temp_sensor_dir,sizeof(char)*(strlen(thermal_dir[i])+1));
                             strcpy(temp_sensor_dir,thermal_dir[i]);
                         }
@@ -446,11 +446,11 @@ int main()
             }
         }
         free_celloc_memory(&thermal_dir,thermal_file_num);
-        if(k != 100)
+        if(temp_sensor_num != 100)
         {
             temp_sensor=(char *)realloc(temp_sensor,sizeof(char)*(strlen(temp_sensor_dir)+6));
             sprintf(temp_sensor,"%s/temp",temp_sensor_dir);
-            snprintf(chartmp,PRINTF_WITH_TIME_MAX_SIZE,"将使用%s温度传感器作为手机温度的获取源",temp_sensors[k]);
+            snprintf(chartmp,PRINTF_WITH_TIME_MAX_SIZE,"将使用%s温度传感器作为手机温度的获取源",temp_sensors[temp_sensor_num]);
             printf_with_time(chartmp);
             check_read_file(temp_sensor,chartmp);
         }
@@ -560,7 +560,7 @@ int main()
             if(power_control) powel_ctl(opt_new, tmp, chartmp);
             if(opt_new[1] == 1 && current_change)
             {
-                if(k != 100)
+                if(temp_sensor_num != 100)
                 {
                     check_read_file(temp_sensor,chartmp);
                     fq = fopen(temp_sensor, "rt");
