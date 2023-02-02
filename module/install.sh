@@ -78,9 +78,9 @@ check_file()
     fi
     if [[ -z "$conn_therm_file" ]]; then
         if [[ -n "$no_force_temp" ]]; then
-            ui_print "由于找不到有关温度传感器，温度控制功能失效，详情请看程序运行时的log文件！"
+            ui_print " ！由于找不到有关温度传感器，温度控制功能失效，详情请看程序运行时的log文件！"
         else
-            ui_print "由于找不到有关温度传感器，温度控制及充电时强制显示28℃功能失效，详情请看程序运行时的log文件！"
+            ui_print " ！由于找不到有关温度传感器，温度控制及充电时强制显示28℃功能失效，详情请看程序运行时的log文件！"
         fi
         no_conn_therm=1
     fi
