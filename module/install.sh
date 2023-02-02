@@ -44,7 +44,7 @@ check_file()
     ui_print " "
     ui_print "--- 检查所需文件是否存在 ---"
     temp_file=$(ls /sys/class/power_supply/*/*temp 2>/dev/null)
-    current_max_file=$(ls /sys/class/power_supply/*/*_current_max /sys/class/power_supply/*/*fast_charge_current /sys/class/power_supply/*/*thermal_input_current 2>/dev/null)
+    current_max_file=$(ls /sys/class/power_supply/*/*constant_charge_current_max /sys/class/power_supply/*/*fast_charge_current /sys/class/power_supply/*/*thermal_input_current 2>/dev/null)
     for i in $(ls /sys/class/thermal 2>/dev/null); do
         [[ -f "/sys/class/thermal/$i/type" && "$(cat /sys/class/thermal/$i/type 2>/dev/null)" == "conn_therm" ]] && conn_therm_file="$i"
     done
@@ -184,7 +184,7 @@ on_install()
     cp -f $TMPDIR/turbo-charge $MODPATH/turbo-charge
     [[ ! -d /data/adb/turbo-charge ]] && mkdir -p /data/adb/turbo-charge
     cp -f $TMPDIR/option.txt /data/adb/turbo-charge/option.txt
-    thermals=`ls /system/bin/*thermal* /system/etc/init/*thermal* /system/etc/perf/*thermal* /system/vendor/bin/*thermal* /system/vendor/etc/*thermal* /system/vendor/etc/powerhint* /system/vendor/etc/init/*_thermal* /system/vendor/etc/perf/*thermal* /system/vendor/lib/hw/thermal* /system/vendor/lib64/hw/thermal* 2>/dev/null | grep -v mi_thermald`
+    thermals=`ls /system/bin/*thermal* /system/etc/init/*thermal* /system/etc/perf/*thermal* /system/vendor/bin/*thermal* /system/vendor/etc/*thermal* /system/vendor/etc/powerhint* /system/vendor/etc/init/*thermal* /system/vendor/etc/perf/*thermal* /system/vendor/lib/hw/thermal* /system/vendor/lib64/hw/thermal* 2>/dev/null`
     for thermal in $thermals; do
         [[ ! -d $MODPATH/${thermal%/*} ]] && mkdir -p $MODPATH/${thermal%/*}
         touch $MODPATH/$thermal
