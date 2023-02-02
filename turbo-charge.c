@@ -397,6 +397,8 @@ int main()
         else
             printf_plus_time("由于找不到/sys/class/power_supply/battery/status文件以及无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！");
     }
+    temp_sensor=(char *)calloc(1,sizeof(char)*5);
+    strcpy(temp_sensor,"none");
     if(force_temp || current_change)
     {
         temp_sensor_dir=(char *)calloc(1,1);
@@ -442,7 +444,7 @@ int main()
         free_celloc_memory(&thermal_dir,thermal_file_num);
         if(k >= 0)
         {
-            temp_sensor=(char *)calloc(1,sizeof(char)*(strlen(temp_sensor_dir)+6));
+            temp_sensor=(char *)realloc(temp_sensor,sizeof(char)*(strlen(temp_sensor_dir)+6));
             snprintf(temp_sensor,malloc_usable_size(temp_sensor),"%s/temp",temp_sensor_dir);
             check_read_file(temp_sensor,chartmp);
         }
