@@ -407,11 +407,11 @@ int main()
     {
         force_temp=0;
         if(battery_status && !temp_file_num)
-            printf_plus_time("无法在/sys/class/power_supply中的所有文件夹内找到文件名以temp结尾的文件，充电时强制显示28℃功能失效！");
+            printf_plus_time("无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！");
         else if(!battery_status && temp_file_num)
             printf_plus_time("由于找不到/sys/class/power_supply/battery/status文件，充电时强制显示28℃功能失效！");
         else
-            printf_plus_time("由于找不到/sys/class/power_supply/battery/status文件以及无法在/sys/class/power_supply中的所有文件夹内找到文件名以temp结尾的文件，充电时强制显示28℃功能失效！");
+            printf_plus_time("由于找不到/sys/class/power_supply/battery/status文件以及无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！");
     }
     conn_therm=(char *)calloc(1,5);
     strcpy(conn_therm,"none");
