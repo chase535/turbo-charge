@@ -197,11 +197,11 @@ on_install()
     [[ ! -d /data/adb/turbo-charge ]] && mkdir -p /data/adb/turbo-charge
     cp -f ${TMPDIR}/option.txt /data/adb/turbo-charge
     for k in /system/bin /system/etc/init /system/etc/perf /system/vendor/bin /system/vendor/etc /system/vendor/etc/init /system/vendor/etc/perf; do
-        all_thermal="$([[ -n "${all_thermal}" ]] && echo "${all_thermal} ")$(find ${k} -maxdepth 1 -type f -name "*thermal*" 2>/dev/null)"
+        all_thermal="$([[ -n "${all_thermal}" ]] && echo "${all_thermal} ")$(find ${k} -maxdepth 1 -type f -name '*thermal*' 2>/dev/null)"
     done
-    all_thermal="$([[ -n "${all_thermal}" ]] && echo "${all_thermal} ")$(find /system/vendor/etc -maxdepth 1 -type f -name "powerhint*" 2>/dev/null)"
-    all_thermal="$([[ -n "${all_thermal}" ]] && echo "${all_thermal} ")$(find /system/vendor/lib/hw -maxdepth 1 -type f -name "thermal*" 2>/dev/null)"
-    all_thermal="$([[ -n "${all_thermal}" ]] && echo "${all_thermal} ")$(find /system/vendor/lib64/hw -maxdepth 1 -type f -name "thermal*" 2>/dev/null)"
+    all_thermal="$([[ -n "${all_thermal}" ]] && echo "${all_thermal} ")$(find /system/vendor/etc -maxdepth 1 -type f -name 'powerhint*' 2>/dev/null)"
+    all_thermal="$([[ -n "${all_thermal}" ]] && echo "${all_thermal} ")$(find /system/vendor/lib/hw -maxdepth 1 -type f -name 'thermal*' 2>/dev/null)"
+    all_thermal="$([[ -n "${all_thermal}" ]] && echo "${all_thermal} ")$(find /system/vendor/lib64/hw -maxdepth 1 -type f -name 'thermal*' 2>/dev/null)"
     if [[ -n "${all_thermal}" ]]; then
         for thermal in ${all_thermal}; do
             [[ ! -d ${MODPATH}${thermal%/*} ]] && mkdir -p ${MODPATH}${thermal%/*}
