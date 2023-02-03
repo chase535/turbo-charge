@@ -304,7 +304,7 @@ int main()
     char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10];
     char *temp_sensor,*temp_sensor_dir,*buffer,*msg,chartmp[PRINTF_WITH_TIME_MAX_SIZE],current_max_char[20],highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
     char temp_sensors[12][15]={"lcd_therm","quiet_therm","modem_therm","wifi_therm","mtktsbtsnrpa","mtktsbtsmdpa","mtktsAP","modem-0-usr","modem1_wifi","conn_therm","ddr-usr","cwlan-usr"};
-    uchar tmp[5]={0,0,0,0,0},num=0,fu=0,bat_temp_size=0,step_charge=1,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1;
+    uchar tmp[5]={0,0,0,0,0},num=0,negative=0,step_charge=1,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1;
     int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
     uint opt_old[OPTION_QUANTITY]={0,0,0,0,0,0,0,0,0,0},opt_new[OPTION_QUANTITY]={0,0,0,0,0,0,0,0,0,0};
     regex_t temp_re,current_max_re,current_limit_re;
@@ -671,11 +671,11 @@ int main()
                 fq=NULL;
                 line_feed(thermal);
                 temp_int=atoi(thermal);
-                fu=0;
+                negative=0;
                 if(temp_int<0)
                 {
                     temp_int=abs(temp_int);
-                    fu=1;
+                    negative=1;
                 }
                 snprintf(bat_temp,4,"%05d",temp_int);
                 if(strcmp(bat_temp,"000")==0) snprintf(bat_temp,sizeof(bat_temp),"0");
@@ -683,13 +683,14 @@ int main()
                 {
                     for(bat_temp_tmp[0]=bat_temp[0];atoi(bat_temp_tmp)==0;bat_temp_tmp[0]=bat_temp[0])
                     {
-                        for(bat_temp_size=0;bat_temp_size<5;bat_temp_size++) bat_temp[bat_temp_size]=bat_temp[bat_temp_size+1];
+                        for(i=0;i<5;i++) bat_temp[i]=bat_temp[i+1];
                         bat_temp[5]='\0';
                     }
                 }
-                if(fu)
+                if(negative)
                 {
-                    snprintf(bat_temp,sizeof(bat_temp),"-%s",bat_temp);
+                    for(i=5;i>0;i--) bat_temp[i]=bat_temp[i-1];
+                    bat_temp[0]='-';
                     set_array_value(temp_file,temp_file_num,bat_temp);
                 }
                 else (temp_int >= 55000)?set_array_value(temp_file,temp_file_num,"280"):set_array_value(temp_file,temp_file_num,bat_temp);
