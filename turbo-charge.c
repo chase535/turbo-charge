@@ -301,14 +301,14 @@ void powel_ctl(uint opt_new[10], uchar tmp[5], char chartmp[PRINTF_WITH_TIME_MAX
 int main()
 {
     FILE *fq;
-    char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10];
+    char **power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10];
     char *temp_sensor,*temp_sensor_dir,*buffer,*msg,chartmp[PRINTF_WITH_TIME_MAX_SIZE],current_max_char[20],highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
     char temp_sensors[12][15]={"lcd_therm","quiet_therm","modem_therm","wifi_therm","mtktsbtsnrpa","mtktsbtsmdpa","mtktsAP","modem-0-usr","modem1_wifi","conn_therm","ddr-usr","cwlan-usr"};
     uchar tmp[5]={0,0,0,0,0},num=0,negative=0,step_charge=1,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1;
-    int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
+    int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
     uint opt_old[OPTION_QUANTITY]={0,0,0,0,0,0,0,0,0,0},opt_new[OPTION_QUANTITY]={0,0,0,0,0,0,0,0,0,0};
-    regex_t temp_re,current_max_re,current_limit_re;
-    regmatch_t temp_pmatch,current_max_pmatch,current_limit_pmatch;
+    regex_t temp_re,current_max_re;
+    regmatch_t temp_pmatch,current_max_pmatch;
     struct stat statbuf;
     printf("作者：酷安@诺鸡鸭\r\n");
     printf("QQ群：738661277\r\n");
@@ -350,10 +350,8 @@ int main()
         }
     }
     regcomp(&current_max_re,".*/constant_charge_current_max$|.*/fast_charge_current$|.*/thermal_input_current$",REG_EXTENDED|REG_NOSUB);
-    regcomp(&current_limit_re,".*/thermal_input_current_limit$",REG_EXTENDED|REG_NOSUB);
-    regcomp(&temp_re,".*/temp$",REG_EXTENDED|REG_NOSUB);
+    regcomp(&temp_re,".*temp$",REG_EXTENDED|REG_NOSUB);
     power_supply_file_num=list_dir("/sys/class/power_supply", &power_supply_dir);
-    current_limit_file=(char **)calloc(1,sizeof(char *)*100);
     current_max_file=(char **)calloc(1,sizeof(char *)*100);
     temp_file=(char **)calloc(1,sizeof(char *)*100);
     for(i=0;i<power_supply_file_num;i++)
@@ -361,12 +359,6 @@ int main()
         power_supply_dir_list_num=list_dir(power_supply_dir[i], &power_supply_dir_list);
         for(j=0;j<power_supply_dir_list_num;j++)
         {
-            if(regexec(&current_limit_re, power_supply_dir_list[j],1,&current_limit_pmatch,0) == 0)
-            {
-                current_limit_file[current_limit_file_num]=(char *)calloc(1,sizeof(char)*(strlen(power_supply_dir_list[j])+1));
-                strcpy(current_limit_file[current_limit_file_num],power_supply_dir_list[j]);
-                current_limit_file_num++;
-            }
             if(regexec(&current_max_re, power_supply_dir_list[j],1,&current_max_pmatch,0) == 0)
             {
                 current_max_file[current_max_file_num]=(char *)calloc(1,sizeof(char)*(strlen(power_supply_dir_list[j])+1));
@@ -383,7 +375,6 @@ int main()
         free_celloc_memory(&power_supply_dir_list,power_supply_dir_list_num);
     }
     free_celloc_memory(&power_supply_dir,power_supply_file_num);
-    current_limit_file=(char **)realloc(current_limit_file, sizeof(char *)*current_limit_file_num);
     current_max_file=(char **)realloc(current_max_file, sizeof(char *)*current_max_file_num);
     temp_file=(char **)realloc(temp_file, sizeof(char *)*temp_file_num);
     if(!current_max_file_num)
@@ -506,7 +497,6 @@ int main()
         if(!num) num=1;
         set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
         set_value("/sys/class/power_supply/battery/system_temp_level", "1");
-        set_value("/sys/class/power_supply/usb/boost_current", "1");
         set_value("/sys/class/power_supply/battery/safety_timer_enabled", "0");
         set_value("/sys/kernel/fast_charge/failsafe", "1");
         set_value("/sys/class/power_supply/battery/allow_hvdcp3", "1");
@@ -515,7 +505,6 @@ int main()
         set_value("/sys/class/power_supply/battery/input_current_limited", "0");
         set_value("/sys/class/power_supply/battery/input_current_settled", "1");
         set_value("/sys/class/qcom-battery/restrict_chg", "0");
-        set_array_value(current_limit_file,current_limit_file_num,"-1");
         if(!battery_status)
         {
             if(current_change) set_array_value(current_max_file,current_max_file_num,current_max_char);
