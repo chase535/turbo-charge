@@ -526,7 +526,7 @@ int main()
             }
             else if(step_charge == 2)
                 (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
-            sleep(5);
+            sleep(1);
             continue;
         }
         check_read_file("/sys/class/power_supply/battery/capacity",chartmp);
@@ -636,7 +636,7 @@ int main()
                             set_array_value(current_max_file,current_max_file_num,highest_temp_current_char);
                             if(force_temp) set_array_value(temp_file,temp_file_num,"280");
                             if(power_control) powel_ctl(opt_new, tmp, chartmp);
-                            sleep(5);
+                            sleep(1);
                         }
                     }
                 }
@@ -695,7 +695,7 @@ int main()
                 else (temp_int >= 55000)?set_array_value(temp_file,temp_file_num,"280"):set_array_value(temp_file,temp_file_num,bat_temp);
             }
         }
-        sleep(5);
+        sleep(1);
     }
     return 0;
 }
