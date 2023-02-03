@@ -3,14 +3,14 @@ name: CMake
 on:
   push:
     branches:
-      - 'main'
+      - 'test'
     paths-ignore:
       - '**.md'
       - '**.zip'
       - '**.json'
   pull_request:
     branches:
-      - 'main'
+      - 'test'
 
 jobs:
   build:
