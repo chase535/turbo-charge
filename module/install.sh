@@ -57,7 +57,7 @@ check_file()
     for i in $(ls /sys/class/thermal | grep "thermal_zone"); do
         if [[ -f "/sys/class/thermal/${i}/type" ]]; then
             temp_sensor=$(cat /sys/class/thermal/${i}/type 2>/dev/null)
-            for j in lcd_therm quiet_therm modem_therm wifi_therm mtktsbtsnrpa mtktsbtsmdpa mtktsAP modem-0-usr modem1_wifi conn_therm ddr-usr cwlan-usr; do
+            for j in conn_therm quiet_therm modem_therm wifi_therm mtktsbtsnrpa mtktsbtsmdpa mtktsAP modem-0-usr modem1_wifi ddr-usr cwlan-usr; do
                 [[ "${temp_sensor}" == "${j}" ]] && have_temp_sensor=1 && break
             done
         fi
