@@ -150,7 +150,7 @@ void set_value(char *file, char *numb)
     }
     else
     {
-        printf("找不到开%s\n",file);
+        printf("找不到%s\n",file);
     }
     fflush(stdout);
 }
