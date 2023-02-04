@@ -402,8 +402,6 @@ int main()
         else
             printf_with_time("由于找不到/sys/class/power_supply/battery/status文件以及无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！");
     }
-    temp_sensor=(char *)calloc(1, sizeof(char)*5);
-    strcpy(temp_sensor, "none");
     if(force_temp || current_change)
     {
         temp_sensor_dir=(char *)calloc(1, sizeof(char));
@@ -449,7 +447,7 @@ int main()
         free_celloc_memory(&thermal_dir, thermal_file_num);
         if(temp_sensor_num != 100)
         {
-            temp_sensor=(char *)realloc(temp_sensor, sizeof(char)*(strlen(temp_sensor_dir)+6));
+            temp_sensor=(char *)calloc(1, sizeof(char)*(strlen(temp_sensor_dir)+6));
             sprintf(temp_sensor, "%s/temp", temp_sensor_dir);
             snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "将使用%s温度传感器作为手机温度的获取源", temp_sensors[temp_sensor_num]);
             printf_with_time(chartmp);
@@ -457,8 +455,6 @@ int main()
         }
         else
         {
-            free(temp_sensor);
-            temp_sensor=NULL;
             if(force_temp)
             {
                 printf_with_time("由于找不到程序支持的温度传感器，温度控制及充电时强制显示28℃功能失效！");
@@ -563,7 +559,7 @@ int main()
             if(power_control) powel_ctl(opt_new, tmp, chartmp);
             if(opt_new[1] == 1 && current_change)
             {
-                if(temp_sensor_num != 100)
+                if(temp_sensor != NULL)
                 {
                     check_read_file(temp_sensor, chartmp);
                     fq=fopen(temp_sensor, "rt");
