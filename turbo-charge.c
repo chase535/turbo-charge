@@ -405,9 +405,9 @@ int main()
     strcpy(temp_sensor,"none");
     if(force_temp || current_change)
     {
-        temp_sensor_dir=(char *)calloc(1,1);
-        buffer=(char *)calloc(1,1);
-        msg=(char *)calloc(1,1);
+        temp_sensor_dir=(char *)calloc(1,sizeof(char)*10);
+        buffer=(char *)calloc(1,sizeof(char)*10);
+        msg=(char *)calloc(1,sizeof(char)*10);
         thermal_file_num=list_dir("/sys/class/thermal", &thermal_dir);
         for(i=0;i<thermal_file_num;i++)
         {
