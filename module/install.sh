@@ -124,11 +124,11 @@ volume_choose()
 {
     while true; do
         getevent -lc 1 2>&1 | grep VOLUME | grep " DOWN" > ${TMPDIR}/events
-        if (`cat ${TMPDIR}/events 2>/dev/null | grep VOLUME >/dev/null`); then
+        if (`cat ${TMPDIR}/events 2>/dev/null | grep VOLUME > /dev/null`); then
             break
         fi
     done
-    if (`cat ${TMPDIR}/events 2>/dev/null | grep VOLUMEUP >/dev/null`); then
+    if (`cat ${TMPDIR}/events 2>/dev/null | grep VOLUMEUP > /dev/null`); then
         return 1
     else
         return 0
