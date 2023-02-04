@@ -312,15 +312,15 @@ void powel_ctl(uint opt_new[10], uchar tmp[5], char chartmp[PRINTF_WITH_TIME_MAX
 int main()
 {
     FILE *fq;
-    char **power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10];
+    char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10];
     char *temp_sensor,*temp_sensor_dir,*buffer,*msg,chartmp[PRINTF_WITH_TIME_MAX_SIZE],current_max_char[20],highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
     char temp_sensors[12][15]={"lcd_therm","quiet_therm","modem_therm","wifi_therm","mtktsbtsnrpa","mtktsbtsmdpa","mtktsAP","modem-0-usr","modem1_wifi","conn_therm","ddr-usr","cwlan-usr"};
     uchar tmp[5]={0,0,0,0,0},num=0,negative=0,step_charge=1,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1;
-    int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
+    int i=0,j=0,temp_sensor_num=100,temp_int=0,current_limit_file_num=0,power_supply_file_num=0,thermal_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
     uint opt_old[OPTION_QUANTITY]={0,0,0,0,0,0,0,0,0,0},opt_new[OPTION_QUANTITY]={0,0,0,0,0,0,0,0,0,0};
     char options[OPTION_QUANTITY][40]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","CURRENT_MAX","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_STOP","CHARGE_START","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
-    regex_t temp_re,current_max_re;
-    regmatch_t temp_pmatch,current_max_pmatch;
+    regex_t temp_re,current_max_re,current_limit_re;
+    regmatch_t temp_pmatch,current_max_pmatch,current_limit_pmatch;
     struct stat statbuf;
     printf("作者：酷安@诺鸡鸭\r\n");
     printf("QQ群：738661277\r\n");
@@ -361,9 +361,11 @@ int main()
             printf_with_time("由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯式充电控制的所有功能失效！");
         }
     }
-    regcomp(&current_max_re,".*/constant_charge_current_max$",REG_EXTENDED|REG_NOSUB);
-    regcomp(&temp_re,".*temp$",REG_EXTENDED|REG_NOSUB);
+    regcomp(&current_max_re,".*/constant_charge_current_max$|.*/fast_charge_current$|.*/thermal_input_current$",REG_EXTENDED|REG_NOSUB);
+    regcomp(&current_limit_re,".*/thermal_input_current_limit$",REG_EXTENDED|REG_NOSUB);
+    regcomp(&temp_re,".*/temp$",REG_EXTENDED|REG_NOSUB);
     power_supply_file_num=list_dir("/sys/class/power_supply", &power_supply_dir);
+    current_limit_file=(char **)calloc(1,sizeof(char *)*100);
     current_max_file=(char **)calloc(1,sizeof(char *)*100);
     temp_file=(char **)calloc(1,sizeof(char *)*100);
     for(i=0;i<power_supply_file_num;i++)
@@ -371,6 +373,12 @@ int main()
         power_supply_dir_list_num=list_dir(power_supply_dir[i], &power_supply_dir_list);
         for(j=0;j<power_supply_dir_list_num;j++)
         {
+            if(regexec(&current_limit_re, power_supply_dir_list[j],1,&current_limit_pmatch,0) == 0)
+            {
+                current_limit_file[current_limit_file_num]=(char *)calloc(1,sizeof(char)*(strlen(power_supply_dir_list[j])+1));
+                strcpy(current_limit_file[current_limit_file_num],power_supply_dir_list[j]);
+                current_limit_file_num++;
+            }
             if(regexec(&current_max_re, power_supply_dir_list[j],1,&current_max_pmatch,0) == 0)
             {
                 current_max_file[current_max_file_num]=(char *)calloc(1,sizeof(char)*(strlen(power_supply_dir_list[j])+1));
@@ -508,28 +516,50 @@ int main()
         snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
         for(i=0;i<10;i++)
         {
-            printf("%s=%d\n",options[i],opt_new[i]);
+            printf("%s=%u\n",options[i],opt_new[i]);
         }
         printf("current_max_char=%s\n",current_max_char);
         printf("highest_temp_current_char=%s\n",highest_temp_current_char);
         fflush(stdout);
         if(!num) num=1;
-        set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
-		set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
-		set_value("/sys/class/power_supply/battery/system_temp_level", "1");
-		set_value("/sys/kernel/fast_charge/failsafe", "1");
-		set_value("/sys/class/power_supply/battery/allow_hvdcp3", "1");
-		set_value("/sys/class/power_supply/usb/pd_allowed", "1");
-		set_value("/sys/class/power_supply/battery/subsystem/usb/pd_allowed", "1");
-		set_value("/sys/class/power_supply/battery/input_current_limited", "0");
-		set_value("/sys/class/power_supply/battery/input_current_settled", "1");
-		set_value("/sys/class/qcom-battery/restrict_chg", "0");
+        set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
+        set_value("/sys/class/power_supply/battery/system_temp_level", "1");
+        set_value("/sys/class/power_supply/usb/boost_current", "1");
+        set_value("/sys/class/power_supply/battery/safety_timer_enabled", "0");
+        set_value("/sys/kernel/fast_charge/failsafe", "1");
+        set_value("/sys/class/power_supply/battery/allow_hvdcp3", "1");
+        set_value("/sys/class/power_supply/usb/pd_allowed", "1");
+        set_value("/sys/class/power_supply/battery/subsystem/usb/pd_allowed", "1");
+        set_value("/sys/class/power_supply/battery/input_current_limited", "0");
+        set_value("/sys/class/power_supply/battery/input_current_settled", "1");
+        set_value("/sys/class/qcom-battery/restrict_chg", "0");
+        set_array_value(current_limit_file,current_limit_file_num,"-1");
+        if(!battery_status)
+        {
+            if(current_change) set_array_value(current_max_file,current_max_file_num,current_max_char);
+            if(step_charge == 1)
+            {
+                if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+                else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+            }
+            else if(step_charge == 2)
+                (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+            sleep(1);
+            continue;
+        }
         check_read_file("/sys/class/power_supply/battery/capacity",chartmp);
         fq = fopen("/sys/class/power_supply/battery/capacity", "rt");
         fgets(power, 5, fq);
         fclose(fq);
         fq=NULL;
         line_feed(power);
+        if(step_charge == 1)
+        {
+            if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+            else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+        }
+        else if(step_charge == 2)
+            (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
         set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
         check_read_file("/sys/class/power_supply/battery/status",chartmp);
         fq = fopen("/sys/class/power_supply/battery/status", "rt");
@@ -547,7 +577,7 @@ int main()
             }
             if(force_temp) set_array_value(temp_file,temp_file_num,"280");
             if(power_control) powel_ctl(opt_new, tmp, chartmp);
-            if(current_change) set_array_value(current_max_file,current_max_file_num,current_max_char);
+            set_array_value(current_max_file,current_max_file_num,current_max_char);
         }
         else
         {
@@ -561,7 +591,13 @@ int main()
                 printf_with_time("充电器断开连接");
                 tmp[0]=1;
             }
-            set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+            if(step_charge == 1)
+            {
+                if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+                else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+            }
+            else if(step_charge == 2)
+                (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
             if(force_temp)
             {
                 check_read_file(temp_sensor,chartmp);
@@ -593,7 +629,7 @@ int main()
                     bat_temp[0]='-';
                     set_array_value(temp_file,temp_file_num,bat_temp);
                 }
-                else (temp_int >= 55000)?set_array_value(temp_file,temp_file_num,"280"):set_array_value(temp_file,temp_file_num,bat_temp);
+                else (temp_int >= 45000)?set_array_value(temp_file,temp_file_num,"280"):set_array_value(temp_file,temp_file_num,bat_temp);
             }
         }
         sleep(1);
