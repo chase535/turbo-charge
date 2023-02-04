@@ -129,7 +129,6 @@ void set_value(char *file, char *numb)
             fputs(numb,fn);
             fclose(fn);
             fn = NULL;
-            printf("修改%s文件 %s\n",file,numb);
         }
         else
         {
@@ -140,19 +139,9 @@ void set_value(char *file, char *numb)
                 fputs(numb,fn);
                 fclose(fn);
                 fn = NULL;
-                printf("修改%s文件 %s\n",file,numb);
-            }
-            else
-            {
-                printf("打不开%s\n",file);
             }
         }
     }
-    else
-    {
-        printf("找不到%s\n",file);
-    }
-    fflush(stdout);
 }
 
 void set_array_value(char **file, int num, char *value)
@@ -318,7 +307,6 @@ int main()
     uchar tmp[5]={0,0,0,0,0},num=0,negative=0,step_charge=1,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1;
     int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
     uint opt_old[OPTION_QUANTITY]={0,0,0,0,0,0,0,0,0,0},opt_new[OPTION_QUANTITY]={0,0,0,0,0,0,0,0,0,0};
-    char options[OPTION_QUANTITY][40]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","CURRENT_MAX","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_STOP","CHARGE_START","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
     regex_t temp_re,current_max_re,current_limit_re;
     regmatch_t temp_pmatch,current_max_pmatch,current_limit_pmatch;
     struct stat statbuf;
@@ -515,13 +503,6 @@ int main()
         read_option(opt_new, opt_old, tmp, num, chartmp, 0);
         snprintf(current_max_char,20,"%u",opt_new[3]);
         snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
-        for(i=0;i<10;i++)
-        {
-            printf("%s=%u\n",options[i],opt_new[i]);
-        }
-        printf("current_max_char=%s\n",current_max_char);
-        printf("highest_temp_current_char=%s\n",highest_temp_current_char);
-        fflush(stdout);
         if(!num) num=1;
         set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
         set_value("/sys/class/power_supply/battery/system_temp_level", "1");
