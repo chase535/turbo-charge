@@ -5,4 +5,7 @@ until [[ "$(getprop service.bootanim.exit)" == "1" ]]; do
     sleep 1
 done
 echo -e "手机启动完毕\n" >> /data/adb/turbo-charge/log.txt
+nohup $MODDIR/turbo-charge 2>&1 > /dev/null &
+sleep 1
+ps -eo comm,pid | grep turbo-charge | awk '{print $2}' | xargs -n1 kill
 nohup $MODDIR/turbo-charge 2>&1 >> /data/adb/turbo-charge/log.txt &
