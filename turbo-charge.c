@@ -577,7 +577,90 @@ int main()
             }
             if(force_temp) set_array_value(temp_file,temp_file_num,"280");
             if(power_control) powel_ctl(opt_new, tmp, chartmp);
-            set_array_value(current_max_file,current_max_file_num,current_max_char);
+            if(opt_new[1] == 1 && current_change)
+            {
+                if(temp_sensor_num != 100)
+                {
+                    check_read_file(temp_sensor,chartmp);
+                    fq = fopen(temp_sensor, "rt");
+                    fgets(thermal, 10, fq);
+                    fclose(fq);
+                    fq=NULL;
+                    line_feed(thermal);
+                    temp_int = atoi(thermal);
+                    if(temp_int >= ((int)opt_new[7])*1000)
+                    {
+                        snprintf(chartmp,PRINTF_WITH_TIME_MAX_SIZE,"手机温度大于等于降低充电电流的温度阈值，限制充电电流为%dμA",opt_new[8]);
+                        printf_with_time(chartmp);
+                        while(1)
+                        {
+                            read_option(opt_new, opt_old, tmp, num, chartmp, 1);
+                            snprintf(current_max_char,20,"%u",opt_new[3]);
+                            snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
+                            check_read_file(temp_sensor,chartmp);
+                            fq = fopen(temp_sensor, "rt");
+                            fgets(thermal, 300, fq);
+                            fclose(fq);
+                            fq=NULL;
+                            line_feed(thermal);
+                            temp_int = atoi(thermal);
+                            if(tmp[3] == 1)
+                            {
+                                if(temp_int < ((int)opt_new[7])*1000)
+                                {
+                                    snprintf(chartmp,PRINTF_WITH_TIME_MAX_SIZE,"新的降低充电电流的温度阈值高于旧的温度阈值，且手机温度小于新的温度阈值，恢复充电电流为%dμA",opt_new[3]);
+                                    printf_with_time(chartmp);
+                                    break;
+                                }
+                                else
+                                {
+                                    snprintf(chartmp,PRINTF_WITH_TIME_MAX_SIZE,"新的降低充电电流的温度阈值高于旧的温度阈值，但手机温度大于等于新的温度阈值，限制充电电流为%dμA",opt_new[8]);
+                                    printf_with_time(chartmp);
+                                }
+                                tmp[3]=0;
+                            }
+                            check_read_file("/sys/class/power_supply/battery/status",chartmp);
+                            fq = fopen("/sys/class/power_supply/battery/status", "rt");
+                            fgets(charge, 20, fq);
+                            fclose(fq);
+                            fq=NULL;
+                            line_feed(charge);
+                            if(strcmp(charge, "Discharging") == 0)
+                            {
+                                snprintf(chartmp,PRINTF_WITH_TIME_MAX_SIZE,"充电器断开连接，恢复充电电流为%dμA",opt_new[3]);
+                                printf_with_time(chartmp);
+                                tmp[0]=1;
+                                tmp[1]=0;
+                                break;
+                            }
+                            if(temp_int <= ((int)opt_new[9])*1000)
+                            {
+                                snprintf(chartmp,PRINTF_WITH_TIME_MAX_SIZE,"手机温度小于等于恢复快充的温度阈值，恢复充电电流为%dμA",opt_new[3]);
+                                printf_with_time(chartmp);
+                                break;
+                            }
+                            if(opt_new[1] == 0)
+                            {
+                                snprintf(chartmp,PRINTF_WITH_TIME_MAX_SIZE,"温控关闭，恢复充电电流为%dμA",opt_new[3]);
+                                printf_with_time(chartmp);
+                                break;
+                            }
+                            if(step_charge == 1)
+                            {
+                                if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+                                else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+                            }
+                            else if(step_charge == 2)
+                                (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+                            set_array_value(current_max_file,current_max_file_num,highest_temp_current_char);
+                            if(force_temp) set_array_value(temp_file,temp_file_num,"280");
+                            if(power_control) powel_ctl(opt_new, tmp, chartmp);
+                            sleep(1);
+                        }
+                    }
+                }
+            }
+            if(current_change) set_array_value(current_max_file,current_max_file_num,current_max_char);
         }
         else
         {
