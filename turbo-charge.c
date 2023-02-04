@@ -406,9 +406,9 @@ int main()
     strcpy(temp_sensor, "none");
     if(force_temp || current_change)
     {
-        temp_sensor_dir=(char *)calloc(1, sizeof(char)*10);
-        buffer=(char *)calloc(1, sizeof(char)*10);
-        msg=(char *)calloc(1, sizeof(char)*10);
+        temp_sensor_dir=(char *)calloc(1, sizeof(char));
+        buffer=(char *)calloc(1, sizeof(char));
+        msg=(char *)calloc(1, sizeof(char));
         thermal_file_num=list_dir("/sys/class/thermal", &thermal_dir);
         for(i=0;i < thermal_file_num;i++)
         {
@@ -439,12 +439,12 @@ int main()
                             strcpy(temp_sensor_dir, thermal_dir[i]);
                         }
                     }
-                    free(msg);
-                    msg=NULL;
                 }
-                free(buffer);
-                buffer=NULL;
             }
+            free(buffer);
+            buffer=NULL;
+            free(msg);
+            msg=NULL;
         }
         free_celloc_memory(&thermal_dir, thermal_file_num);
         if(temp_sensor_num != 100)
@@ -457,6 +457,8 @@ int main()
         }
         else
         {
+            free(temp_sensor);
+            temp_sensor=NULL;
             if(force_temp)
             {
                 printf_with_time("由于找不到程序支持的温度传感器，温度控制及充电时强制显示28℃功能失效！");
