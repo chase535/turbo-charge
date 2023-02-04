@@ -129,6 +129,7 @@ void set_value(char *file, char *numb)
             fputs(numb,fn);
             fclose(fn);
             fn = NULL;
+            printf("修改%s文件 %s\n",file,numb);
         }
         else
         {
@@ -139,9 +140,19 @@ void set_value(char *file, char *numb)
                 fputs(numb,fn);
                 fclose(fn);
                 fn = NULL;
+                printf("修改%s文件 %s\n",file,numb);
+            }
+            else
+            {
+                printf("打不开%s\n",file);
             }
         }
     }
+    else
+    {
+        printf("找不到开%s\n",file);
+    }
+    fflush(stdout);
 }
 
 void set_array_value(char **file, int num, char *value)
@@ -307,6 +318,7 @@ int main()
     uchar tmp[5]={0,0,0,0,0},num=0,negative=0,step_charge=1,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1;
     int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
     uint opt_old[OPTION_QUANTITY]={0,0,0,0,0,0,0,0,0,0},opt_new[OPTION_QUANTITY]={0,0,0,0,0,0,0,0,0,0};
+    char options[OPTION_QUANTITY][40]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","CURRENT_MAX","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_STOP","CHARGE_START","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
     regex_t temp_re,current_max_re;
     regmatch_t temp_pmatch,current_max_pmatch;
     struct stat statbuf;
@@ -396,9 +408,9 @@ int main()
     strcpy(temp_sensor,"none");
     if(force_temp || current_change)
     {
-        temp_sensor_dir=(char *)calloc(1,1);
-        buffer=(char *)calloc(1,1);
-        msg=(char *)calloc(1,1);
+        temp_sensor_dir=(char *)calloc(1,sizeof(char));
+        buffer=(char *)calloc(1,sizeof(char));
+        msg=(char *)calloc(1,sizeof(char));
         thermal_file_num=list_dir("/sys/class/thermal", &thermal_dir);
         for(i=0;i<thermal_file_num;i++)
         {
@@ -494,43 +506,31 @@ int main()
         read_option(opt_new, opt_old, tmp, num, chartmp, 0);
         snprintf(current_max_char,20,"%u",opt_new[3]);
         snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
-        if(!num) num=1;
-        set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
-        set_value("/sys/class/power_supply/battery/system_temp_level", "1");
-        set_value("/sys/class/power_supply/battery/safety_timer_enabled", "0");
-        set_value("/sys/kernel/fast_charge/failsafe", "1");
-        set_value("/sys/class/power_supply/battery/allow_hvdcp3", "1");
-        set_value("/sys/class/power_supply/usb/pd_allowed", "1");
-        set_value("/sys/class/power_supply/battery/subsystem/usb/pd_allowed", "1");
-        set_value("/sys/class/power_supply/battery/input_current_limited", "0");
-        set_value("/sys/class/power_supply/battery/input_current_settled", "1");
-        set_value("/sys/class/qcom-battery/restrict_chg", "0");
-        if(!battery_status)
+        for(i=0;i<10;i++)
         {
-            if(current_change) set_array_value(current_max_file,current_max_file_num,current_max_char);
-            if(step_charge == 1)
-            {
-                if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
-                else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
-            }
-            else if(step_charge == 2)
-                (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
-            sleep(1);
-            continue;
+            printf("%s=%d\n",options[i],opt_new[i]);
         }
+        printf("current_max_char=%s\n",current_max_char);
+        printf("highest_temp_current_char=%s\n",highest_temp_current_char);
+        fflush(stdout);
+        if(!num) num=1;
+        set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
+		set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
+		set_value("/sys/class/power_supply/battery/system_temp_level", "1");
+		set_value("/sys/kernel/fast_charge/failsafe", "1");
+		set_value("/sys/class/power_supply/battery/allow_hvdcp3", "1");
+		set_value("/sys/class/power_supply/usb/pd_allowed", "1");
+		set_value("/sys/class/power_supply/battery/subsystem/usb/pd_allowed", "1");
+		set_value("/sys/class/power_supply/battery/input_current_limited", "0");
+		set_value("/sys/class/power_supply/battery/input_current_settled", "1");
+		set_value("/sys/class/qcom-battery/restrict_chg", "0");
         check_read_file("/sys/class/power_supply/battery/capacity",chartmp);
         fq = fopen("/sys/class/power_supply/battery/capacity", "rt");
         fgets(power, 5, fq);
         fclose(fq);
         fq=NULL;
         line_feed(power);
-        if(step_charge == 1)
-        {
-            if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
-            else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
-        }
-        else if(step_charge == 2)
-            (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+        set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
         check_read_file("/sys/class/power_supply/battery/status",chartmp);
         fq = fopen("/sys/class/power_supply/battery/status", "rt");
         fgets(charge, 20, fq);
@@ -547,89 +547,6 @@ int main()
             }
             if(force_temp) set_array_value(temp_file,temp_file_num,"280");
             if(power_control) powel_ctl(opt_new, tmp, chartmp);
-            if(opt_new[1] == 1 && current_change)
-            {
-                if(temp_sensor_num != 100)
-                {
-                    check_read_file(temp_sensor,chartmp);
-                    fq = fopen(temp_sensor, "rt");
-                    fgets(thermal, 10, fq);
-                    fclose(fq);
-                    fq=NULL;
-                    line_feed(thermal);
-                    temp_int = atoi(thermal);
-                    if(temp_int >= ((int)opt_new[7])*1000)
-                    {
-                        snprintf(chartmp,PRINTF_WITH_TIME_MAX_SIZE,"手机温度大于等于降低充电电流的温度阈值，限制充电电流为%dμA",opt_new[8]);
-                        printf_with_time(chartmp);
-                        while(1)
-                        {
-                            read_option(opt_new, opt_old, tmp, num, chartmp, 1);
-                            snprintf(current_max_char,20,"%u",opt_new[3]);
-                            snprintf(highest_temp_current_char,20,"%u",opt_new[8]);
-                            check_read_file(temp_sensor,chartmp);
-                            fq = fopen(temp_sensor, "rt");
-                            fgets(thermal, 300, fq);
-                            fclose(fq);
-                            fq=NULL;
-                            line_feed(thermal);
-                            temp_int = atoi(thermal);
-                            if(tmp[3] == 1)
-                            {
-                                if(temp_int < ((int)opt_new[7])*1000)
-                                {
-                                    snprintf(chartmp,PRINTF_WITH_TIME_MAX_SIZE,"新的降低充电电流的温度阈值高于旧的温度阈值，且手机温度小于新的温度阈值，恢复充电电流为%dμA",opt_new[3]);
-                                    printf_with_time(chartmp);
-                                    break;
-                                }
-                                else
-                                {
-                                    snprintf(chartmp,PRINTF_WITH_TIME_MAX_SIZE,"新的降低充电电流的温度阈值高于旧的温度阈值，但手机温度大于等于新的温度阈值，限制充电电流为%dμA",opt_new[8]);
-                                    printf_with_time(chartmp);
-                                }
-                                tmp[3]=0;
-                            }
-                            check_read_file("/sys/class/power_supply/battery/status",chartmp);
-                            fq = fopen("/sys/class/power_supply/battery/status", "rt");
-                            fgets(charge, 20, fq);
-                            fclose(fq);
-                            fq=NULL;
-                            line_feed(charge);
-                            if(strcmp(charge, "Discharging") == 0)
-                            {
-                                snprintf(chartmp,PRINTF_WITH_TIME_MAX_SIZE,"充电器断开连接，恢复充电电流为%dμA",opt_new[3]);
-                                printf_with_time(chartmp);
-                                tmp[0]=1;
-                                tmp[1]=0;
-                                break;
-                            }
-                            if(temp_int <= ((int)opt_new[9])*1000)
-                            {
-                                snprintf(chartmp,PRINTF_WITH_TIME_MAX_SIZE,"手机温度小于等于恢复快充的温度阈值，恢复充电电流为%dμA",opt_new[3]);
-                                printf_with_time(chartmp);
-                                break;
-                            }
-                            if(opt_new[1] == 0)
-                            {
-                                snprintf(chartmp,PRINTF_WITH_TIME_MAX_SIZE,"温控关闭，恢复充电电流为%dμA",opt_new[3]);
-                                printf_with_time(chartmp);
-                                break;
-                            }
-                            if(step_charge == 1)
-                            {
-                                if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
-                                else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
-                            }
-                            else if(step_charge == 2)
-                                (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
-                            set_array_value(current_max_file,current_max_file_num,highest_temp_current_char);
-                            if(force_temp) set_array_value(temp_file,temp_file_num,"280");
-                            if(power_control) powel_ctl(opt_new, tmp, chartmp);
-                            sleep(1);
-                        }
-                    }
-                }
-            }
             if(current_change) set_array_value(current_max_file,current_max_file_num,current_max_char);
         }
         else
@@ -644,13 +561,7 @@ int main()
                 printf_with_time("充电器断开连接");
                 tmp[0]=1;
             }
-            if(step_charge == 1)
-            {
-                if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?set_value("/sys/class/power_supply/battery/step_charging_enabled", "1"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
-                else set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
-            }
-            else if(step_charge == 2)
-                (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+            set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
             if(force_temp)
             {
                 check_read_file(temp_sensor,chartmp);
