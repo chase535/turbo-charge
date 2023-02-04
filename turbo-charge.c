@@ -693,7 +693,7 @@ int main()
                     bat_temp[0]='-';
                     set_array_value(temp_file,temp_file_num,bat_temp);
                 }
-                else (temp_int >= 55000)?set_array_value(temp_file,temp_file_num,"280"):set_array_value(temp_file,temp_file_num,bat_temp);
+                else (temp_int >= 45000)?set_array_value(temp_file,temp_file_num,"280"):set_array_value(temp_file,temp_file_num,bat_temp);
             }
         }
         sleep(1);
