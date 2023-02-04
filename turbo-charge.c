@@ -316,7 +316,7 @@ int main()
     char *temp_sensor,*temp_sensor_dir,*buffer,*msg,chartmp[PRINTF_WITH_TIME_MAX_SIZE],current_max_char[20],highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
     char temp_sensors[12][15]={"lcd_therm","quiet_therm","modem_therm","wifi_therm","mtktsbtsnrpa","mtktsbtsmdpa","mtktsAP","modem-0-usr","modem1_wifi","conn_therm","ddr-usr","cwlan-usr"};
     uchar tmp[5]={0,0,0,0,0},num=0,negative=0,step_charge=1,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1;
-    int i=0,j=0,temp_sensor_num=100,temp_int=0,current_limit_file_num=0,power_supply_file_num=0,thermal_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
+    int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
     uint opt_old[OPTION_QUANTITY]={0,0,0,0,0,0,0,0,0,0},opt_new[OPTION_QUANTITY]={0,0,0,0,0,0,0,0,0,0};
     char options[OPTION_QUANTITY][40]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","CURRENT_MAX","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_STOP","CHARGE_START","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
     regex_t temp_re,current_max_re,current_limit_re;
@@ -395,6 +395,7 @@ int main()
         free_celloc_memory(&power_supply_dir_list,power_supply_dir_list_num);
     }
     free_celloc_memory(&power_supply_dir,power_supply_file_num);
+    current_limit_file=(char **)realloc(current_limit_file, sizeof(char *)*current_limit_file_num);
     current_max_file=(char **)realloc(current_max_file, sizeof(char *)*current_max_file_num);
     temp_file=(char **)realloc(temp_file, sizeof(char *)*temp_file_num);
     if(!current_max_file_num)
@@ -560,7 +561,6 @@ int main()
         }
         else if(step_charge == 2)
             (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
-        set_value("/sys/class/power_supply/battery/step_charging_enabled", "0");
         check_read_file("/sys/class/power_supply/battery/status",chartmp);
         fq = fopen("/sys/class/power_supply/battery/status", "rt");
         fgets(charge, 20, fq);
