@@ -441,11 +441,11 @@ int main()
                     }
                 }
             }
-            free(buffer);
-            buffer=NULL;
-            free(msg);
-            msg=NULL;
         }
+        free(buffer);
+        buffer=NULL;
+        free(msg);
+        msg=NULL;
         free_celloc_memory(&thermal_dir, thermal_file_num);
         if(temp_sensor_num != 100)
         {
