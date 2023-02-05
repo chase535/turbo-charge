@@ -160,8 +160,16 @@ void charge_value(char *i)
 {
     set_value("/sys/class/power_supply/battery/charging_enabled", i);
     set_value("/sys/class/power_supply/battery/battery_charging_enabled", i);
-    (atoi(i))?set_value("/sys/class/power_supply/battery/input_suspend", "0"):set_value("/sys/class/power_supply/battery/input_suspend", "1");
-    (atoi(i))?set_value("/sys/class/qcom-battery/restricted_charging", "0"):set_value("/sys/class/qcom-battery/restricted_charging", "1");
+    if(atoi(i))
+    {
+        set_value("/sys/class/power_supply/battery/input_suspend", "0");
+        set_value("/sys/class/qcom-battery/restricted_charging", "0");
+    }
+    else
+    {
+        set_value("/sys/class/power_supply/battery/input_suspend", "1");
+        set_value("/sys/class/qcom-battery/restricted_charging", "1");
+    }
 }
 
 void check_read_file(char *file, char chartmp[PRINTF_WITH_TIME_MAX_SIZE])
