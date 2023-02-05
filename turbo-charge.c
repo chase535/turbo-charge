@@ -665,6 +665,7 @@ int main()
             }
             else if(step_charge == 2)
                 (opt_new[0] == 1)?set_value("/sys/class/power_supply/battery/step_charging_enabled", "0"):set_value("/sys/class/power_supply/battery/step_charging_enabled", "1");
+            if(power_control) powel_ctl(opt_new, tmp, chartmp);
             if(force_temp)
             {
                 check_read_file(temp_sensor, chartmp);
