@@ -8,7 +8,7 @@ echo "手机启动完毕" >> /data/adb/turbo-charge/log.txt
 echo "" >> /data/adb/turbo-charge/log.txt
 nohup ${MODDIR}/turbo-charge 2>&1 > /dev/null &
 sleep 1
-first_process=$(ps -eo comm,pid 2>/dev/null | grep "turbo-charge" 2>/dev/null | awk '{print $2}' 2>/dev/null)
+first_process=$(ps -eo comm,pid | grep "turbo-charge" | awk '{print $2}')
 nohup ${MODDIR}/turbo-charge 2>&1 >> /data/adb/turbo-charge/log.txt &
 sleep 60
 [[ -n "${first_process}" ]] && kill ${first_process}
