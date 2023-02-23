@@ -18,10 +18,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y dos2unix ssh git
-      - name: Sync to Gitee
+      - name: LF to CRLF
         run: |
           git clone https://"${GITHUB_USER}":"${GITHUB_TOKEN}"@github.com/chase535/turbo-charge.git ${{ github.workspace }}/git_clone -b main --depth=1
-          files=$(find ${{ github.workspace }}/git_clone -type f)
+          cd ${{ github.workspace }}/git_clone
+          files=$(find . -type f)
           unix2dos ${files}
           git add . -f
           git commit -a -m "换行符LF转CRLF"
