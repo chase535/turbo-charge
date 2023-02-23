@@ -15,6 +15,8 @@
 typedef unsigned char uchar;
 typedef unsigned int uint;
 
+char chartmp[PRINTF_WITH_TIME_MAX_SIZE];
+
 struct tm *get_utc8_time(void)
 {
     time_t cur_time;
@@ -118,28 +120,36 @@ int list_dir(char *path, char ***ppp)
     return file_num;
 }
 
+void line_feed(char *line)
+{
+    char *p;
+    p=strchr(line, '\n');
+    if(p != NULL) *p='\0';
+}
+
 void set_value(char *file, char *numb)
 {
-    FILE *fn;
     if(access(file, F_OK) == 0)
     {
-        fn=fopen(file, "wt");
-        if(fn != NULL)
-        {
-            fputs(numb, fn);
-            fclose(fn);
-            fn=NULL;
-        }
+        FILE *fn;
+        struct stat statbuf;
+        stat(file, &statbuf);
+        char content[statbuf.st_size+1];
+        fn=fopen(file, "rt+");
+        if(fn != NULL) goto write_data;
         else
         {
             chmod(file, 0644);
-            fn=fopen(file, "wt");
+            fn=fopen(file, "rt+");
             if(fn != NULL)
             {
-                fputs(numb, fn);
+                write_data:
+                fgets(content, statbuf.st_size+1, fn);
+                line_feed(content);
+                if(strcmp(content, numb) != 0) fputs(numb, fn);
                 fclose(fn);
                 fn=NULL;
-            }
+            } 
         }
     }
 }
@@ -147,13 +157,6 @@ void set_value(char *file, char *numb)
 void set_array_value(char **file, int num, char *value)
 {
     for(int i=0;i < num;i++) set_value(file[i], value);
-}
-
-void line_feed(char *line)
-{
-    char *p;
-    p=strchr(line, '\n');
-    if(p != NULL) *p='\0';
 }
 
 void charge_value(char *i)
@@ -172,7 +175,7 @@ void charge_value(char *i)
     }
 }
 
-void check_read_file(char *file, char chartmp[PRINTF_WITH_TIME_MAX_SIZE])
+void check_read_file(char *file)
 {
     if(file == NULL)
     {
@@ -201,13 +204,13 @@ void check_read_file(char *file, char chartmp[PRINTF_WITH_TIME_MAX_SIZE])
     }
 }
 
-void read_option(uint opt_new[OPTION_QUANTITY], uint opt_old[OPTION_QUANTITY], uchar tmp[5], uchar num, char chartmp[PRINTF_WITH_TIME_MAX_SIZE], uchar is_temp_wall)
+void read_option(uint opt_new[OPTION_QUANTITY], uint opt_old[OPTION_QUANTITY], uchar tmp[5], uchar num, uchar is_temp_wall)
 {
     FILE *fc;
     char options[OPTION_QUANTITY][40]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","CURRENT_MAX","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_STOP","CHARGE_START","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
     uchar opt;
     struct stat statbuf;
-    check_read_file("/data/adb/turbo-charge/option.txt", chartmp);
+    check_read_file("/data/adb/turbo-charge/option.txt");
     stat("/data/adb/turbo-charge/option.txt", &statbuf);
     char option[statbuf.st_size+1];
     fc=fopen("/data/adb/turbo-charge/option.txt", "rt");
@@ -243,31 +246,20 @@ void read_option(uint opt_new[OPTION_QUANTITY], uint opt_old[OPTION_QUANTITY], u
     else for(opt=0;opt < OPTION_QUANTITY;opt++) opt_old[opt]=opt_new[opt];
 }
 
-void step_charge_ctl(int value, char chartmp[PRINTF_WITH_TIME_MAX_SIZE])
+void step_charge_ctl(char *value)
 {
-    FILE *fd;
-    char step_stat[4],value_char[4];
-    check_read_file("/sys/class/power_supply/battery/step_charging_enabled", chartmp);
-    fd=fopen("/sys/class/power_supply/battery/step_charging_enabled", "rt");
-    fgets(step_stat, 4, fd);
-    fclose(fd);
-    fd=NULL;
-    line_feed(step_stat);
-    if(atoi(step_stat) != value)
-    {
-        snprintf(value_char, 4, "%d", value);
-        set_value("/sys/class/power_supply/battery/step_charging_enabled", value_char);
-        set_value("/sys/class/power_supply/battery/sw_jeita_enabled", value_char);
-    }
+    check_read_file("/sys/class/power_supply/battery/step_charging_enabled");
+    set_value("/sys/class/power_supply/battery/step_charging_enabled", value);
+    set_value("/sys/class/power_supply/battery/sw_jeita_enabled", value);
 }
 
-void powel_ctl(uint opt_new[10], uchar tmp[5], char chartmp[PRINTF_WITH_TIME_MAX_SIZE])
+void powel_ctl(uint opt_new[10], uchar tmp[5])
 {
     if(opt_new[2] == 1)
     {
         FILE *fd;
         struct stat statbuf;
-        check_read_file("/sys/class/power_supply/battery/capacity", chartmp);
+        check_read_file("/sys/class/power_supply/battery/capacity");
         stat("/sys/class/power_supply/battery/capacity", &statbuf);
         char power[statbuf.st_size+1];
         fd=fopen("/sys/class/power_supply/battery/capacity", "rt");
@@ -329,7 +321,7 @@ int main()
 {
     FILE *fq;
     char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10];
-    char *temp_sensor,*temp_sensor_dir,*buffer,*msg,chartmp[PRINTF_WITH_TIME_MAX_SIZE],current_max_char[20],highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
+    char *temp_sensor,*temp_sensor_dir,*buffer,*msg,current_max_char[20],highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
     char temp_sensors[12][15]={"lcd_therm","conn_therm","modem_therm","wifi_therm","quiet_therm","mtktsbtsnrpa","mtktsbtsmdpa","mtktsAP","modem-0-usr","modem1_wifi","ddr-usr","cwlan-usr"};
     uchar tmp[5]={0,0,0,0,0},num=0,negative=0,step_charge=1,step_charge_file=0,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1;
     int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
@@ -480,7 +472,7 @@ int main()
             sprintf(temp_sensor, "%s/temp", temp_sensor_dir);
             snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "将使用%s温度传感器作为手机温度的获取源。由于每个传感器所处位置不同以及每个手机发热区不同，很可能导致获取到的温度与实际体感温度不同，请见谅", temp_sensors[temp_sensor_num]);
             printf_with_time(chartmp);
-            check_read_file(temp_sensor, chartmp);
+            check_read_file(temp_sensor);
         }
         else
         {
@@ -525,12 +517,12 @@ int main()
             printf_with_time(chartmp);
         }
     }
-    check_read_file("/data/adb/turbo-charge/option.txt", chartmp);
+    check_read_file("/data/adb/turbo-charge/option.txt");
     printf_with_time("文件检测完毕，程序开始运行");
     charge_value("1");
     while(1)
     {
-        read_option(opt_new, opt_old, tmp, num, chartmp, 0);
+        read_option(opt_new, opt_old, tmp, num, 0);
         snprintf(current_max_char, 20, "%u", opt_new[3]);
         snprintf(highest_temp_current_char, 20, "%u", opt_new[8]);
         if(!num) num=1;
@@ -551,15 +543,15 @@ int main()
             if(current_change) set_array_value(current_max_file, current_max_file_num, current_max_char);
             if(step_charge == 1)
             {
-                if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?step_charge_ctl(1, chartmp):step_charge_ctl(0, chartmp);
-                else step_charge_ctl(1, chartmp);
+                if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?step_charge_ctl("1"):step_charge_ctl("0");
+                else step_charge_ctl("1");
             }
             else if(step_charge == 2)
-                (opt_new[0] == 1)?step_charge_ctl(0, chartmp):step_charge_ctl(1, chartmp);
+                (opt_new[0] == 1)?step_charge_ctl("0"):step_charge_ctl("1");
             sleep(1);
             continue;
         }
-        check_read_file("/sys/class/power_supply/battery/capacity", chartmp);
+        check_read_file("/sys/class/power_supply/battery/capacity");
         fq=fopen("/sys/class/power_supply/battery/capacity", "rt");
         fgets(power, 5, fq);
         fclose(fq);
@@ -567,12 +559,12 @@ int main()
         line_feed(power);
         if(step_charge == 1)
         {
-            if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?step_charge_ctl(1, chartmp):step_charge_ctl(0, chartmp);
-            else step_charge_ctl(1, chartmp);
+            if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?step_charge_ctl("1"):step_charge_ctl("0");
+            else step_charge_ctl("1");
         }
         else if(step_charge == 2)
-            (opt_new[0] == 1)?step_charge_ctl(0, chartmp):step_charge_ctl(1, chartmp);
-        check_read_file("/sys/class/power_supply/battery/status", chartmp);
+            (opt_new[0] == 1)?step_charge_ctl("0"):step_charge_ctl("1");
+        check_read_file("/sys/class/power_supply/battery/status");
         fq=fopen("/sys/class/power_supply/battery/status", "rt");
         fgets(charge, 20, fq);
         fclose(fq);
@@ -587,10 +579,10 @@ int main()
                 tmp[1]=1;
             }
             if(force_temp) set_array_value(temp_file, temp_file_num, "280");
-            if(power_control) powel_ctl(opt_new, tmp, chartmp);
+            if(power_control) powel_ctl(opt_new, tmp);
             if(opt_new[1] == 1 && temp_sensor_num != 100 && current_change)
             {
-                check_read_file(temp_sensor, chartmp);
+                check_read_file(temp_sensor);
                 fq=fopen(temp_sensor, "rt");
                 fgets(thermal, 10, fq);
                 fclose(fq);
@@ -603,10 +595,10 @@ int main()
                     printf_with_time(chartmp);
                     while(1)
                     {
-                        read_option(opt_new, opt_old, tmp, num, chartmp, 1);
+                        read_option(opt_new, opt_old, tmp, num, 1);
                         snprintf(current_max_char, 20, "%u", opt_new[3]);
                         snprintf(highest_temp_current_char, 20, "%u", opt_new[8]);
-                        check_read_file(temp_sensor, chartmp);
+                        check_read_file(temp_sensor);
                         fq=fopen(temp_sensor, "rt");
                         fgets(thermal, 300, fq);
                         fclose(fq);
@@ -628,7 +620,7 @@ int main()
                             }
                             tmp[3]=0;
                         }
-                        check_read_file("/sys/class/power_supply/battery/status", chartmp);
+                        check_read_file("/sys/class/power_supply/battery/status");
                         fq=fopen("/sys/class/power_supply/battery/status", "rt");
                         fgets(charge, 20, fq);
                         fclose(fq);
@@ -656,14 +648,14 @@ int main()
                         }
                         if(step_charge == 1)
                         {
-                            if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?step_charge_ctl(1, chartmp):step_charge_ctl(0, chartmp);
-                            else step_charge_ctl(1, chartmp);
+                            if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?step_charge_ctl("1"):step_charge_ctl("0");
+                            else step_charge_ctl("1");
                         }
                         else if(step_charge == 2)
-                            (opt_new[0] == 1)?step_charge_ctl(0, chartmp):step_charge_ctl(1, chartmp);
+                            (opt_new[0] == 1)?step_charge_ctl("0"):step_charge_ctl("1");
                         set_array_value(current_max_file, current_max_file_num, highest_temp_current_char);
                         if(force_temp) set_array_value(temp_file, temp_file_num, "280");
-                        if(power_control) powel_ctl(opt_new, tmp, chartmp);
+                        if(power_control) powel_ctl(opt_new, tmp);
                         sleep(1);
                     }
                 }
@@ -684,15 +676,15 @@ int main()
             }
             if(step_charge == 1)
             {
-                if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?step_charge_ctl(1, chartmp):step_charge_ctl(0, chartmp);
-                else step_charge_ctl(1, chartmp);
+                if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?step_charge_ctl("1"):step_charge_ctl("0");
+                else step_charge_ctl("1");
             }
             else if(step_charge == 2)
-                (opt_new[0] == 1)?step_charge_ctl(0, chartmp):step_charge_ctl(1, chartmp);
-            if(power_control) powel_ctl(opt_new, tmp, chartmp);
+                (opt_new[0] == 1)?step_charge_ctl("0"):step_charge_ctl("1");
+            if(power_control) powel_ctl(opt_new, tmp);
             if(force_temp)
             {
-                check_read_file(temp_sensor, chartmp);
+                check_read_file(temp_sensor);
                 fq=fopen(temp_sensor, "rt");
                 fgets(thermal, 10, fq);
                 fclose(fq);
