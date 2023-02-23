@@ -1,3 +1,6 @@
+#ifndef _TURBO_CHARGE_H
+#define _TURBO_CHARGE_H
+
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
@@ -91,3 +94,5 @@ void read_option(uint *last_modify_time, uchar num, uchar is_temp_wall);
 void step_charge_ctl(char *value);
 void powel_ctl(void);
 int list_dir(char *path, char ***ppp);
+
+#endif
