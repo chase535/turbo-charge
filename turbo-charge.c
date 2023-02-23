@@ -1,78 +1,4 @@
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
-#include "dirent.h"
-#include "unistd.h"
-#include "time.h"
-#include "regex.h"
-#include "malloc.h"
-#include "sys/types.h"
-#include "sys/stat.h"
-
-#define OPTION_QUANTITY 10
-#define PRINTF_WITH_TIME_MAX_SIZE 400
-
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-char chartmp[PRINTF_WITH_TIME_MAX_SIZE];
-
-struct tm *get_utc8_time(void)
-{
-    time_t cur_time;
-    struct tm *ptm;
-    time(&cur_time);
-    ptm=gmtime(&cur_time);
-    ptm->tm_year+=1900;
-    ptm->tm_mon+=1;
-    ptm->tm_hour+=8;
-    if(ptm->tm_hour > 23)
-    {
-        ptm->tm_hour-=24;
-        ptm->tm_mday+=1;
-        switch(ptm->tm_mon)
-        {
-            case 1: case 3: case 5: case 7: case 8: case 10: case 12:
-                if(ptm->tm_mday > 31)
-                {
-                    ptm->tm_mday-=31;
-                    ptm->tm_mon+=1;
-                }
-                break;
-            case 2:
-                if(((ptm->tm_year%4 == 0) && (ptm->tm_year%100 != 0)) || (ptm->tm_year%400 == 0))
-                {
-                    if(ptm->tm_mday > 29)
-                    {
-                        ptm->tm_mday-=29;
-                        ptm->tm_mon+=1;
-                    }
-                }
-                else
-                {
-                    if(ptm->tm_mday > 28)
-                    {
-                        ptm->tm_mday-=28;
-                        ptm->tm_mon+=1;
-                    }
-                }
-                break;
-            default:
-                if(ptm->tm_mday > 30)
-                {
-                    ptm->tm_mday-=30;
-                    ptm->tm_mon+=1;
-                }
-                break;
-        }
-        if(ptm->tm_mon > 12)
-        {
-            ptm->tm_mon-=12;
-            ptm->tm_year+=1;
-        }
-    }
-    return ptm;
-}
+#include "turbo-charge.h"
 
 void printf_with_time(char *dat)
 {
@@ -206,18 +132,18 @@ void check_read_file(char *file)
     }
 }
 
-void read_option(uint opt_new[OPTION_QUANTITY], uint opt_old[OPTION_QUANTITY], uchar tmp[5], uchar num, uchar is_temp_wall)
+void read_option(uint *last_modify_time, uchar num, uchar is_temp_wall)
 {
     FILE *fc;
-    char option_tmp[42], *value;
-    char options[OPTION_QUANTITY][40]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","CURRENT_MAX","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_STOP","CHARGE_START","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
-    uchar opt,kong[10]={0},i;
+    char option_tmp[42], option[100], *value;
+    uchar opt,value_stat[OPTION_QUANTITY]={0},i;
     struct stat statbuf;
-    check_read_file("/data/adb/turbo-charge/option.txt");
-    stat("/data/adb/turbo-charge/option.txt", &statbuf);
-    char option[statbuf.st_size+1];
-    fc=fopen("/data/adb/turbo-charge/option.txt", "rt");
-    while(fgets(option, statbuf.st_size+1, fc) != NULL)
+    check_read_file(option_file);
+    stat(option_file, &statbuf);
+    if(statbuf.st_mtime == *last_modify_time && num) return;
+    *last_modify_time=statbuf.st_mtime;
+    fc=fopen(option_file, "rt");
+    while(fgets(option, sizeof(option), fc) != NULL)
     {
         line_feed(option);
         if(strstr(option, "#") != NULL && strstr(option, "#") == 0) continue;
@@ -225,11 +151,7 @@ void read_option(uint opt_new[OPTION_QUANTITY], uint opt_old[OPTION_QUANTITY], u
         {
             snprintf(option_tmp, 42, "%s=", options[opt]);
             if(strstr(option, option_tmp) == NULL) continue;
-            if(strcmp(option, option_tmp) == 0)
-            {
-                kong[opt]=1;
-                continue;
-            }
+            if(strcmp(option, option_tmp) == 0) value_stat[opt]=1;
             else
             {
                 value=option+strlen(option_tmp);
@@ -237,16 +159,13 @@ void read_option(uint opt_new[OPTION_QUANTITY], uint opt_old[OPTION_QUANTITY], u
                 {
                     if((int)value[i] < 48 || (int)value[i] > 57)
                     {
-                        kong[i]=2;
-                        continue;
+                        value_stat[opt]=2;
+                        break;
                     }
                 }
             }
-            if(atoi(value) < 0)
-            {
-                kong[opt]=3;
-                continue;
-            }
+            if(!value_stat[opt] && atoi(value) < 0) value_stat[opt]=3;
+            if(value_stat[opt]) continue;
             opt_new[opt]=atoi(value);
         }
     }
@@ -256,10 +175,10 @@ void read_option(uint opt_new[OPTION_QUANTITY], uint opt_old[OPTION_QUANTITY], u
     {
         for(opt=0;opt < OPTION_QUANTITY;opt++)
         {
-            if(kong[opt] == 1) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "%s值发生改变，但新值为空，故程序沿用上一次的值%d", options[opt], opt_new[opt]);
-            else if(kong[opt] == 2) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "%s值发生改变，但新值不是由纯数字组成，故程序沿用上一次的值%d", options[opt], opt_new[opt]);
-            else if(kong[opt] == 3) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "%s值发生改变，但新值小于0，这是不被允许的，故程序沿用上一次的值%d", options[opt], opt_new[opt]);
-            if(!kong[opt]) printf_with_time(chartmp);
+            if(value_stat[opt] == 1) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "%s的值为空，故程序沿用上一次的值%d", options[opt], opt_new[opt]);
+            else if(value_stat[opt] == 2) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "%s的值不是由纯数字组成，故程序沿用上一次的值%d", options[opt], opt_new[opt]);
+            else if(value_stat[opt] == 3) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "%s的值小于0，这是不被允许的，故程序沿用上一次的值%d", options[opt], opt_new[opt]);
+            if(value_stat[opt]) printf_with_time(chartmp);
             if(opt_old[opt] != opt_new[opt])
             {
                 snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "%s值发生改变，新%s值为%d", options[opt], options[opt], opt_new[opt]);
@@ -274,10 +193,10 @@ void read_option(uint opt_new[OPTION_QUANTITY], uint opt_old[OPTION_QUANTITY], u
     {
         for(opt=0;opt < OPTION_QUANTITY;opt++)
         {
-            if(kong[opt] == 1) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s不存在或值为空，故程序使用默认值%d", options[opt], opt_new[opt]);
-            else if(kong[opt] == 2) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s的值不是由纯数字组成，故程序使用默认值%d", options[opt], opt_new[opt]);
-            else if(kong[opt] == 3) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s的值小于0，这是不被允许的，故程序使用默认值%d", options[opt], opt_new[opt]);
-            if(!kong[opt]) printf_with_time(chartmp);
+            if(value_stat[opt] == 1) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s不存在或值为空，故程序使用默认值%d", options[opt], opt_new[opt]);
+            else if(value_stat[opt] == 2) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s的值不是由纯数字组成，故程序使用默认值%d", options[opt], opt_new[opt]);
+            else if(value_stat[opt] == 3) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s的值小于0，这是不被允许的，故程序使用默认值%d", options[opt], opt_new[opt]);
+            if(value_stat[opt]) printf_with_time(chartmp);
             opt_old[opt]=opt_new[opt];
         }
     }
@@ -290,7 +209,7 @@ void step_charge_ctl(char *value)
     set_value("/sys/class/power_supply/battery/sw_jeita_enabled", value);
 }
 
-void powel_ctl(uint opt_new[10], uchar tmp[5])
+void powel_ctl(void)
 {
     if(opt_new[2] == 1)
     {
@@ -360,9 +279,9 @@ int main()
     char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10];
     char *temp_sensor,*temp_sensor_dir,*buffer,*msg,current_max_char[20],highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
     char temp_sensors[12][15]={"lcd_therm","conn_therm","modem_therm","wifi_therm","quiet_therm","mtktsbtsnrpa","mtktsbtsmdpa","mtktsAP","modem-0-usr","modem1_wifi","ddr-usr","cwlan-usr"};
-    uchar tmp[5]={0,0,0,0,0},num=0,negative=0,step_charge=1,step_charge_file=0,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1;
+    uchar num=0,negative=0,step_charge=1,step_charge_file=0,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1;
     int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
-    uint opt_old[OPTION_QUANTITY]={0,0,0,0,0,0,0,0,0,0},opt_new[OPTION_QUANTITY]={0,1,0,50000000,15,95,80,52,2000000,45};
+    uint option_last_modify_time=0;
     regex_t temp_re,current_max_re,current_limit_re;
     regmatch_t temp_pmatch,current_max_pmatch,current_limit_pmatch;
     struct stat statbuf;
@@ -554,12 +473,12 @@ int main()
             printf_with_time(chartmp);
         }
     }
-    check_read_file("/data/adb/turbo-charge/option.txt");
+    check_read_file(option_file);
     printf_with_time("文件检测完毕，程序开始运行");
     charge_value("1");
     while(1)
     {
-        read_option(opt_new, opt_old, tmp, num, 0);
+        read_option(&option_last_modify_time, num, 0);
         snprintf(current_max_char, 20, "%u", opt_new[3]);
         snprintf(highest_temp_current_char, 20, "%u", opt_new[8]);
         if(!num) num=1;
@@ -616,7 +535,7 @@ int main()
                 tmp[1]=1;
             }
             if(force_temp) set_array_value(temp_file, temp_file_num, "280");
-            if(power_control) powel_ctl(opt_new, tmp);
+            if(power_control) powel_ctl();
             if(opt_new[1] == 1 && temp_sensor_num != 100 && current_change)
             {
                 check_read_file(temp_sensor);
@@ -632,7 +551,7 @@ int main()
                     printf_with_time(chartmp);
                     while(1)
                     {
-                        read_option(opt_new, opt_old, tmp, num, 1);
+                        read_option(&option_last_modify_time, num, 1);
                         snprintf(current_max_char, 20, "%u", opt_new[3]);
                         snprintf(highest_temp_current_char, 20, "%u", opt_new[8]);
                         check_read_file(temp_sensor);
@@ -692,7 +611,7 @@ int main()
                             (opt_new[0] == 1)?step_charge_ctl("0"):step_charge_ctl("1");
                         set_array_value(current_max_file, current_max_file_num, highest_temp_current_char);
                         if(force_temp) set_array_value(temp_file, temp_file_num, "280");
-                        if(power_control) powel_ctl(opt_new, tmp);
+                        if(power_control) powel_ctl();
                         sleep(1);
                     }
                 }
@@ -718,7 +637,7 @@ int main()
             }
             else if(step_charge == 2)
                 (opt_new[0] == 1)?step_charge_ctl("0"):step_charge_ctl("1");
-            if(power_control) powel_ctl(opt_new, tmp);
+            if(power_control) powel_ctl();
             if(force_temp)
             {
                 check_read_file(temp_sensor);
