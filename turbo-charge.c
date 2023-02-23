@@ -123,6 +123,8 @@ int list_dir(char *path, char ***ppp)
 void line_feed(char *line)
 {
     char *p;
+    p=strchr(line, '\r');
+    if(p != NULL) *p='\0';
     p=strchr(line, '\n');
     if(p != NULL) *p='\0';
 }
@@ -209,7 +211,7 @@ void read_option(uint opt_new[OPTION_QUANTITY], uint opt_old[OPTION_QUANTITY], u
     FILE *fc;
     char option_tmp[42], *value;
     char options[OPTION_QUANTITY][40]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","CURRENT_MAX","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_STOP","CHARGE_START","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
-    uchar opt,i;
+    uchar opt,kong[10]={0},i;
     struct stat statbuf;
     check_read_file("/data/adb/turbo-charge/option.txt");
     stat("/data/adb/turbo-charge/option.txt", &statbuf);
@@ -217,13 +219,35 @@ void read_option(uint opt_new[OPTION_QUANTITY], uint opt_old[OPTION_QUANTITY], u
     fc=fopen("/data/adb/turbo-charge/option.txt", "rt");
     while(fgets(option, statbuf.st_size+1, fc) != NULL)
     {
+        line_feed(option);
         if(strstr(option, "#") != NULL && strstr(option, "#") == 0) continue;
-        for(i=0;i < OPTION_QUANTITY;i++)
+        for(opt=0;opt < OPTION_QUANTITY;opt++)
         {
-            snprintf(option_tmp, 42, "%s=", options[i]);
+            snprintf(option_tmp, 42, "%s=", options[opt]);
             if(strstr(option, option_tmp) == NULL) continue;
-            value=option+strlen(option_tmp);
-            opt_new[i]=atoi(value);
+            if(strcmp(option, option_tmp) == 0)
+            {
+                kong[opt]=1;
+                continue;
+            }
+            else
+            {
+                value=option+strlen(option_tmp);
+                for(i=0;i < strlen(value);i++)
+                {
+                    if((int)value[i] < 48 || (int)value[i] > 57)
+                    {
+                        kong[i]=2;
+                        continue;
+                    }
+                }
+            }
+            if(atoi(value) < 0)
+            {
+                kong[opt]=3;
+                continue;
+            }
+            opt_new[opt]=atoi(value);
         }
     }
     fclose(fc);
@@ -232,6 +256,9 @@ void read_option(uint opt_new[OPTION_QUANTITY], uint opt_old[OPTION_QUANTITY], u
     {
         for(opt=0;opt < OPTION_QUANTITY;opt++)
         {
+            if(kong[opt] == 1) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "%s值发生改变，但新值为空，故程序沿用上一次的值%s", options[opt], opt_new[opt]);
+            else if(kong[opt] == 2) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "%s值发生改变，但新值不是由纯数字组成，故程序沿用上一次的值%s", options[opt], opt_new[opt]);
+            else if(kong[opt] == 3) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "%s值发生改变，但新值小于0，这是不被允许的，故程序沿用上一次的值%s", options[opt], opt_new[opt]);
             if(opt_old[opt] != opt_new[opt])
             {
                 snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "%s值发生改变，新%s值为%d", options[opt], options[opt], opt_new[opt]);
@@ -242,7 +269,16 @@ void read_option(uint opt_new[OPTION_QUANTITY], uint opt_old[OPTION_QUANTITY], u
             }
         }
     }
-    else for(opt=0;opt < OPTION_QUANTITY;opt++) opt_old[opt]=opt_new[opt];
+    else
+    {
+        for(opt=0;opt < OPTION_QUANTITY;opt++)
+        {
+            if(kong[opt] == 1) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s不存在或值为空，故程序使用默认值%s", options[opt], opt_new[opt]);
+            else if(kong[opt] == 2) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s的值不是由纯数字组成，故程序使用默认值%s", options[opt], opt_new[opt]);
+            else if(kong[opt] == 3) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s的值小于0，这是不被允许的，故程序使用默认值%s", options[opt], opt_new[opt]);
+            opt_old[opt]=opt_new[opt];
+        }
+    }
 }
 
 void step_charge_ctl(char *value)
@@ -324,7 +360,7 @@ int main()
     char temp_sensors[12][15]={"lcd_therm","conn_therm","modem_therm","wifi_therm","quiet_therm","mtktsbtsnrpa","mtktsbtsmdpa","mtktsAP","modem-0-usr","modem1_wifi","ddr-usr","cwlan-usr"};
     uchar tmp[5]={0,0,0,0,0},num=0,negative=0,step_charge=1,step_charge_file=0,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1;
     int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
-    uint opt_old[OPTION_QUANTITY]={0,0,0,0,0,0,0,0,0,0},opt_new[OPTION_QUANTITY]={0,0,0,0,0,0,0,0,0,0};
+    uint opt_old[OPTION_QUANTITY]={0,0,0,0,0,0,0,0,0,0},opt_new[OPTION_QUANTITY]={0,1,0,50000000,15,95,80,52,2000000,45};
     regex_t temp_re,current_max_re,current_limit_re;
     regmatch_t temp_pmatch,current_max_pmatch,current_limit_pmatch;
     struct stat statbuf;
