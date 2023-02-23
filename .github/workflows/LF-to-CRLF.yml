@@ -27,6 +27,7 @@ jobs:
           cd ${{ github.workspace }}/git_clone
           files=$(find . -type f)
           unix2dos ${files}
+          git push --set-upstream origin main
           git add . -f
           git commit -a -m "换行符LF转CRLF"
           git push origin main -f
