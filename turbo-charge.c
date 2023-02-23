@@ -207,8 +207,9 @@ void check_read_file(char *file)
 void read_option(uint opt_new[OPTION_QUANTITY], uint opt_old[OPTION_QUANTITY], uchar tmp[5], uchar num, uchar is_temp_wall)
 {
     FILE *fc;
+    char option_tmp[42], *value;
     char options[OPTION_QUANTITY][40]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","CURRENT_MAX","STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_STOP","CHARGE_START","TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
-    uchar opt;
+    uchar opt,i;
     struct stat statbuf;
     check_read_file("/data/adb/turbo-charge/option.txt");
     stat("/data/adb/turbo-charge/option.txt", &statbuf);
@@ -216,16 +217,14 @@ void read_option(uint opt_new[OPTION_QUANTITY], uint opt_old[OPTION_QUANTITY], u
     fc=fopen("/data/adb/turbo-charge/option.txt", "rt");
     while(fgets(option, statbuf.st_size+1, fc) != NULL)
     {
-        sscanf(option, "STEP_CHARGING_DISABLED=%u", &opt_new[0]);
-        sscanf(option, "TEMP_CTRL=%u", &opt_new[1]);
-        sscanf(option, "POWER_CTRL=%u", &opt_new[2]);
-        sscanf(option, "CURRENT_MAX=%u", &opt_new[3]);
-        sscanf(option, "STEP_CHARGING_DISABLED_THRESHOLD=%u", &opt_new[4]);
-        sscanf(option, "CHARGE_STOP=%u", &opt_new[5]);
-        sscanf(option, "CHARGE_START=%u", &opt_new[6]);
-        sscanf(option, "TEMP_MAX=%u", &opt_new[7]);
-        sscanf(option, "HIGHEST_TEMP_CURRENT=%u", &opt_new[8]);
-        sscanf(option, "RECHARGE_TEMP=%u", &opt_new[9]);
+        if(strstr(option, "#") != NULL && strstr(option, "#") == 0) continue;
+        for(i=0;i < OPTION_QUANTITY;i++)
+        {
+            snprintf(option_tmp, 42, "%s=", options[i]);
+            if(strstr(option, option_tmp) == NULL) continue;
+            value=option+strlen(option_tmp);
+            opt_new[i]=atoi(value);
+        }
     }
     fclose(fc);
     fc=NULL;
