@@ -1,0 +1,28 @@
+name: LF To CRLF
+
+on: 
+  push: 
+    branches:
+      - 'main'
+
+env:
+  GITHUB_USER: "${{secrets.USERNAME}}"
+  GITHUB_EMAIL: "${{secrets.EMAIL}}"
+  GITHUB_TOKEN: "${{secrets.API_TOKEN_GITHUB}}"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dos2unix ssh git
+      - name: Sync to Gitee
+        run: |
+          git clone https://"${GITHUB_USER}":"${GITHUB_TOKEN}"@github.com/chase535/turbo-charge.git ${{ github.workspace }}/git_clone -b main --depth=1
+          files=$(find ${{ github.workspace }}/git_clone -type f)
+          unix2dos ${files}
+          git add . -f
+          git commit -a -m "换行符LF转CRLF"
+          git push origin main -f
