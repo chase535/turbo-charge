@@ -25,7 +25,7 @@ jobs:
           mkdir -vp ${{ github.workspace }}/git_clone
           git clone https://"${GITHUB_USER}":"${GITHUB_TOKEN}"@github.com/chase535/turbo-charge.git ${{ github.workspace }}/git_clone -b main --depth=1
           cd ${{ github.workspace }}/git_clone
-          files=$(find . -type f -not -path "./.git/*")
+          files=$(find ${{ github.workspace }}/git_clone/ -type f -not -path "/.git/*")
           dos2unix ${files}
           a=$(git diff)
           echo $a
