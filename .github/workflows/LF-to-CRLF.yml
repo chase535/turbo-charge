@@ -28,8 +28,8 @@ jobs:
           cd ${{ github.workspace }}/git_clone
           files=$(find . -type f -not -path "./.git/*")
           sudo dos2unix ${files}
-          git diff
-          git rm --cached -r .
+          a=git diff
+          echo $a
           git add . -f
           git diff
           git commit -a -m "换行符LF转CRLF"
