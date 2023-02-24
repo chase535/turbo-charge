@@ -26,7 +26,6 @@ jobs:
           sudo chmod 0644 /etc/ssh/ssh_config
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_rsa
-          git config --global core.autocrlf true
           git clone --mirror "git@github.com:chase535/turbo-charge.git" ${{ github.workspace }}/git_clone
           cd ${{ github.workspace }}/git_clone
           git remote set-url --push origin "git@gitee.com:chase535/turbo-charge"
