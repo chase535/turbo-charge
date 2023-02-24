@@ -27,8 +27,8 @@ jobs:
           git clone https://"${GITHUB_USER}":"${GITHUB_TOKEN}"@github.com/chase535/turbo-charge.git ${{ github.workspace }}/git_clone -b main --depth=1
           cd ${{ github.workspace }}/git_clone
           files=$(find . -type f -not -path "./.git/*")
-          sudo dos2unix ${files}
-          a=git diff
+          dos2unix ${files}
+          a=$(git diff)
           echo $a
           git add . -f
           git diff
