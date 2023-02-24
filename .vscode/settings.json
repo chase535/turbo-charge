@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "unistd.h": "c",
+        "printf_with_time.h": "c"
+    }
+}
