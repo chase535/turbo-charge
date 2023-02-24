@@ -250,7 +250,7 @@ int main()
         {
             temp_sensor=(char *)realloc(temp_sensor, sizeof(char)*(strlen(temp_sensor_dir)+6));
             sprintf(temp_sensor, "%s/temp", temp_sensor_dir);
-            snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "将使用%s温度传感器作为手机温度的获取源。由于每个传感器所处位置不同以及每个手机发热区不同，很可能导致获取到的温度与实际体感温度不同，请见谅", temp_sensors[temp_sensor_num]);
+            snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "将使用%s温度传感器作为手机温度的获取源。由于每个传感器所处位置不同以及每个手机发热区不同，很可能导致获取到的温度与实际体感温度不同", temp_sensors[temp_sensor_num]);
             printf_with_time(chartmp);
             check_read_file(temp_sensor);
         }
