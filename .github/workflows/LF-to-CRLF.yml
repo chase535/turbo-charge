@@ -30,6 +30,7 @@ jobs:
           dos2unix ${files}
           git diff
           git rm --cached -r .
-          git reset --hard
+          git add . -f
+          git diff
           git commit -a -m "换行符LF转CRLF"
           git push origin main -f
