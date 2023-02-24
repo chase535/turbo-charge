@@ -1,4 +1,4 @@
-name: LF To CRLF
+name: CRLF To LF
 
 on: 
   push: 
@@ -18,7 +18,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y dos2unix ssh git
-      - name: LF to CRLF
+      - name: CRLF to LF
         run: |
           git config --global user.name "${GITHUB_USER}"
           git config --global user.email "${GITHUB_EMAIL}"
@@ -26,7 +26,8 @@ jobs:
           git clone https://"${GITHUB_USER}":"${GITHUB_TOKEN}"@github.com/chase535/turbo-charge.git ${{ github.workspace }}/git_clone -b main --depth=1
           cd ${{ github.workspace }}/git_clone
           files=$(find . -type f -not -path "./.git/*")
-          unix2dos ${files}
+          dos2unix ${files}
+          [[ -z "$(git diff)" ]] && exit 0
           git add . -f
           git commit -a -m "换行符LF转CRLF"
           git push origin main -f
