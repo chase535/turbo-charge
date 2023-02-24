@@ -11,6 +11,7 @@
 
 #include "main.h"
 #include "read_option.h"
+#include "some_ctrl.h"
 #include "printf_with_time.h"
 
 void free_celloc_memory(char ***addr, int num)
