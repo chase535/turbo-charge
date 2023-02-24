@@ -27,7 +27,7 @@ jobs:
           git clone https://"${GITHUB_USER}":"${GITHUB_TOKEN}"@github.com/chase535/turbo-charge.git ${{ github.workspace }}/git_clone -b main --depth=1
           cd ${{ github.workspace }}/git_clone
           files=$(find . -type f -not -path "./.git/*")
-          unix2dos ${files}
+          dos2unix ${files}
           git add . -f
           git commit -a -m "换行符LF转CRLF"
           git push origin main -f
