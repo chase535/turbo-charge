@@ -146,7 +146,7 @@ void read_option(uint *last_modify_time, uchar num, uchar is_temp_wall)
     while(fgets(option, sizeof(option), fc) != NULL)
     {
         line_feed(option);
-        if(strstr(option, "#") != NULL && strstr(option, "#") == 0) continue;
+        if((strstr(option, "#") != NULL && strstr(option, "#") == 0) || strlen(option) == 0) continue;
         for(opt=0;opt < OPTION_QUANTITY;opt++)
         {
             snprintf(option_tmp, 42, "%s=", options[opt]);
