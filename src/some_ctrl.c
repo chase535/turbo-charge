@@ -7,6 +7,22 @@ void step_charge_ctl(char *value)
     set_value("/sys/class/power_supply/battery/sw_jeita_enabled", value);
 }
 
+void charge_ctl(char *i)
+{
+    set_value("/sys/class/power_supply/battery/charging_enabled", i);
+    set_value("/sys/class/power_supply/battery/battery_charging_enabled", i);
+    if(atoi(i))
+    {
+        set_value("/sys/class/power_supply/battery/input_suspend", "0");
+        set_value("/sys/class/qcom-battery/restricted_charging", "0");
+    }
+    else
+    {
+        set_value("/sys/class/power_supply/battery/input_suspend", "1");
+        set_value("/sys/class/qcom-battery/restricted_charging", "1");
+    }
+}
+
 void powel_ctl(void)
 {
     if(opt_new[2] == 1)
@@ -68,21 +84,5 @@ void powel_ctl(void)
             tmp[2]=0;
         }
         charge_ctl("1");
-    }
-}
-
-void charge_ctl(char *i)
-{
-    set_value("/sys/class/power_supply/battery/charging_enabled", i);
-    set_value("/sys/class/power_supply/battery/battery_charging_enabled", i);
-    if(atoi(i))
-    {
-        set_value("/sys/class/power_supply/battery/input_suspend", "0");
-        set_value("/sys/class/qcom-battery/restricted_charging", "0");
-    }
-    else
-    {
-        set_value("/sys/class/power_supply/battery/input_suspend", "1");
-        set_value("/sys/class/qcom-battery/restricted_charging", "1");
     }
 }

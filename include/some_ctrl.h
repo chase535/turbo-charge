@@ -8,7 +8,7 @@
 #include "sys/stat.h"
 
 void step_charge_ctl(char *value);
-void powel_ctl(void);
 void charge_ctl(char *i);
+void powel_ctl(void);
 
 #endif
