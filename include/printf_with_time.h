@@ -4,7 +4,7 @@
 #include "stdio.h"
 #include "time.h"
 
-struct tm *get_utc8_time(void)
+static struct tm *get_utc8_time(void)
 {
     time_t cur_time;
     struct tm *ptm;
