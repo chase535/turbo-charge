@@ -28,6 +28,7 @@ jobs:
           cd ${{ github.workspace }}/git_clone
           files=$(find . -type f -not -path "./.git/*")
           dos2unix ${files}
+          git diff
           git rm --cached -r .
           git reset --hard
           git commit -a -m "换行符LF转CRLF"
