@@ -2,6 +2,7 @@
 #include "read_option.h"
 #include "some_ctrl.h"
 #include "printf_with_time.h"
+#include "value_set.h"
 
 #include "dirent.h"
 #include "unistd.h"
@@ -65,54 +66,6 @@ void line_feed(char *line)
     if(p != NULL) *p='\0';
     p=strchr(line, '\n');
     if(p != NULL) *p='\0';
-}
-
-void set_value(char *file, char *numb)
-{
-    if(access(file, F_OK) == 0)
-    {
-        FILE *fn;
-        struct stat statbuf;
-        stat(file, &statbuf);
-        char content[statbuf.st_size+1];
-        fn=fopen(file, "rt+");
-        if(fn != NULL) goto write_data;
-        else
-        {
-            chmod(file, 0644);
-            fn=fopen(file, "rt+");
-            if(fn != NULL)
-            {
-                write_data:
-                fgets(content, statbuf.st_size+1, fn);
-                line_feed(content);
-                if(strcmp(content, numb) != 0) fputs(numb, fn);
-                fclose(fn);
-                fn=NULL;
-            } 
-        }
-    }
-}
-
-void set_array_value(char **file, int num, char *value)
-{
-    for(int i=0;i < num;i++) set_value(file[i], value);
-}
-
-void charge_value(char *i)
-{
-    set_value("/sys/class/power_supply/battery/charging_enabled", i);
-    set_value("/sys/class/power_supply/battery/battery_charging_enabled", i);
-    if(atoi(i))
-    {
-        set_value("/sys/class/power_supply/battery/input_suspend", "0");
-        set_value("/sys/class/qcom-battery/restricted_charging", "0");
-    }
-    else
-    {
-        set_value("/sys/class/power_supply/battery/input_suspend", "1");
-        set_value("/sys/class/qcom-battery/restricted_charging", "1");
-    }
 }
 
 void check_read_file(char *file)
@@ -346,7 +299,7 @@ int main()
     }
     check_read_file(option_file);
     printf_with_time("文件检测完毕，程序开始运行");
-    charge_value("1");
+    charge_ctl("1");
     while(1)
     {
         read_option(&option_last_modify_time, num, 0);

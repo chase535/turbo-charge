@@ -21,7 +21,6 @@ void free_celloc_memory(char ***addr, int num);
 void line_feed(char *line);
 void set_value(char *file, char *numb);
 void set_array_value(char **file, int num, char *value);
-void charge_value(char *i);
 void check_read_file(char *file);
 int list_dir(char *path, char ***ppp);
 
