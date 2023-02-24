@@ -41,10 +41,10 @@ jobs:
           cd ${{ github.workspace }}/git_clone
           cp -avf ${{ github.workspace }}/turbo-charge.zip ./update_channel
           cat ./update_channel/changelog.md >> ${{ github.workspace }}/changelog.md
-          unix2dos ${{ github.workspace }}/changelog.md
+          dos2unix ${{ github.workspace }}/changelog.md
           cp -avf ${{ github.workspace }}/changelog.md ./update_channel
           jq -sM add ./update_channel/turbo-charge.json ${{ github.workspace }}/version.json > ${{ github.workspace }}/turbo-charge.json
-          unix2dos ${{ github.workspace }}/turbo-charge.json
+          dos2unix ${{ github.workspace }}/turbo-charge.json
           cp -avf ${{ github.workspace }}/turbo-charge.json ./update_channel
           git add . -f
           git commit -a -m "更新${tag}版本"
