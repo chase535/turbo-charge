@@ -1,6 +1,10 @@
 #ifndef _MAIN_H
 #define _MAIN_H
 
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
+
 #define OPTION_QUANTITY 10
 #define PRINTF_WITH_TIME_MAX_SIZE 400
 

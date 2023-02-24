@@ -1,6 +1,8 @@
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
+#include "main.h"
+#include "read_option.h"
+#include "some_ctrl.h"
+#include "printf_with_time.h"
+
 #include "dirent.h"
 #include "unistd.h"
 #include "time.h"
@@ -8,11 +10,6 @@
 #include "malloc.h"
 #include "sys/types.h"
 #include "sys/stat.h"
-
-#include "main.h"
-#include "read_option.h"
-#include "some_ctrl.h"
-#include "printf_with_time.h"
 
 uint opt_old[OPTION_QUANTITY]={0},opt_new[OPTION_QUANTITY]={0,1,0,50000000,15,95,80,52,2000000,45};
 uchar tmp[5]={0};

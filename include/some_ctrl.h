@@ -2,7 +2,6 @@
 #define _SOME_CTRL_H
 
 #include "main.h"
-#include "stdio.h"
 #include "sys/stat.h"
 
 #include "printf_with_time.h"

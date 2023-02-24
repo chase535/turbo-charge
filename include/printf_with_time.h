@@ -1,7 +1,7 @@
 #ifndef _PRINTF_WITH_TIME_H
 #define _PRINTF_WITH_TIME_H
 
-#include "stdio.h"
+#include "main.h"
 #include "time.h"
 
 struct tm *get_utc8_time(void);
