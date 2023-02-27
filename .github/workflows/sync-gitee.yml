@@ -6,7 +6,8 @@ on:
       - 'main'
 
 env:
-  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  SSH_PRIVATE_KEY: "${{ secrets.SSH_PRIVATE_KEY }}"
+  GIT_CLONE: "${{ github.workspace }}/git_clone"
 
 jobs:
   build:
@@ -26,8 +27,9 @@ jobs:
           sudo chmod 0644 /etc/ssh/ssh_config
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_rsa
-          git clone --mirror "git@github.com:chase535/turbo-charge.git" ${{ github.workspace }}/git_clone
-          cd ${{ github.workspace }}/git_clone
+          mkdir -vp ${GIT_CLONE}
+          git clone --mirror "git@github.com:chase535/turbo-charge.git" ${GIT_CLONE}
+          cd ${GIT_CLONE}
           git remote set-url --push origin "git@gitee.com:chase535/turbo-charge"
           git fetch -p origin
           git for-each-ref --format 'delete %(refname)' refs/pull | git update-ref --stdin

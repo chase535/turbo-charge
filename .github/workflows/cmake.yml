@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@main
       - name: Install tools
         run: |
           sudo apt-get update
@@ -37,7 +37,7 @@ jobs:
       - name: Copy ELF file into module directory
         run: cp -f ${{github.workspace}}/build/turbo-charge ${{github.workspace}}/module/common/turbo-charge
       - name : Zip and upload module
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@main
         with:
           name: turbo-charge
           path: ${{github.workspace}}/module/*
