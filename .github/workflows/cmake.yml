@@ -14,7 +14,7 @@ on:
 
 env:
   GCC_PATH: "${{ github.workspace }}/aarch64-linux-musl-gcc"
-  CC: "${{ GCC_PATH }}/aarch64-linux-musl-gcc/bin/aarch64-linux-musl-gcc"
+  CC: "${{ github.workspace }}/aarch64-linux-musl-gcc/aarch64-linux-musl-gcc/bin/aarch64-linux-musl-gcc"
 
 jobs:
   build:
