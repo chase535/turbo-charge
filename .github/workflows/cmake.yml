@@ -13,8 +13,8 @@ on:
       - 'main'
 
 env:
-  GCC_PATH: "${{github.workspace}}/aarch64-linux-musl-gcc"
-  CC: "${GCC_PATH}/aarch64-linux-musl-gcc/bin/aarch64-linux-musl-gcc"
+  GCC_PATH: "${{ github.workspace }}/aarch64-linux-musl-gcc"
+  CC: "${{ GCC_PATH }}/aarch64-linux-musl-gcc/bin/aarch64-linux-musl-gcc"
 
 jobs:
   build:
@@ -31,15 +31,15 @@ jobs:
       - name: Clone aarch64-linux-musl-gcc
         run: git clone https://github.com/chase535/aarch64-linux-musl-gcc.git ${GCC_PATH} --depth=1
       - name: Create directory
-        run: mkdir -vp ${{github.workspace}}/build
+        run: mkdir -vp ${{ github.workspace }}/build
       - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=Release
       - name: Build module
         run: cmake --build ${{github.workspace}}/build --config Release
       - name: Copy ELF file into module directory
-        run: cp -f ${{github.workspace}}/build/turbo-charge ${{github.workspace}}/module/common/turbo-charge
+        run: cp -f ${{ github.workspace }}/build/turbo-charge ${{ github.workspace }}/module/common/turbo-charge
       - name : Zip and upload module
         uses: actions/upload-artifact@main
         with:
           name: turbo-charge
-          path: ${{github.workspace}}/module/*
+          path: ${{ github.workspace }}/module/*
