@@ -14,7 +14,6 @@ on:
 
 env:
   GCC_PATH: "${{ github.workspace }}/aarch64-linux-musl-gcc"
-  CC: "${{ github.workspace }}/aarch64-linux-musl-gcc/bin/aarch64-linux-musl-gcc"
 
 jobs:
   build:
@@ -22,6 +21,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@main
+      - name: Set C and C++ compiler
+        run: |
+          echo "CC=${GCC_PATH}/bin/aarch64-linux-musl-gcc" >> ${GITHUB_ENV}
+          echo "CXX=${GCC_PATH}/bin/aarch64-linux-musl-g++" >> ${GITHUB_ENV}
       - name: Install tools
         run: |
           sudo apt-get update
