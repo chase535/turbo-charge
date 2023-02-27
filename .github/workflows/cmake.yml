@@ -24,6 +24,8 @@ jobs:
         uses: actions/checkout@main
       - name: Install tools
         run: |
+          echo $GCC_PATH
+          echo $CC
           sudo apt-get update
           sudo apt-get install -y ssh git cmake
       - name: Clone aarch64-linux-musl-gcc
