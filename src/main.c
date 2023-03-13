@@ -380,7 +380,7 @@ int main()
                         snprintf(highest_temp_current_char, 20, "%u", opt_new[8]);
                         check_read_file(temp_sensor);
                         fq=fopen(temp_sensor, "rt");
-                        fgets(thermal, 300, fq);
+                        fgets(thermal, 10, fq);
                         fclose(fq);
                         fq=NULL;
                         line_feed(thermal);
