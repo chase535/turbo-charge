@@ -3,9 +3,6 @@
 
 #include "global.h"
 
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
 int list_dir(char *path, char ***ppp);
 
 #endif
