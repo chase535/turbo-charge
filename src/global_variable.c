@@ -1,4 +1,4 @@
-#include "global.h"
+#include "global_variable.h"
 
 unsigned int opt_old[OPTION_QUANTITY]={0},opt_new[OPTION_QUANTITY]={0,1,0,50000000,15,95,80,52,2000000,45};
 unsigned char tmp[5]={0};

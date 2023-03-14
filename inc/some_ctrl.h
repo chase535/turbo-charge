@@ -1,7 +1,8 @@
 #ifndef _SOME_CTRL_H
 #define _SOME_CTRL_H
 
-#include "main.h"
+#include "global_variable.h"
+#include "global_function.h"
 
 void step_charge_ctl(char *value);
 void charge_ctl(char *i);
