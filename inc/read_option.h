@@ -1,5 +1,5 @@
-#ifndef _READ_FILE_H
-#define _READ_FILE_H
+#ifndef _READ_OPTION_H
+#define _READ_OPTION_H
 
 #include "main.h"
 #include "printf_with_time.h"
