@@ -5,8 +5,6 @@
 #include "value_set.h"
 #include "printf_with_time.h"
 
-#include "sys/stat.h"
-
 void step_charge_ctl(char *value);
 void charge_ctl(char *i);
 void powel_ctl(void);

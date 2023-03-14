@@ -1,3 +1,7 @@
+#include "stdio.h"
+#include "stdlib.h"
+#include "sys/stat.h"
+
 #include "some_ctrl.h"
 
 void step_charge_ctl(char *value)

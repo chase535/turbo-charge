@@ -3,9 +3,6 @@
 
 #include "main.h"
 
-#include "sys/stat.h"
-#include "unistd.h"
-
 void set_value(char *file, char *numb);
 void set_array_value(char **file, int num, char *value);
 

@@ -1,3 +1,10 @@
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
+#include "sys/stat.h"
+#include "unistd.h"
+#include "dirent.h"
+
 #include "read_option.h"
 
 void read_option(uint *last_modify_time, uchar num, uchar is_temp_wall)

@@ -1,3 +1,8 @@
+#include "stdio.h"
+#include "string.h"
+#include "sys/stat.h"
+#include "unistd.h"
+
 #include "value_set.h"
 
 void set_value(char *file, char *numb)

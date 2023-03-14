@@ -1,3 +1,6 @@
+#include "stdio.h"
+#include "time.h"
+
 #include "printf_with_time.h"
 
 struct tm *get_utc8_time(void)

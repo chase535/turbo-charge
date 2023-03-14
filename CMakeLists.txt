@@ -13,7 +13,7 @@ set(CMAKE_C_FLAGS "-g0 -O0 -W -Wall -Wno-format-truncation -Wno-unused-result -W
 set(CMAKE_EXE_LINKER_FLAGS "-g0 -O0 -static -fvisibility=hidden -flto -ffixed-x18 -Wl,-O0,--strip-all,--hash-style=both,--gc-sections,--exclude-libs,ALL")
 
 # 添加头文件目录
-include_directories(./include)
+include_directories(./inc)
 
 # 指定生成目标
 aux_source_directory(./src SRC_LIST)

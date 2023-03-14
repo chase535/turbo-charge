@@ -1,41 +1,17 @@
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
+#include "dirent.h"
+#include "unistd.h"
+#include "regex.h"
+#include "malloc.h"
+#include "sys/stat.h"
+
 #include "main.h"
 #include "read_option.h"
 #include "some_ctrl.h"
 #include "printf_with_time.h"
 #include "value_set.h"
-
-#include "dirent.h"
-#include "unistd.h"
-#include "time.h"
-#include "regex.h"
-#include "malloc.h"
-#include "sys/types.h"
-#include "sys/stat.h"
-
-uint opt_old[OPTION_QUANTITY]={0},opt_new[OPTION_QUANTITY]={0,1,0,50000000,15,95,80,52,2000000,45};
-uchar tmp[5]={0};
-char chartmp[PRINTF_WITH_TIME_MAX_SIZE];
-char option_file[]="/data/adb/turbo-charge/option.txt";
-char options[OPTION_QUANTITY][40]={"STEP_CHARGING_DISABLED","TEMP_CTRL","POWER_CTRL","CURRENT_MAX",
-                                    "STEP_CHARGING_DISABLED_THRESHOLD","CHARGE_STOP","CHARGE_START",
-                                    "TEMP_MAX","HIGHEST_TEMP_CURRENT","RECHARGE_TEMP"};
-
-void free_celloc_memory(char ***addr, int num)
-{
-    if(addr != NULL && *addr != NULL)
-    {
-        for(int i=0;i < num;i++)
-        {
-            if((*addr)[i] != NULL)
-            {
-                free((*addr)[i]);
-                (*addr)[i]=NULL;
-            }
-        }
-        free(*addr);
-        *addr=NULL;
-    }
-}
 
 int list_dir(char *path, char ***ppp)
 {
@@ -94,6 +70,23 @@ void check_read_file(char *file)
         snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "找不到%s文件，程序强制退出！", file);
         printf_with_time(chartmp);
         exit(999);
+    }
+}
+
+void free_celloc_memory(char ***addr, int num)
+{
+    if(addr != NULL && *addr != NULL)
+    {
+        for(int i=0;i < num;i++)
+        {
+            if((*addr)[i] != NULL)
+            {
+                free((*addr)[i]);
+                (*addr)[i]=NULL;
+            }
+        }
+        free(*addr);
+        *addr=NULL;
     }
 }
 
