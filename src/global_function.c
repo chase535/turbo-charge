@@ -5,6 +5,7 @@
 #include "sys/stat.h"
 
 #include "global_function.h"
+#include "global_variable.h"
 
 void line_feed(char *line)
 {
