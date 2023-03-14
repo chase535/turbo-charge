@@ -103,7 +103,6 @@ int main()
     regmatch_t temp_pmatch,current_max_pmatch,current_limit_pmatch;
     struct stat statbuf;
     printf("作者：酷安@诺鸡鸭\r\n");
-    printf("QQ群：738661277\r\n");
     printf("GitHub开源地址：https://github.com/chase535/turbo-charge\r\n\r\n");
     fflush(stdout);
     if(access("/sys/class/power_supply/battery/status", F_OK) != 0) battery_status=0;
