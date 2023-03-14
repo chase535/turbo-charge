@@ -3,6 +3,8 @@
 #include "sys/stat.h"
 
 #include "some_ctrl.h"
+#include "value_set.h"
+#include "printf_with_time.h"
 
 void step_charge_ctl(char *value)
 {
