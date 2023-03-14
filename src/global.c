@@ -3,7 +3,6 @@
 #include "string.h"
 
 #include "global.h"
-#include "printf_with_time.h"
 
 uint opt_old[OPTION_QUANTITY]={0},opt_new[OPTION_QUANTITY]={0,1,0,50000000,15,95,80,52,2000000,45};
 uchar tmp[5]={0};
