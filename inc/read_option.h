@@ -3,6 +3,6 @@
 
 #include "main.h"
 
-void read_option(uint *last_modify_time, uchar num, uchar is_temp_wall);
+void read_option(uint *last_modify_time, uchar num, uchar tmp[], uchar is_temp_wall);
 
 #endif

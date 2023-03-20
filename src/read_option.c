@@ -8,7 +8,7 @@
 #include "read_option.h"
 #include "printf_with_time.h"
 
-void read_option(uint *last_modify_time, uchar num, uchar is_temp_wall)
+void read_option(uint *last_modify_time, uchar num, uchar tmp[], uchar is_temp_wall)
 {
     FILE *fc;
     char option_tmp[42], option[100], *value;
@@ -22,7 +22,7 @@ void read_option(uint *last_modify_time, uchar num, uchar is_temp_wall)
     while(fgets(option, sizeof(option), fc) != NULL)
     {
         line_feed(option);
-        if((strstr(option, "#") != NULL && strstr(option, "#") == 0) || strlen(option) == 0) continue;
+        if((strstr(option, "#") != NULL && !strstr(option, "#")) || !strlen(option)) continue;
         for(opt=0;opt < OPTION_QUANTITY;opt++)
         {
             snprintf(option_tmp, 42, "%s=", options[opt]);
@@ -42,7 +42,7 @@ void read_option(uint *last_modify_time, uchar num, uchar is_temp_wall)
                 }
             }
             if(value_stat[opt] == 10 && atoi(value) < 0) value_stat[opt]=3;
-            if(opt == 10 && !atoi(value)) value_stat[opt]=4;
+            if(opt == 10 && value_stat[opt] == 10 && !atoi(value)) value_stat[opt]=4;
             if(value_stat[opt] == 10) opt_new[opt]=atoi(value);
         }
     }

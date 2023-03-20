@@ -52,12 +52,12 @@ void check_read_file(char *file)
         printf_with_time(chartmp);
         exit(789);
     }
-    if(access(file, F_OK) == 0)
+    if(!access(file, F_OK))
     {
-        if(access(file, R_OK) != 0)
+        if(access(file, R_OK))
         {
             chmod(file, 0644);
-            if(access(file, R_OK) != 0)
+            if(access(file, R_OK))
             {
                 snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "无法读取%s文件，程序强制退出！", file);
                 printf_with_time(chartmp);
@@ -96,7 +96,7 @@ int main()
     char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10];
     char *temp_sensor,*temp_sensor_dir,*buffer,*msg,current_max_char[20],highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
     char temp_sensors[12][15]={"lcd_therm","conn_therm","modem_therm","wifi_therm","quiet_therm","mtktsbtsnrpa","mtktsbtsmdpa","mtktsAP","modem-0-usr","modem1_wifi","ddr-usr","cwlan-usr"};
-    uchar num=0,negative=0,step_charge=1,step_charge_file=0,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1;
+    uchar num=0,negative=0,step_charge=1,step_charge_file=0,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1,tmp[5]={0};
     int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
     uint option_last_modify_time=0;
     regex_t temp_re,current_max_re,current_limit_re;
@@ -105,8 +105,8 @@ int main()
     printf("作者：酷安@诺鸡鸭\r\n");
     printf("GitHub开源地址：https://github.com/chase535/turbo-charge\r\n\r\n");
     fflush(stdout);
-    if(access("/sys/class/power_supply/battery/status", F_OK) != 0) battery_status=0;
-    if(access("/sys/class/power_supply/battery/capacity", F_OK) != 0) battery_capacity=0;
+    if(access("/sys/class/power_supply/battery/status", F_OK)) battery_status=0;
+    if(access("/sys/class/power_supply/battery/capacity", F_OK)) battery_capacity=0;
     if(!battery_status || !battery_capacity)
     {
         power_control=0;
@@ -119,7 +119,7 @@ int main()
     }
     else
     {
-        if(access("/sys/class/power_supply/battery/charging_enabled", F_OK) != 0 && access("/sys/class/power_supply/battery/battery_charging_enabled", F_OK) != 0 && access("/sys/class/power_supply/battery/input_suspend", F_OK) != 0 && access("/sys/class/qcom-battery/restricted_charging", F_OK) != 0)
+        if(access("/sys/class/power_supply/battery/charging_enabled", F_OK) && access("/sys/class/power_supply/battery/battery_charging_enabled", F_OK) && access("/sys/class/power_supply/battery/input_suspend", F_OK) && access("/sys/class/qcom-battery/restricted_charging", F_OK))
         {
             power_control=0;
             printf_with_time("由于找不到控制手机暂停充电的文件，电量控制功能失效！");
@@ -127,7 +127,7 @@ int main()
             printf_with_time("如果您知道其他的有关文件，请联系模块制作者！");
         }
     }
-    if(access("/sys/class/power_supply/battery/step_charging_enabled", F_OK) == 0) step_charge_file++;
+    if(!access("/sys/class/power_supply/battery/step_charging_enabled", F_OK)) step_charge_file++;
     if(!step_charge_file || !battery_capacity)
     {
         if(step_charge_file && !battery_capacity)
@@ -153,19 +153,19 @@ int main()
         power_supply_dir_list_num=list_dir(power_supply_dir[i], &power_supply_dir_list);
         for(j=0;j < power_supply_dir_list_num;j++)
         {
-            if(regexec(&current_limit_re, power_supply_dir_list[j], 1, &current_limit_pmatch, 0) == 0)
+            if(!regexec(&current_limit_re, power_supply_dir_list[j], 1, &current_limit_pmatch, 0))
             {
                 current_limit_file[current_limit_file_num]=(char *)calloc(1, sizeof(char)*(strlen(power_supply_dir_list[j])+1));
                 strcpy(current_limit_file[current_limit_file_num], power_supply_dir_list[j]);
                 current_limit_file_num++;
             }
-            if(regexec(&current_max_re, power_supply_dir_list[j], 1, &current_max_pmatch, 0) == 0)
+            if(!regexec(&current_max_re, power_supply_dir_list[j], 1, &current_max_pmatch, 0))
             {
                 current_max_file[current_max_file_num]=(char *)calloc(1, sizeof(char)*(strlen(power_supply_dir_list[j])+1));
                 strcpy(current_max_file[current_max_file_num], power_supply_dir_list[j]);
                 current_max_file_num++;
             }
-            if(regexec(&temp_re, power_supply_dir_list[j], 1, &temp_pmatch, 0) == 0)
+            if(!regexec(&temp_re, power_supply_dir_list[j], 1, &temp_pmatch, 0))
             {
                 temp_file[temp_file_num]=(char *)calloc(1, sizeof(char)*(strlen(power_supply_dir_list[j])+1));
                 strcpy(temp_file[temp_file_num], power_supply_dir_list[j]);
@@ -203,11 +203,11 @@ int main()
         thermal_file_num=list_dir("/sys/class/thermal", &thermal_dir);
         for(i=0;i < thermal_file_num;i++)
         {
-            if(strstr(thermal_dir[i], "thermal_zone")!=NULL)
+            if(strstr(thermal_dir[i], "thermal_zone") != NULL)
             {
                 buffer=(char *)realloc(buffer, sizeof(char)*(strlen(thermal_dir[i])+6));
                 sprintf(buffer, "%s/type", thermal_dir[i]);
-                if(access(buffer, R_OK) != 0) continue;
+                if(access(buffer, R_OK)) continue;
                 stat(buffer, &statbuf);
                 fq=fopen(buffer, "rt");
                 if(fq != NULL)
@@ -223,7 +223,7 @@ int main()
                     line_feed(msg);
                     for(j=0;j < (int)sizeof(temp_sensors);j++)
                     {
-                        if(strcmp(msg, temp_sensors[j]) == 0 && temp_sensor_num > j)
+                        if(!strcmp(msg, temp_sensors[j]) && temp_sensor_num > j)
                         {
                             temp_sensor_num=j;
                             temp_sensor_dir=(char *)realloc(temp_sensor_dir, sizeof(char)*(strlen(thermal_dir[i])+1));
@@ -294,7 +294,7 @@ int main()
     charge_ctl("1");
     while(1)
     {
-        read_option(&option_last_modify_time, num, 0);
+        read_option(&option_last_modify_time, num, tmp, 0);
         snprintf(current_max_char, 20, "%u", opt_new[3]);
         snprintf(highest_temp_current_char, 20, "%u", opt_new[8]);
         if(!num) num=1;
@@ -320,7 +320,7 @@ int main()
             }
             else if(step_charge == 2)
                 (opt_new[0] == 1)?step_charge_ctl("0"):step_charge_ctl("1");
-            sleep(1);
+            sleep(opt_new[10]);
             continue;
         }
         check_read_file("/sys/class/power_supply/battery/capacity");
@@ -342,7 +342,7 @@ int main()
         fclose(fq);
         fq=NULL;
         line_feed(charge);
-        if(strcmp(charge, "Discharging") != 0)
+        if(strcmp(charge, "Discharging"))
         {
             if(tmp[0] || !tmp[1])
             {
@@ -351,7 +351,7 @@ int main()
                 tmp[1]=1;
             }
             if(force_temp) set_array_value(temp_file, temp_file_num, "280");
-            if(power_control) powel_ctl();
+            if(power_control) powel_ctl(tmp);
             if(opt_new[1] == 1 && temp_sensor_num != 100 && current_change)
             {
                 check_read_file(temp_sensor);
@@ -367,7 +367,7 @@ int main()
                     printf_with_time(chartmp);
                     while(1)
                     {
-                        read_option(&option_last_modify_time, num, 1);
+                        read_option(&option_last_modify_time, num, tmp, 1);
                         snprintf(current_max_char, 20, "%u", opt_new[3]);
                         snprintf(highest_temp_current_char, 20, "%u", opt_new[8]);
                         check_read_file(temp_sensor);
@@ -377,7 +377,7 @@ int main()
                         fq=NULL;
                         line_feed(thermal);
                         temp_int=atoi(thermal);
-                        if(tmp[3] == 1)
+                        if(tmp[3])
                         {
                             if(temp_int < ((int)opt_new[7])*1000)
                             {
@@ -398,7 +398,7 @@ int main()
                         fclose(fq);
                         fq=NULL;
                         line_feed(charge);
-                        if(strcmp(charge, "Discharging") == 0)
+                        if(!strcmp(charge, "Discharging"))
                         {
                             snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "充电器断开连接，恢复充电电流为%dμA", opt_new[3]);
                             printf_with_time(chartmp);
@@ -412,7 +412,7 @@ int main()
                             printf_with_time(chartmp);
                             break;
                         }
-                        if(opt_new[1] == 0)
+                        if(!opt_new[1])
                         {
                             snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "温控关闭，恢复充电电流为%dμA", opt_new[3]);
                             printf_with_time(chartmp);
@@ -427,8 +427,8 @@ int main()
                             (opt_new[0] == 1)?step_charge_ctl("0"):step_charge_ctl("1");
                         set_array_value(current_max_file, current_max_file_num, highest_temp_current_char);
                         if(force_temp) set_array_value(temp_file, temp_file_num, "280");
-                        if(power_control) powel_ctl();
-                        sleep(1);
+                        if(power_control) powel_ctl(tmp);
+                        sleep(opt_new[10]);
                     }
                 }
             }
@@ -453,7 +453,7 @@ int main()
             }
             else if(step_charge == 2)
                 (opt_new[0] == 1)?step_charge_ctl("0"):step_charge_ctl("1");
-            if(power_control) powel_ctl();
+            if(power_control) powel_ctl(tmp);
             if(force_temp)
             {
                 check_read_file(temp_sensor);

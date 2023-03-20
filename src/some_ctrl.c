@@ -29,7 +29,7 @@ void charge_ctl(char *i)
     }
 }
 
-void powel_ctl(void)
+void powel_ctl(uchar tmp[])
 {
     if(opt_new[2] == 1)
     {
