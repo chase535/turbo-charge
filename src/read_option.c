@@ -42,7 +42,7 @@ void read_option(uint *last_modify_time, uchar num, uchar tmp[], uchar is_temp_w
                 }
             }
             if(value_stat[opt] == 10 && atoi(value) < 0) value_stat[opt]=3;
-            if(value_stat[opt] == 10 && !atoi(value)) value_stat[opt]=4;
+            if(value_stat[opt] == 10 && opt == 10 && !atoi(value)) value_stat[opt]=4;
             if(value_stat[opt] == 10) opt_new[opt]=atoi(value);
         }
     }
