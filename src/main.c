@@ -365,7 +365,7 @@ int main()
                     printf_with_time(chartmp);
                     while(1)
                     {
-                        read_option(&option_last_modify_time, num, tmp, 1);
+                        read_option(&option_last_modify_time, 1, tmp, 1);
                         snprintf(current_max_char, 20, "%u", opt_new[3]);
                         snprintf(highest_temp_current_char, 20, "%u", opt_new[8]);
                         check_read_file(temp_sensor);
