@@ -7,7 +7,7 @@
 
 void set_value(char *file, char *numb)
 {
-    if(access(file, F_OK) == 0)
+    if(!access(file, F_OK))
     {
         FILE *fn;
         struct stat statbuf;
@@ -24,7 +24,7 @@ void set_value(char *file, char *numb)
                 write_data:
                 fgets(content, statbuf.st_size+1, fn);
                 line_feed(content);
-                if(strcmp(content, numb) != 0) fputs(numb, fn);
+                if(strcmp(content, numb)) fputs(numb, fn);
                 fclose(fn);
                 fn=NULL;
             } 

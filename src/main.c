@@ -24,7 +24,7 @@ int list_dir(char *path, char ***ppp)
         *ppp=(char **)calloc(1, sizeof(char *)*500);
         while((ent=readdir(pDir)) != NULL)
         {
-            if(strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
+            if(!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, "..")) continue;
             (*ppp)[file_num]=(char *)calloc(1, sizeof(char)*((strlen(path)+strlen(ent->d_name))+2));
             sprintf((*ppp)[file_num], "%s/%s", path, ent->d_name);
             file_num++;
@@ -469,10 +469,10 @@ int main()
                     negative=1;
                 }
                 snprintf(bat_temp, 4, "%05d", temp_int);
-                if(strcmp(bat_temp, "000") == 0) snprintf(bat_temp, sizeof(bat_temp), "0");
+                if(!strcmp(bat_temp, "000")) snprintf(bat_temp, sizeof(bat_temp), "0");
                 else
                 {
-                    for(bat_temp_tmp[0]=bat_temp[0];atoi(bat_temp_tmp) == 0;bat_temp_tmp[0]=bat_temp[0])
+                    for(bat_temp_tmp[0]=bat_temp[0];!atoi(bat_temp_tmp) == 0;bat_temp_tmp[0]=bat_temp[0])
                     {
                         for(i=0;i < 5;i++) bat_temp[i]=bat_temp[i+1];
                         bat_temp[5]='\0';
