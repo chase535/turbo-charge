@@ -95,7 +95,7 @@ int main()
     FILE *fq;
     char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10];
     char *temp_sensor,*temp_sensor_dir,*buffer,*msg,current_max_char[20],highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
-    uchar num=0,negative=0,step_charge=1,step_charge_file=0,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1,tmp[5]={0};
+    uchar negative=0,step_charge=1,step_charge_file=0,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1,tmp[5]={0};
     int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
     uint option_last_modify_time=0;
     regex_t temp_re,current_max_re,current_limit_re;
@@ -289,25 +289,24 @@ int main()
         }
     }
     check_read_file(option_file);
+    read_option(&option_last_modify_time, 0, tmp, 0);
     printf_with_time("文件检测完毕，程序开始运行");
+    set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
+    set_value("/sys/class/power_supply/battery/system_temp_level", "1");
+    set_value("/sys/class/power_supply/usb/boost_current", "1");
+    set_value("/sys/class/power_supply/battery/safety_timer_enabled", "0");
+    set_value("/sys/kernel/fast_charge/failsafe", "1");
+    set_value("/sys/class/power_supply/battery/allow_hvdcp3", "1");
+    set_value("/sys/class/power_supply/usb/pd_allowed", "1");
+    set_value("/sys/class/power_supply/battery/input_current_limited", "0");
+    set_value("/sys/class/power_supply/battery/input_current_settled", "1");
+    set_value("/sys/class/qcom-battery/restrict_chg", "0");
     charge_ctl("1");
     while(1)
     {
-        read_option(&option_last_modify_time, num, tmp, 0);
+        read_option(&option_last_modify_time, 1, tmp, 0);
         snprintf(current_max_char, 20, "%u", opt_new[3]);
         snprintf(highest_temp_current_char, 20, "%u", opt_new[8]);
-        if(!num) num=1;
-        set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
-        set_value("/sys/class/power_supply/battery/system_temp_level", "1");
-        set_value("/sys/class/power_supply/usb/boost_current", "1");
-        set_value("/sys/class/power_supply/battery/safety_timer_enabled", "0");
-        set_value("/sys/kernel/fast_charge/failsafe", "1");
-        set_value("/sys/class/power_supply/battery/allow_hvdcp3", "1");
-        set_value("/sys/class/power_supply/usb/pd_allowed", "1");
-        set_value("/sys/class/power_supply/battery/subsystem/usb/pd_allowed", "1");
-        set_value("/sys/class/power_supply/battery/input_current_limited", "0");
-        set_value("/sys/class/power_supply/battery/input_current_settled", "1");
-        set_value("/sys/class/qcom-battery/restrict_chg", "0");
         set_array_value(current_limit_file, current_limit_file_num, "-1");
         if(!battery_status)
         {
