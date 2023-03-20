@@ -1,4 +1,4 @@
-#define OPTION_QUANTITY 10
+#define OPTION_QUANTITY 11
 #define PRINTF_WITH_TIME_MAX_SIZE 400
 
 extern unsigned int opt_old[OPTION_QUANTITY],opt_new[OPTION_QUANTITY];

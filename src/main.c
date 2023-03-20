@@ -488,7 +488,7 @@ int main()
                 else (temp_int >= 45000)?set_array_value(temp_file, temp_file_num, "280"):set_array_value(temp_file, temp_file_num, bat_temp);
             }
         }
-        sleep(1);
+        sleep(opt_new[10]);
     }
     return 0;
 }
