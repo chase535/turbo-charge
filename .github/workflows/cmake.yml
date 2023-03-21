@@ -31,12 +31,10 @@ jobs:
         run: |
           echo "CC=${GCC_CLONE_PATH}/bin/aarch64-linux-musl-gcc" >> ${GITHUB_ENV}
           echo "CXX=${GCC_CLONE_PATH}/bin/aarch64-linux-musl-g++" >> ${GITHUB_ENV}
-      - name: Create directory
-        run: mkdir -vp ${{ github.workspace }}/build
       - name: Configure CMake
-        run: cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build
       - name: Build module
-        run: cmake --build ${{github.workspace}}/build --config Release
+        run: make -C build -j$(nproc --all)
       - name: Copy ELF file into module directory
         run: cp -f ${{ github.workspace }}/build/turbo-charge ${{ github.workspace }}/module/common/turbo-charge
       - name : Zip and upload module
