@@ -1,5 +1,6 @@
 #include "stdio.h"
 #include "stdlib.h"
+#include "string.h"
 #include "sys/stat.h"
 
 #include "some_ctrl.h"
@@ -31,7 +32,7 @@ void charge_ctl(char *i)
 
 void powel_ctl(uchar tmp[])
 {
-    int power_control=0,charge_stop=0,charge_start=0;
+    int power_control=0,charge_stop=0,charge_start=0,i=0;
     for(i=0;i < OPTION_QUANTITY;i++)
     {
         if(!strcmp(options[i].name, "POWER_CTRL")) power_control=options[i].value;
