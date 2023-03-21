@@ -43,33 +43,33 @@ void read_option(uint *last_modify_time, uchar num, uchar tmp[], uchar is_temp_w
             }
             if(value_stat[opt] == 10 && atoi(value) < 0) value_stat[opt]=3;
             if(value_stat[opt] == 10 && opt == 10 && !atoi(value)) value_stat[opt]=4;
-            if(value_stat[opt] == 10) opt_new[opt]=atoi(value);
+            if(value_stat[opt] == 10) options_value[opt]=atoi(value);
             if(num)
             {
-                if(value_stat[opt] == 0) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s不存在，故程序沿用上一次的值%d", options[opt], opt_new[opt]);
-                else if(value_stat[opt] == 1) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新%s的值为空，故程序沿用上一次的值%d", options[opt], opt_new[opt]);
-                else if(value_stat[opt] == 2) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新%s的值不是由纯数字组成，故程序沿用上一次的值%d", options[opt], opt_new[opt]);
-                else if(value_stat[opt] == 3) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新%s的值小于0，这是不被允许的，故程序沿用上一次的值%d", options[opt], opt_new[opt]);
-                else if(value_stat[opt] == 4) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新%s的值为0，这是不被允许的，故程序沿用上一次的值%d", options[opt], opt_new[opt]);
+                if(value_stat[opt] == 0) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s不存在，故程序沿用上一次的值%d", options[opt], options_value[opt]);
+                else if(value_stat[opt] == 1) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新%s的值为空，故程序沿用上一次的值%d", options[opt], options_value[opt]);
+                else if(value_stat[opt] == 2) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新%s的值不是由纯数字组成，故程序沿用上一次的值%d", options[opt], options_value[opt]);
+                else if(value_stat[opt] == 3) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新%s的值小于0，这是不被允许的，故程序沿用上一次的值%d", options[opt], options_value[opt]);
+                else if(value_stat[opt] == 4) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新%s的值为0，这是不被允许的，故程序沿用上一次的值%d", options[opt], options_value[opt]);
                 if(value_stat[opt] != 10) printf_with_time(chartmp);
-                else if(opt_new[opt] != atoi(value))
+                else if(options_value[opt] != atoi(value))
                 {
-                    snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "%s值发生改变，新%s值为%d", options[opt], options[opt], opt_new[opt]);
+                    snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "%s值发生改变，新%s值为%d", options[opt], options[opt], options_value[opt]);
                     printf_with_time(chartmp);
-                    if(opt == 5 && opt_new[opt] < atoi(value)) tmp[4]=1;
-                    if(opt == 7 && is_temp_wall == 1 && opt_new[opt] < atoi(value)) tmp[3]=1;
-                    opt_new[opt]=atoi(value);
+                    if(opt == 5 && options_value[opt] < atoi(value)) tmp[4]=1;
+                    if(opt == 7 && is_temp_wall == 1 && options_value[opt] < atoi(value)) tmp[3]=1;
+                    options_value[opt]=atoi(value);
                 }
             }
             else
             {
-                if(value_stat[opt] == 0) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s不存在，故程序使用默认值%d", options[opt], opt_new[opt]);
-                else if(value_stat[opt] == 1) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s的值为空，故程序使用默认值%d", options[opt], opt_new[opt]);
-                else if(value_stat[opt] == 2) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s的值不是由纯数字组成，故程序使用默认值%d", options[opt], opt_new[opt]);
-                else if(value_stat[opt] == 3) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s的值小于0，这是不被允许的，故程序使用默认值%d", options[opt], opt_new[opt]);
-                else if(value_stat[opt] == 4) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s的值为0，这是不被允许的，故程序使用默认值%d", options[opt], opt_new[opt]);
+                if(value_stat[opt] == 0) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s不存在，故程序使用默认值%d", options[opt], options_value[opt]);
+                else if(value_stat[opt] == 1) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s的值为空，故程序使用默认值%d", options[opt], options_value[opt]);
+                else if(value_stat[opt] == 2) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s的值不是由纯数字组成，故程序使用默认值%d", options[opt], options_value[opt]);
+                else if(value_stat[opt] == 3) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s的值小于0，这是不被允许的，故程序使用默认值%d", options[opt], options_value[opt]);
+                else if(value_stat[opt] == 4) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s的值为0，这是不被允许的，故程序使用默认值%d", options[opt], options_value[opt]);
                 if(value_stat[opt] != 10) printf_with_time(chartmp);
-                else opt_new[opt]=atoi(value);
+                else options_value[opt]=atoi(value);
             }
         }
     }

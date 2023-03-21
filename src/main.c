@@ -305,20 +305,20 @@ int main()
     while(1)
     {
         read_option(&option_last_modify_time, 1, tmp, 0);
-        snprintf(current_max_char, 20, "%u", opt_new[3]);
-        snprintf(highest_temp_current_char, 20, "%u", opt_new[8]);
+        snprintf(current_max_char, 20, "%u", options_value[3]);
+        snprintf(highest_temp_current_char, 20, "%u", options_value[8]);
         set_array_value(current_limit_file, current_limit_file_num, "-1");
         if(!battery_status)
         {
             if(current_change) set_array_value(current_max_file, current_max_file_num, current_max_char);
             if(step_charge == 1)
             {
-                if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?step_charge_ctl("1"):step_charge_ctl("0");
+                if(options_value[0] == 1) (atoi(power) < (int)options_value[4])?step_charge_ctl("1"):step_charge_ctl("0");
                 else step_charge_ctl("1");
             }
             else if(step_charge == 2)
-                (opt_new[0] == 1)?step_charge_ctl("0"):step_charge_ctl("1");
-            sleep(opt_new[10]);
+                (options_value[0] == 1)?step_charge_ctl("0"):step_charge_ctl("1");
+            sleep(options_value[10]);
             continue;
         }
         check_read_file("/sys/class/power_supply/battery/capacity");
@@ -329,11 +329,11 @@ int main()
         line_feed(power);
         if(step_charge == 1)
         {
-            if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?step_charge_ctl("1"):step_charge_ctl("0");
+            if(options_value[0] == 1) (atoi(power) < (int)options_value[4])?step_charge_ctl("1"):step_charge_ctl("0");
             else step_charge_ctl("1");
         }
         else if(step_charge == 2)
-            (opt_new[0] == 1)?step_charge_ctl("0"):step_charge_ctl("1");
+            (options_value[0] == 1)?step_charge_ctl("0"):step_charge_ctl("1");
         check_read_file("/sys/class/power_supply/battery/status");
         fq=fopen("/sys/class/power_supply/battery/status", "rt");
         fgets(charge, 20, fq);
@@ -350,7 +350,7 @@ int main()
             }
             if(force_temp) set_array_value(temp_file, temp_file_num, "280");
             if(power_control) powel_ctl(tmp);
-            if(opt_new[1] == 1 && temp_sensor_num != 100 && current_change)
+            if(options_value[1] == 1 && temp_sensor_num != 100 && current_change)
             {
                 check_read_file(temp_sensor);
                 fq=fopen(temp_sensor, "rt");
@@ -359,15 +359,15 @@ int main()
                 fq=NULL;
                 line_feed(thermal);
                 temp_int=atoi(thermal);
-                if(temp_int >= ((int)opt_new[7])*1000)
+                if(temp_int >= ((int)options_value[7])*1000)
                 {
-                    snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "手机温度大于等于降低充电电流的温度阈值，限制充电电流为%dμA", opt_new[8]);
+                    snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "手机温度大于等于降低充电电流的温度阈值，限制充电电流为%dμA", options_value[8]);
                     printf_with_time(chartmp);
                     while(1)
                     {
                         read_option(&option_last_modify_time, 1, tmp, 1);
-                        snprintf(current_max_char, 20, "%u", opt_new[3]);
-                        snprintf(highest_temp_current_char, 20, "%u", opt_new[8]);
+                        snprintf(current_max_char, 20, "%u", options_value[3]);
+                        snprintf(highest_temp_current_char, 20, "%u", options_value[8]);
                         check_read_file(temp_sensor);
                         fq=fopen(temp_sensor, "rt");
                         fgets(thermal, 10, fq);
@@ -377,15 +377,15 @@ int main()
                         temp_int=atoi(thermal);
                         if(tmp[3])
                         {
-                            if(temp_int < ((int)opt_new[7])*1000)
+                            if(temp_int < ((int)options_value[7])*1000)
                             {
-                                snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新的降低充电电流的温度阈值高于旧的温度阈值，且手机温度小于新的温度阈值，恢复充电电流为%dμA", opt_new[3]);
+                                snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新的降低充电电流的温度阈值高于旧的温度阈值，且手机温度小于新的温度阈值，恢复充电电流为%dμA", options_value[3]);
                                 printf_with_time(chartmp);
                                 break;
                             }
                             else
                             {
-                                snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新的降低充电电流的温度阈值高于旧的温度阈值，但手机温度大于等于新的温度阈值，限制充电电流为%dμA", opt_new[8]);
+                                snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新的降低充电电流的温度阈值高于旧的温度阈值，但手机温度大于等于新的温度阈值，限制充电电流为%dμA", options_value[8]);
                                 printf_with_time(chartmp);
                             }
                             tmp[3]=0;
@@ -398,35 +398,35 @@ int main()
                         line_feed(charge);
                         if(!strcmp(charge, "Discharging"))
                         {
-                            snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "充电器断开连接，恢复充电电流为%dμA", opt_new[3]);
+                            snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "充电器断开连接，恢复充电电流为%dμA", options_value[3]);
                             printf_with_time(chartmp);
                             tmp[0]=1;
                             tmp[1]=0;
                             break;
                         }
-                        if(temp_int <= ((int)opt_new[9])*1000)
+                        if(temp_int <= ((int)options_value[9])*1000)
                         {
-                            snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "手机温度小于等于恢复快充的温度阈值，恢复充电电流为%dμA", opt_new[3]);
+                            snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "手机温度小于等于恢复快充的温度阈值，恢复充电电流为%dμA", options_value[3]);
                             printf_with_time(chartmp);
                             break;
                         }
-                        if(!opt_new[1])
+                        if(!options_value[1])
                         {
-                            snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "温控关闭，恢复充电电流为%dμA", opt_new[3]);
+                            snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "温控关闭，恢复充电电流为%dμA", options_value[3]);
                             printf_with_time(chartmp);
                             break;
                         }
                         if(step_charge == 1)
                         {
-                            if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?step_charge_ctl("1"):step_charge_ctl("0");
+                            if(options_value[0] == 1) (atoi(power) < (int)options_value[4])?step_charge_ctl("1"):step_charge_ctl("0");
                             else step_charge_ctl("1");
                         }
                         else if(step_charge == 2)
-                            (opt_new[0] == 1)?step_charge_ctl("0"):step_charge_ctl("1");
+                            (options_value[0] == 1)?step_charge_ctl("0"):step_charge_ctl("1");
                         set_array_value(current_max_file, current_max_file_num, highest_temp_current_char);
                         if(force_temp) set_array_value(temp_file, temp_file_num, "280");
                         if(power_control) powel_ctl(tmp);
-                        sleep(opt_new[10]);
+                        sleep(options_value[10]);
                     }
                 }
             }
@@ -446,11 +446,11 @@ int main()
             }
             if(step_charge == 1)
             {
-                if(opt_new[0] == 1) (atoi(power) < (int)opt_new[4])?step_charge_ctl("1"):step_charge_ctl("0");
+                if(options_value[0] == 1) (atoi(power) < (int)options_value[4])?step_charge_ctl("1"):step_charge_ctl("0");
                 else step_charge_ctl("1");
             }
             else if(step_charge == 2)
-                (opt_new[0] == 1)?step_charge_ctl("0"):step_charge_ctl("1");
+                (options_value[0] == 1)?step_charge_ctl("0"):step_charge_ctl("1");
             if(power_control) powel_ctl(tmp);
             if(force_temp)
             {
@@ -486,7 +486,7 @@ int main()
                 else (temp_int >= 45000)?set_array_value(temp_file, temp_file_num, "280"):set_array_value(temp_file, temp_file_num, bat_temp);
             }
         }
-        sleep(opt_new[10]);
+        sleep(options_value[10]);
     }
     return 0;
 }
