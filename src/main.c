@@ -309,12 +309,12 @@ int main()
         for(i=0;i < OPTION_QUANTITY;i++)
         {
             if(!strcmp(options[i].name, "CYCLE_TIME")) cycle_time=options[i].value;
-            else if(!strcmp(options[i].name, "CURRENT_MAX")) snprintf(current_max_char, 20, "%u", options[i].value);
+            else if(!strcmp(options[i].name, "CURRENT_MAX")) snprintf(current_max_char, 20, "%i", options[i].value);
             else if(!strcmp(options[i].name, "STEP_CHARGING_DISABLED")) step_charging_disabled=options[i].value;
             else if(!strcmp(options[i].name, "TEMP_CTRL")) temp_ctrl=options[i].value;
             else if(!strcmp(options[i].name, "STEP_CHARGING_DISABLED_THRESHOLD")) step_charging_disabled_threshold=options[i].value;
             else if(!strcmp(options[i].name, "TEMP_MAX")) temp_max=options[i].value;
-            else if(!strcmp(options[i].name, "HIGHEST_TEMP_CURRENT")) snprintf(highest_temp_current_char, 20, "%u", options[i].value);
+            else if(!strcmp(options[i].name, "HIGHEST_TEMP_CURRENT")) snprintf(highest_temp_current_char, 20, "%i", options[i].value);
             else if(!strcmp(options[i].name, "RECHARGE_TEMP")) recharge_temp=options[i].value;
         }
         set_array_value(current_limit_file, current_limit_file_num, "-1");
@@ -379,12 +379,12 @@ int main()
                         for(i=0;i < OPTION_QUANTITY;i++)
                         {
                             if(!strcmp(options[i].name, "CYCLE_TIME")) cycle_time=options[i].value;
-                            else if(!strcmp(options[i].name, "CURRENT_MAX")) snprintf(current_max_char, 20, "%u", options[i].value);
+                            else if(!strcmp(options[i].name, "CURRENT_MAX")) snprintf(current_max_char, 20, "%i", options[i].value);
                             else if(!strcmp(options[i].name, "STEP_CHARGING_DISABLED")) step_charging_disabled=options[i].value;
                             else if(!strcmp(options[i].name, "TEMP_CTRL")) temp_ctrl=options[i].value;
                             else if(!strcmp(options[i].name, "STEP_CHARGING_DISABLED_THRESHOLD")) step_charging_disabled_threshold=options[i].value;
                             else if(!strcmp(options[i].name, "TEMP_MAX")) temp_max=options[i].value;
-                            else if(!strcmp(options[i].name, "HIGHEST_TEMP_CURRENT")) snprintf(highest_temp_current_char, 20, "%u", options[i].value);
+                            else if(!strcmp(options[i].name, "HIGHEST_TEMP_CURRENT")) snprintf(highest_temp_current_char, 20, "%i", options[i].value);
                             else if(!strcmp(options[i].name, "RECHARGE_TEMP")) recharge_temp=options[i].value;
                         }
                         check_read_file(temp_sensor);
