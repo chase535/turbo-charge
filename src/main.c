@@ -490,7 +490,7 @@ int main()
                 if(!strcmp(bat_temp, "000")) snprintf(bat_temp, sizeof(bat_temp), "0");
                 else
                 {
-                    for(bat_temp_tmp[0]=bat_temp[0];!atoi(bat_temp_tmp) == 0;bat_temp_tmp[0]=bat_temp[0])
+                    for(bat_temp_tmp[0]=bat_temp[0];atoi(bat_temp_tmp) == 0;bat_temp_tmp[0]=bat_temp[0])
                     {
                         for(i=0;i < 5;i++) bat_temp[i]=bat_temp[i+1];
                         bat_temp[5]='\0';
