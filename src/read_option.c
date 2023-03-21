@@ -69,7 +69,7 @@ void read_option(uint *last_modify_time, uchar num, uchar tmp[], uchar is_temp_w
             else if(value_stat[opt] == 2) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新%s的值不是由纯数字组成，故程序沿用上一次的值%d", options[opt].name, options[opt].value);
             else if(value_stat[opt] == 3) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新%s的值小于0，这是不被允许的，故程序沿用上一次的值%d", options[opt].name, options[opt].value);
             else if(value_stat[opt] == 4) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新%s的值为0，这是不被允许的，故程序沿用上一次的值%d", options[opt].name, options[opt].value);
-            else if(value_stat[opt] == 100) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "%s值发生改变，新%s值为%d", options[opt].name, options[opt].name, options[opt].value);
+            else if(value_stat[opt] == 100) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "%s的值更改为%d", options[opt].name, options[opt].value);
             if(value_stat[opt] != 10) printf_with_time(chartmp);
         }
         else
