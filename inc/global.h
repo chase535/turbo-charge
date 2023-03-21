@@ -1,13 +1,13 @@
 #define OPTION_QUANTITY 11
 #define PRINTF_WITH_TIME_MAX_SIZE 400
 
-struct option_struct
+typedef struct option_struct
 {
-    char name[];
+    char name[40];
     int value;
-};
+}options_array;
 
-extern struct option options[OPTION_QUANTITY];
+extern options_array options[OPTION_QUANTITY];
 extern char chartmp[PRINTF_WITH_TIME_MAX_SIZE];
 extern char option_file[];
 extern char temp_sensors[12][15];
