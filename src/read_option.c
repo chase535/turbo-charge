@@ -42,8 +42,7 @@ void read_option(uint *last_modify_time, uchar num, uchar tmp[], uchar is_temp_w
                 }
             }
             if(value_stat[opt] == 10 && atoi(value) < 0) value_stat[opt]=3;
-            if(value_stat[opt] == 10 && opt == 10 && !atoi(value)) value_stat[opt]=4;
-            if(value_stat[opt] == 10) options_value[opt]=atoi(value);
+            if(value_stat[opt] == 10 && opt == 0 && !atoi(value)) value_stat[opt]=4;
             if(num)
             {
                 if(value_stat[opt] == 0) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s不存在，故程序沿用上一次的值%d", options[opt], options_value[opt]);
@@ -56,8 +55,8 @@ void read_option(uint *last_modify_time, uchar num, uchar tmp[], uchar is_temp_w
                 {
                     snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "%s值发生改变，新%s值为%d", options[opt], options[opt], options_value[opt]);
                     printf_with_time(chartmp);
-                    if(opt == 5 && options_value[opt] < atoi(value)) tmp[4]=1;
-                    if(opt == 7 && is_temp_wall == 1 && options_value[opt] < atoi(value)) tmp[3]=1;
+                    if(opt == 6 && options_value[opt] < atoi(value)) tmp[4]=1;
+                    if(opt == 8 && is_temp_wall == 1 && options_value[opt] < atoi(value)) tmp[3]=1;
                     options_value[opt]=atoi(value);
                 }
             }
