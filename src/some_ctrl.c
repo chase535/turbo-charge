@@ -31,7 +31,14 @@ void charge_ctl(char *i)
 
 void powel_ctl(uchar tmp[])
 {
-    if(options[3].value == 1)
+    int power_control=0,charge_stop=0,charge_start=0;
+    for(i=0;i < OPTION_QUANTITY;i++)
+    {
+        if(!strcmp(options[i].name, "POWER_CTRL")) power_control=options[i].value;
+        else if(!strcmp(options[i].name, "CHARGE_STOP")) charge_stop=options[i].value;
+        else if(!strcmp(options[i].name, "CHARGE_START")) charge_start=options[i].value;
+    }
+    if(power_control == 1)
     {
         FILE *fd;
         struct stat statbuf;
@@ -45,7 +52,7 @@ void powel_ctl(uchar tmp[])
         line_feed(power);
         if(tmp[2] && tmp[4])
         {
-            if(atoi(power) < (int)options[6].value)
+            if(atoi(power) < charge_stop)
             {
                 snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新的停止充电的电量阈值高于旧的电量阈值，且手机当前电量为%s%%，小于新的电量阈值，恢复充电", power);
                 printf_with_time(chartmp);
@@ -61,7 +68,7 @@ void powel_ctl(uchar tmp[])
             }
             tmp[4]=0;
         }
-        if(atoi(power) >= (int)options[6].value)
+        if(atoi(power) >= charge_stop)
         {
             if(!tmp[2])
             {
@@ -71,7 +78,7 @@ void powel_ctl(uchar tmp[])
             }
             charge_ctl("0");
         }
-        if(atoi(power) <= (int)options[7].value)
+        if(atoi(power) <= charge_start)
         {
             if(tmp[2])
             {

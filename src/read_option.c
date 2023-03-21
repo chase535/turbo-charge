@@ -55,8 +55,8 @@ void read_option(uint *last_modify_time, uchar num, uchar tmp[], uchar is_temp_w
                 {
                     snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "%s值发生改变，新%s值为%d", options[opt].name, options[opt].name, options[opt].value);
                     printf_with_time(chartmp);
-                    if(opt == 6 && options[opt].value < atoi(value)) tmp[4]=1;
-                    if(opt == 8 && is_temp_wall == 1 && options[opt].value < atoi(value)) tmp[3]=1;
+                    if(!strcmp(ptions[opt].name, "CHARGE_STOP") && options[opt].value < atoi(value)) tmp[4]=1;
+                    if(!strcmp(ptions[opt].name, "TEMP_MAX") && is_temp_wall == 1 && options[opt].value < atoi(value)) tmp[3]=1;
                     options[opt].value=atoi(value);
                 }
             }
