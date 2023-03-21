@@ -79,7 +79,7 @@ void read_option(uint *last_modify_time, uchar num, uchar tmp[], uchar is_temp_w
             else if(value_stat[opt] == 2) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s的值不是由纯数字组成，故程序使用默认值%d", options[opt].name, options[opt].value);
             else if(value_stat[opt] == 3) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s的值小于0，这是不被允许的，故程序使用默认值%d", options[opt].name, options[opt].value);
             else if(value_stat[opt] == 4) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s的值为0，这是不被允许的，故程序使用默认值%d", options[opt].name, options[opt].value);
-            if(value_stat[opt] != 10 || value_stat[opt] != 100) printf_with_time(chartmp);
+            if(!(value_stat[opt] == 10 || value_stat[opt] == 100)) printf_with_time(chartmp);
         }
     }
 }
