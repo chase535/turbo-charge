@@ -3,51 +3,6 @@ PROPFILE=false
 POSTFSDATA=false
 LATESTARTSERVICE=true
 
-print_modname()
-{
-    source ${TMPDIR}/module.prop
-    ui_print " "
-    ui_print " ********************************************************"
-    ui_print " "
-    ui_print " - 模块: ${name}"
-    ui_print " - 模块版本: ${version}"
-    ui_print " - 作者: ${author}"
-    ui_print " "
-    ui_print " -      ↓模块介绍↓"
-    ui_print " - 删除温控，充电时持续修改电池温度，让系统认为电池温度一直是28℃"
-    ui_print " - 持续修改充电电流，以达到最快充电速度"
-    ui_print " - 可选添加温控，若添加，默认当手机温度高于52℃时最高充电电流限制为2A"
-    ui_print " - 可选添加电量控制，若添加，默认电量到达95%时断电，小于等于80%时恢复充电"
-    ui_print " - 可选是否关闭阶梯式充电，若选是，默认电量大于15%时关闭阶梯式充电，电量小于等于15%时开启阶梯式充电"
-    ui_print " "
-    ui_print " - 为了避免温度过高手机卡顿甚至强制关机，故有如下限制"
-    ui_print "   · 若不充电时手机温度大于等于45℃，程序仍会强制显示28℃"
-    ui_print "   · 待手机温度降至45℃以下，显示真实温度"
-    ui_print " "
-    ui_print " ！！！若手机体感温度过高，请立即拔下充电器并将手机静置在阴凉处！！！"
-    ui_print " "
-    ui_print " ********************************************************"
-    ui_print " "
-    ui_print " - 可修改/data/adb/turbo-charge/option.txt来更改一些参数，即时生效"
-    ui_print " - 当然也可以通过重新刷模块来选择是否关闭阶梯式充电、添加温控、添加电量控制"
-    ui_print " "
-    ui_print " - log文件为同目录的log.txt，包含文件检测、配置更改、充电器拔插、撞程序内温度墙等信息"
-    ui_print " "
-    ui_print " ********************************************************"
-    ui_print " "
-    ui_print " ！！！卸载模块请务必在Magisk中卸载！！！"
-    ui_print " ！！！或手动执行模块目录下的uninstall.sh文件后再删除模块目录！！！"
-    ui_print " "
-    ui_print " ********************************************************"
-    ui_print " "
-    ui_print "  安装信息过多，导致屏幕显示信息不全"
-    ui_print "  音量键测试完毕后可通过划动屏幕查看未显示在屏幕上的内容"
-    ui_print "  不可在音量键测试时划动屏幕，否则会导致检测失败"
-    ui_print " "
-    ui_print " ********************************************************"
-    ui_print " "
-}
-
 check_file()
 {
     ui_print " "
@@ -120,6 +75,66 @@ volume_keytest()
     return 0
 }
 
+run_volume_key_test()
+{
+    if volume_keytest; then
+        KEYTEST=volume_choose
+        ui_print "- 音量键测试完成"
+    else
+        KEYTEST=false
+        ui_print " ！错误：没有检测到音量键选择，默认循环间隔时间1秒，不关闭阶梯式充电，添加温控，不添加电量控制"
+    fi
+}
+
+print_modname()
+{
+    source ${TMPDIR}/module.prop
+    ui_print " "
+    ui_print " ********************************************************"
+    ui_print " "
+    ui_print " - 模块: ${name}"
+    ui_print " - 模块版本: ${version}"
+    ui_print " - 作者: ${author}"
+    ui_print " "
+    ui_print " ********************************************************"
+    ui_print " "
+    ui_print "  安装信息过多，屏幕显示不全，所以优先显示此注意事项"
+    ui_print "  音量键测试完毕后可通过划动屏幕查看未显示在屏幕上的内容"
+    ui_print "  不可在音量键测试时划动屏幕，否则会导致检测失败"
+    ui_print " "
+    ui_print " ********************************************************"
+    ui_print " "
+    run_volume_key_test
+    ui_print " "
+    ui_print " -      ↓模块介绍↓"
+    ui_print " - 删除温控，充电时持续修改电池温度，让系统认为电池温度一直是28℃"
+    ui_print " - 持续修改充电电流，以达到最快充电速度"
+    ui_print " - 可选添加温控，若添加，默认当手机温度高于52℃时最高充电电流限制为2A"
+    ui_print " - 可选添加电量控制，若添加，默认电量到达95%时断电，小于等于80%时恢复充电"
+    ui_print " - 可选是否关闭阶梯式充电，若选是，默认电量大于15%时关闭阶梯式充电，电量小于等于15%时开启阶梯式充电"
+    ui_print " "
+    ui_print " - 为了避免温度过高手机卡顿甚至强制关机，故有如下限制"
+    ui_print "   · 若不充电时手机温度大于等于45℃，程序仍会强制显示28℃"
+    ui_print "   · 待手机温度降至45℃以下，显示真实温度"
+    ui_print " "
+    ui_print " ！！！若手机体感温度过高，请立即拔下充电器并将手机静置在阴凉处！！！"
+    ui_print " "
+    ui_print " ********************************************************"
+    ui_print " "
+    ui_print " - 可修改/data/adb/turbo-charge/option.txt来更改一些参数，即时生效"
+    ui_print " - 当然也可以通过重新刷模块来选择是否关闭阶梯式充电、添加温控、添加电量控制"
+    ui_print " "
+    ui_print " - log文件为同目录的log.txt，包含文件检测、配置更改、充电器拔插、撞程序内温度墙等信息"
+    ui_print " "
+    ui_print " ********************************************************"
+    ui_print " "
+    ui_print " ！！！卸载模块请务必在Magisk中卸载！！！"
+    ui_print " ！！！或手动执行模块目录下的uninstall.sh文件后再删除模块目录！！！"
+    ui_print " "
+    ui_print " ********************************************************"
+    ui_print " "
+}
+
 volume_choose()
 {
     while true; do
@@ -132,17 +147,6 @@ volume_choose()
         return 1
     else
         return 0
-    fi
-}
-
-run_volume_key_test()
-{
-    if volume_keytest; then
-        KEYTEST=volume_choose
-        ui_print "- 音量键测试完成"
-    else
-        KEYTEST=false
-        ui_print " ！错误：没有检测到音量键选择，默认不关闭阶梯式充电、添加温控、不添加电量控制"
     fi
 }
 
@@ -196,7 +200,6 @@ run_step_charge()
 
 on_install()
 {
-    run_volume_key_test
     run_step_charge
     run_temp
     run_power_ctrl
