@@ -23,7 +23,7 @@ void read_option(uint *last_modify_time, uchar num, uchar tmp[], uchar is_temp_w
     while(fgets(option, sizeof(option), fc) != NULL)
     {
         line_feed(option);
-        if((strstr(option, "#") != NULL && !strstr(option, "#")) || !strlen(option)) continue;
+        if(!strlen(option) || (strstr(option, "#") != NULL && !strstr(option, "#"))) continue;
         for(opt=0;opt < OPTION_QUANTITY;opt++)
         {
             snprintf(option_tmp, 42, "%s=", options[opt].name);
