@@ -1,6 +1,6 @@
 #include "global.h"
 
-options_array options[OPTION_QUANTITY]={{"CYCLE_TIME",5},
+options_array options[OPTION_QUANTITY]={{"CYCLE_TIME",1},
                                         {"CURRENT_MAX",50000000},
                                         {"STEP_CHARGING_DISABLED",0},
                                         {"TEMP_CTRL",1},
@@ -14,5 +14,5 @@ options_array options[OPTION_QUANTITY]={{"CYCLE_TIME",5},
 
 char chartmp[PRINTF_WITH_TIME_MAX_SIZE];
 char option_file[]="/data/adb/turbo-charge/option.txt";
-char temp_sensors[12][15]={"lcd_therm","conn_therm","modem_therm","wifi_therm","quiet_therm","mtktsbtsnrpa",
+char temp_sensors[12][15]={"conn_therm","modem_therm","lcd_therm","wifi_therm","quiet_therm","mtktsbtsnrpa",
                             "mtktsbtsmdpa","mtktsAP","modem-0-usr","modem1_wifi","ddr-usr","cwlan-usr"};
