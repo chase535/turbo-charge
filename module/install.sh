@@ -5,9 +5,6 @@ LATESTARTSERVICE=true
 
 check_file()
 {
-    ui_print " "
-    ui_print " ********************************************************"
-    ui_print " "
     ui_print "--- 检查所需文件是否存在 ---"
     temp_file=$(ls /sys/class/power_supply/*/temp 2>/dev/null)
     current_max_file=$(ls /sys/class/power_supply/*/constant_charge_current_max /sys/class/power_supply/*/fast_charge_current /sys/class/power_supply/*/thermal_input_current 2>/dev/null)
@@ -99,6 +96,7 @@ print_modname()
     ui_print " - 作者: ${author}"
     ui_print " "
     ui_print " ********************************************************"
+    ui_print " "
     check_file
     ui_print " "
     ui_print " ********************************************************"
