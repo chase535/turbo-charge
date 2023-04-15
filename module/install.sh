@@ -106,6 +106,8 @@ print_modname()
     ui_print " "
     run_volume_key_test
     ui_print " "
+    ui_print " ********************************************************"
+    ui_print " "
     ui_print " -      ↓模块介绍↓"
     ui_print " - 删除温控，充电时持续修改电池温度，让系统认为电池温度一直是28℃"
     ui_print " - 持续修改充电电流，以达到最快充电速度"
