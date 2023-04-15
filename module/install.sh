@@ -99,6 +99,9 @@ print_modname()
     ui_print " - 作者: ${author}"
     ui_print " "
     ui_print " ********************************************************"
+    check_file
+    ui_print " "
+    ui_print " ********************************************************"
     ui_print " "
     ui_print "  安装信息过多，屏幕显示不全，所以优先显示此注意事项"
     ui_print "  音量键测试完毕后可通过划动屏幕查看未显示在屏幕上的内容"
@@ -235,5 +238,3 @@ set_permissions()
     chmod 0777 ${MODPATH}/turbo-charge
     chmod 0777 /data/adb/turbo-charge/option.txt
 }
-
-check_file
