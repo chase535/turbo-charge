@@ -95,15 +95,15 @@ int main()
     FILE *fq;
     char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10];
     char *temp_sensor,*temp_sensor_dir,*buffer,*msg,current_max_char[20],highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
-    uchar negative=0,step_charge=1,step_charge_file=0,power_control=1,force_temp=1,current_change=1,battery_status=1,battery_capacity=1,tmp[5]={0};
+    uchar negative=0,step_charge=1,step_charge_file=0,power_control=1,force_temp=1,option_force_temp=1,current_change=1,battery_status=1,battery_capacity=1,tmp[5]={0};
     int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
     int step_charging_disabled=0,cycle_time=0,step_charging_disabled_threshold=0,temp_ctrl=0,temp_max=0,recharge_temp=0;
     uint option_last_modify_time=0;
     regex_t temp_re,current_max_re,current_limit_re;
     regmatch_t temp_pmatch,current_max_pmatch,current_limit_pmatch;
     struct stat statbuf;
-    printf("作者：酷安@诺鸡鸭\r\n");
-    printf("GitHub开源地址：https://github.com/chase535/turbo-charge\r\n\r\n");
+    printf("作者：酷安@诺鸡鸭\n");
+    printf("GitHub开源地址：https://github.com/chase535/turbo-charge\n\n");
     fflush(stdout);
     if(access("/sys/class/power_supply/battery/status", F_OK)) battery_status=0;
     if(access("/sys/class/power_supply/battery/capacity", F_OK)) battery_capacity=0;
@@ -309,6 +309,7 @@ int main()
         for(i=0;i < OPTION_QUANTITY;i++)
         {
             if(!strcmp(options[i].name, "CYCLE_TIME")) cycle_time=options[i].value;
+            else if(!strcmp(options[i].name, "FORCE_TEMP")) option_force_temp=options[i].value;
             else if(!strcmp(options[i].name, "CURRENT_MAX")) snprintf(current_max_char, 20, "%d", options[i].value);
             else if(!strcmp(options[i].name, "STEP_CHARGING_DISABLED")) step_charging_disabled=options[i].value;
             else if(!strcmp(options[i].name, "TEMP_CTRL")) temp_ctrl=options[i].value;
