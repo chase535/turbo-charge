@@ -136,7 +136,7 @@ int main()
 {
     FILE *fq;
     char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10];
-    char *temp_sensor,*temp_sensor_dir,*buffer,*msg,current_max_char[20],highest_temp_current_char[20],thermal[15];
+    char *tmp,*temp_sensor,*temp_sensor_dir,*buffer,*msg,current_max_char[20],highest_temp_current_char[20],thermal[15];
     uchar step_charge=1,step_charge_file=0,power_control=1,force_temp=1,has_force_temp=0,option_force_temp=1,current_change=1,battery_status=1,battery_capacity=1,tmp[5]={0};
     int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
     int step_charging_disabled=0,cycle_time=0,step_charging_disabled_threshold=0,temp_ctrl=0,temp_max=0,recharge_temp=0;
@@ -241,6 +241,7 @@ int main()
     {
         temp_sensor_dir=(char *)calloc(1, sizeof(char));
         buffer=(char *)calloc(1, sizeof(char));
+        tmp=(char *)calloc(1, sizeof(char)*15);
         msg=(char *)calloc(1, sizeof(char));
         thermal_file_num=list_dir("/sys/class/thermal", &thermal_dir);
         for(i=0;i < thermal_file_num;i++)
@@ -260,24 +261,33 @@ int main()
                     fq=NULL;
                 }
                 else continue;
-                if(msg != NULL)
+                line_feed(msg);
+                sprintf(buffer, "%s/temp", thermal_dir[i]);
+                if(access(buffer, R_OK)) continue;
+                fq=fopen(buffer, "rt");
+                if(fq != NULL)
                 {
-                    line_feed(msg);
-                    if(atoi(msg) == 1 || atoi(msg) == 0 || atoi(msg) == -1) continue;
-                    for(j=0;j < TEMP_SENSOR_QUANTITY;j++)
+                    fgets(tmp, 10, fq);
+                    fclose(fq);
+                    fq=NULL;
+                }
+                line_feed(tmp);
+                if(atoi(tmp) == 1 || atoi(tmp) == 0 || atoi(tmp) == -1) continue;
+                for(j=0;j < TEMP_SENSOR_QUANTITY;j++)
+                {
+                    if(!strcmp(msg, temp_sensors[j]) && temp_sensor_num > j)
                     {
-                        if(!strcmp(msg, temp_sensors[j]) && temp_sensor_num > j)
-                        {
-                            temp_sensor_num=j;
-                            temp_sensor_dir=(char *)realloc(temp_sensor_dir, sizeof(char)*(strlen(thermal_dir[i])+1));
-                            strcpy(temp_sensor_dir, thermal_dir[i]);
-                        }
+                        temp_sensor_num=j;
+                        temp_sensor_dir=(char *)realloc(temp_sensor_dir, sizeof(char)*(strlen(thermal_dir[i])+1));
+                        strcpy(temp_sensor_dir, thermal_dir[i]);
                     }
                 }
             }
         }
         free(buffer);
         buffer=NULL;
+        free(tmp);
+        tmp=NULL;
         free(msg);
         msg=NULL;
         free_celloc_memory(&thermal_dir, thermal_file_num);
