@@ -263,7 +263,8 @@ int main()
                 if(msg != NULL)
                 {
                     line_feed(msg);
-                    for(j=0;j < (int)sizeof(temp_sensors);j++)
+                    if(atoi(msg) == 1 || atoi(msg) == 0 || atoi(msg) == -1) continue;
+                    for(j=0;j < TEMP_SENSOR_QUANTITY;j++)
                     {
                         if(!strcmp(msg, temp_sensors[j]) && temp_sensor_num > j)
                         {
