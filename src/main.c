@@ -90,12 +90,54 @@ void free_celloc_memory(char ***addr, int num)
     }
 }
 
+void set_temp(char *temp_sensor, char **temp_file, int temp_file_num, uchar tempwall)
+{
+    FILE *fq;
+    char thermal[15],bat_temp_tmp[1],bat_temp[6];
+    int temp_int=0, negative=0;
+    uchar i=0;
+    check_read_file(temp_sensor);
+    fq=fopen(temp_sensor, "rt");
+    fgets(thermal, 10, fq);
+    fclose(fq);
+    fq=NULL;
+    line_feed(thermal);
+    temp_int=atoi(thermal);
+    negative=0;
+    if(temp_int < 0)
+    {
+        temp_int=abs(temp_int);
+        negative=1;
+    }
+    snprintf(bat_temp, 4, "%05d", temp_int);
+    if(!strcmp(bat_temp, "000")) snprintf(bat_temp, sizeof(bat_temp), "0");
+    else
+    {
+        for(bat_temp_tmp[0]=bat_temp[0];atoi(bat_temp_tmp) == 0;bat_temp_tmp[0]=bat_temp[0])
+        {
+            for(i=0;i < 5;i++) bat_temp[i]=bat_temp[i+1];
+            bat_temp[5]='\0';
+        }
+    }
+    if(negative)
+    {
+        for(i=5;i > 0;i--) bat_temp[i]=bat_temp[i-1];
+        bat_temp[0]='-';
+        set_array_value(temp_file, temp_file_num, bat_temp);
+    }
+    else
+    {
+        if(tempwall) (temp_int >= 45000)?set_array_value(temp_file, temp_file_num, "280"):set_array_value(temp_file, temp_file_num, bat_temp);
+        else set_array_value(temp_file, temp_file_num, bat_temp);
+    }
+}
+
 int main()
 {
     FILE *fq;
     char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10];
     char *temp_sensor,*temp_sensor_dir,*buffer,*msg,current_max_char[20],highest_temp_current_char[20],thermal[15],bat_temp_tmp[1],bat_temp[6];
-    uchar negative=0,step_charge=1,step_charge_file=0,power_control=1,force_temp=1,option_force_temp=1,current_change=1,battery_status=1,battery_capacity=1,tmp[5]={0};
+    uchar negative=0,step_charge=1,step_charge_file=0,power_control=1,force_temp=1,has_force_temp=0,option_force_temp=1,current_change=1,battery_status=1,battery_capacity=1,tmp[5]={0};
     int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
     int step_charging_disabled=0,cycle_time=0,step_charging_disabled_threshold=0,temp_ctrl=0,temp_max=0,recharge_temp=0;
     uint option_last_modify_time=0;
@@ -332,6 +374,7 @@ int main()
             sleep(cycle_time);
             continue;
         }
+        if(force_temp && option_force_temp == 1 && !has_force_temp) has_force_temp=1;
         check_read_file("/sys/class/power_supply/battery/capacity");
         fq=fopen("/sys/class/power_supply/battery/capacity", "rt");
         fgets(power, 5, fq);
@@ -359,7 +402,8 @@ int main()
                 tmp[0]=0;
                 tmp[1]=1;
             }
-            if(force_temp && option_force_temp) set_array_value(temp_file, temp_file_num, "280");
+            if(force_temp && option_force_temp == 1) set_array_value(temp_file, temp_file_num, "280");
+            else if(has_force_temp) set_temp(temp_sensor, temp_file, temp_file_num, 0);
             if(power_control) powel_ctl(tmp);
             if(temp_ctrl == 1 && temp_sensor_num != 100 && current_change)
             {
@@ -389,6 +433,8 @@ int main()
                             else if(!strcmp(options[i].name, "HIGHEST_TEMP_CURRENT")) snprintf(highest_temp_current_char, 20, "%d", options[i].value);
                             else if(!strcmp(options[i].name, "RECHARGE_TEMP")) recharge_temp=options[i].value;
                         }
+                        set_array_value(current_limit_file, current_limit_file_num, "-1");
+                        if(force_temp && option_force_temp == 1 && !has_force_temp) has_force_temp=1;
                         check_read_file(temp_sensor);
                         fq=fopen(temp_sensor, "rt");
                         fgets(thermal, 10, fq);
@@ -445,7 +491,8 @@ int main()
                         else if(step_charge == 2)
                             (step_charging_disabled == 1)?step_charge_ctl("0"):step_charge_ctl("1");
                         set_array_value(current_max_file, current_max_file_num, highest_temp_current_char);
-                        if(force_temp && option_force_temp) set_array_value(temp_file, temp_file_num, "280");
+                        if(force_temp && option_force_temp == 1) set_array_value(temp_file, temp_file_num, "280");
+                        else if(has_force_temp) set_temp(temp_sensor, temp_file, temp_file_num, 0);
                         if(power_control) powel_ctl(tmp);
                         sleep(cycle_time);
                     }
@@ -473,38 +520,10 @@ int main()
             else if(step_charge == 2)
                 (step_charging_disabled == 1)?step_charge_ctl("0"):step_charge_ctl("1");
             if(power_control) powel_ctl(tmp);
-            if(force_temp && option_force_temp)
+            if(has_force_temp)
             {
-                check_read_file(temp_sensor);
-                fq=fopen(temp_sensor, "rt");
-                fgets(thermal, 10, fq);
-                fclose(fq);
-                fq=NULL;
-                line_feed(thermal);
-                temp_int=atoi(thermal);
-                negative=0;
-                if(temp_int < 0)
-                {
-                    temp_int=abs(temp_int);
-                    negative=1;
-                }
-                snprintf(bat_temp, 4, "%05d", temp_int);
-                if(!strcmp(bat_temp, "000")) snprintf(bat_temp, sizeof(bat_temp), "0");
-                else
-                {
-                    for(bat_temp_tmp[0]=bat_temp[0];atoi(bat_temp_tmp) == 0;bat_temp_tmp[0]=bat_temp[0])
-                    {
-                        for(i=0;i < 5;i++) bat_temp[i]=bat_temp[i+1];
-                        bat_temp[5]='\0';
-                    }
-                }
-                if(negative)
-                {
-                    for(i=5;i > 0;i--) bat_temp[i]=bat_temp[i-1];
-                    bat_temp[0]='-';
-                    set_array_value(temp_file, temp_file_num, bat_temp);
-                }
-                else (temp_int >= 45000)?set_array_value(temp_file, temp_file_num, "280"):set_array_value(temp_file, temp_file_num, bat_temp);
+                if(option_force_temp == 1) set_temp(temp_sensor, temp_file, temp_file_num, 1);
+                else set_temp(temp_sensor, temp_file, temp_file_num, 0);
             }
         }
         sleep(cycle_time);
