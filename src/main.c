@@ -359,7 +359,7 @@ int main()
                 tmp[0]=0;
                 tmp[1]=1;
             }
-            if(force_temp) set_array_value(temp_file, temp_file_num, "280");
+            if(force_temp && option_force_temp) set_array_value(temp_file, temp_file_num, "280");
             if(power_control) powel_ctl(tmp);
             if(temp_ctrl == 1 && temp_sensor_num != 100 && current_change)
             {
@@ -380,6 +380,7 @@ int main()
                         for(i=0;i < OPTION_QUANTITY;i++)
                         {
                             if(!strcmp(options[i].name, "CYCLE_TIME")) cycle_time=options[i].value;
+                            else if(!strcmp(options[i].name, "FORCE_TEMP")) option_force_temp=options[i].value;
                             else if(!strcmp(options[i].name, "CURRENT_MAX")) snprintf(current_max_char, 20, "%d", options[i].value);
                             else if(!strcmp(options[i].name, "STEP_CHARGING_DISABLED")) step_charging_disabled=options[i].value;
                             else if(!strcmp(options[i].name, "TEMP_CTRL")) temp_ctrl=options[i].value;
@@ -444,7 +445,7 @@ int main()
                         else if(step_charge == 2)
                             (step_charging_disabled == 1)?step_charge_ctl("0"):step_charge_ctl("1");
                         set_array_value(current_max_file, current_max_file_num, highest_temp_current_char);
-                        if(force_temp) set_array_value(temp_file, temp_file_num, "280");
+                        if(force_temp && option_force_temp) set_array_value(temp_file, temp_file_num, "280");
                         if(power_control) powel_ctl(tmp);
                         sleep(cycle_time);
                     }
@@ -472,7 +473,7 @@ int main()
             else if(step_charge == 2)
                 (step_charging_disabled == 1)?step_charge_ctl("0"):step_charge_ctl("1");
             if(power_control) powel_ctl(tmp);
-            if(force_temp)
+            if(force_temp && option_force_temp)
             {
                 check_read_file(temp_sensor);
                 fq=fopen(temp_sensor, "rt");
