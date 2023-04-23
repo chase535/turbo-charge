@@ -1,4 +1,4 @@
-#define OPTION_QUANTITY 11
+#define OPTION_QUANTITY 12
 #define PRINTF_WITH_TIME_MAX_SIZE 400
 
 struct option_struct
