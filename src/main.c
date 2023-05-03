@@ -90,25 +90,6 @@ void free_celloc_memory(char ***addr, int num)
     }
 }
 
-void set_temp(char *temp_sensor, char **temp_file, int temp_file_num, uchar tempwall)
-{
-    FILE *fq;
-    char thermal[15],bat_temp[6];
-    int temp_int=0;
-    check_read_file(temp_sensor);
-    fq=fopen(temp_sensor, "rt");
-    fgets(thermal, 10, fq);
-    fclose(fq);
-    fq=NULL;
-    line_feed(thermal);
-    temp_int=atoi(thermal);
-    (temp_int < 0)?snprintf(bat_temp, 5, "%06d", temp_int):snprintf(bat_temp, 4, "%05d", temp_int);
-    temp_int=atoi(bat_temp);
-    snprintf(bat_temp, 6, "%d", temp_int);
-    if(tempwall) (temp_int >= 450)?set_array_value(temp_file, temp_file_num, "280"):set_array_value(temp_file, temp_file_num, bat_temp);
-    else set_array_value(temp_file, temp_file_num, bat_temp);
-}
-
 int main()
 {
     FILE *fq;
