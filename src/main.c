@@ -93,9 +93,8 @@ void free_celloc_memory(char ***addr, int num)
 void set_temp(char *temp_sensor, char **temp_file, int temp_file_num, uchar tempwall)
 {
     FILE *fq;
-    char thermal[15],bat_temp_tmp[1],bat_temp[6];
-    int temp_int=0, negative=0;
-    uchar i=0;
+    char thermal[15],bat_temp[6];
+    int temp_int=0,negative=0;
     check_read_file(temp_sensor);
     fq=fopen(temp_sensor, "rt");
     fgets(thermal, 10, fq);
