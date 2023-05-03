@@ -110,26 +110,10 @@ void set_temp(char *temp_sensor, char **temp_file, int temp_file_num, uchar temp
         negative=1;
     }
     snprintf(bat_temp, 4, "%05d", temp_int);
-    if(!strcmp(bat_temp, "000")) snprintf(bat_temp, sizeof(bat_temp), "0");
-    else
-    {
-        for(bat_temp_tmp[0]=bat_temp[0];atoi(bat_temp_tmp) == 0;bat_temp_tmp[0]=bat_temp[0])
-        {
-            for(i=0;i < 5;i++) bat_temp[i]=bat_temp[i+1];
-            bat_temp[5]='\0';
-        }
-    }
-    if(negative)
-    {
-        for(i=5;i > 0;i--) bat_temp[i]=bat_temp[i-1];
-        bat_temp[0]='-';
-        set_array_value(temp_file, temp_file_num, bat_temp);
-    }
-    else
-    {
-        if(tempwall) (temp_int >= 45000)?set_array_value(temp_file, temp_file_num, "280"):set_array_value(temp_file, temp_file_num, bat_temp);
-        else set_array_value(temp_file, temp_file_num, bat_temp);
-    }
+    temp_int=(negative)?0-atoi(bat_temp):atoi(bat_temp);
+    snprintf(bat_temp, 6, "%d", temp_int);
+    if(tempwall) (temp_int >= 450)?set_array_value(temp_file, temp_file_num, "280"):set_array_value(temp_file, temp_file_num, bat_temp);
+    else set_array_value(temp_file, temp_file_num, bat_temp);
 }
 
 int main()
