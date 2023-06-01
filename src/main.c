@@ -5,6 +5,7 @@
 #include "unistd.h"
 #include "regex.h"
 #include "malloc.h"
+#include "pthread.h"
 #include "sys/stat.h"
 
 #include "main.h"
@@ -12,6 +13,7 @@
 #include "some_ctrl.h"
 #include "printf_with_time.h"
 #include "value_set.h"
+#include "foreground_app.h"
 
 int list_dir(char *path, char ***ppp)
 {
@@ -102,6 +104,7 @@ int main()
     regex_t temp_re,current_max_re,current_limit_re;
     regmatch_t temp_pmatch,current_max_pmatch,current_limit_pmatch;
     struct stat statbuf;
+    pthread_t thread1;
     printf("作者：酷安@诺鸡鸭\n");
     printf("GitHub开源地址：https://github.com/chase535/turbo-charge\n\n");
     fflush(stdout);
@@ -300,8 +303,8 @@ int main()
             printf_with_time(chartmp);
         }
     }
-    check_read_file(option_file);
-    read_option(&option_last_modify_time, 0, tmp, 0);
+    read_option(&option_last_modify_time, 0, tmp, 0, &cycle_time, &option_force_temp, current_max_char, &step_charging_disabled,
+                &temp_ctrl, &step_charging_disabled_threshold , &temp_max, highest_temp_current_char, &recharge_temp);
     printf_with_time("文件检测完毕，程序开始运行");
     set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
     set_value("/sys/class/power_supply/battery/system_temp_level", "1");
@@ -316,20 +319,13 @@ int main()
     charge_ctl("1");
     while(1)
     {
-        read_option(&option_last_modify_time, 1, tmp, 0);
-        for(i=0;i < OPTION_QUANTITY;i++)
-        {
-            if(!strcmp(options[i].name, "CYCLE_TIME")) cycle_time=options[i].value;
-            else if(!strcmp(options[i].name, "FORCE_TEMP")) option_force_temp=options[i].value;
-            else if(!strcmp(options[i].name, "CURRENT_MAX")) snprintf(current_max_char, 20, "%d", options[i].value);
-            else if(!strcmp(options[i].name, "STEP_CHARGING_DISABLED")) step_charging_disabled=options[i].value;
-            else if(!strcmp(options[i].name, "TEMP_CTRL")) temp_ctrl=options[i].value;
-            else if(!strcmp(options[i].name, "STEP_CHARGING_DISABLED_THRESHOLD")) step_charging_disabled_threshold=options[i].value;
-            else if(!strcmp(options[i].name, "TEMP_MAX")) temp_max=options[i].value;
-            else if(!strcmp(options[i].name, "HIGHEST_TEMP_CURRENT")) snprintf(highest_temp_current_char, 20, "%d", options[i].value);
-            else if(!strcmp(options[i].name, "RECHARGE_TEMP")) recharge_temp=options[i].value;
-        }
+        read_option(&option_last_modify_time, 1, tmp, 0, &cycle_time, &option_force_temp, current_max_char, &step_charging_disabled,
+                    &temp_ctrl, &step_charging_disabled_threshold , &temp_max, highest_temp_current_char, &recharge_temp);
         set_array_value(current_limit_file, current_limit_file_num, "-1");
+        if(strlen((const char*)ForegroundAppName) == 0 && bypass_charge == 1)
+        {
+            pthread_create(&thread1, NULL, get_foreground_appname, NULL);
+        }
         if(!battery_status)
         {
             if(current_change) set_array_value(current_max_file, current_max_file_num, current_max_char);
@@ -389,19 +385,8 @@ int main()
                     printf_with_time(chartmp);
                     while(1)
                     {
-                        read_option(&option_last_modify_time, 1, tmp, 1);
-                        for(i=0;i < OPTION_QUANTITY;i++)
-                        {
-                            if(!strcmp(options[i].name, "CYCLE_TIME")) cycle_time=options[i].value;
-                            else if(!strcmp(options[i].name, "FORCE_TEMP")) option_force_temp=options[i].value;
-                            else if(!strcmp(options[i].name, "CURRENT_MAX")) snprintf(current_max_char, 20, "%d", options[i].value);
-                            else if(!strcmp(options[i].name, "STEP_CHARGING_DISABLED")) step_charging_disabled=options[i].value;
-                            else if(!strcmp(options[i].name, "TEMP_CTRL")) temp_ctrl=options[i].value;
-                            else if(!strcmp(options[i].name, "STEP_CHARGING_DISABLED_THRESHOLD")) step_charging_disabled_threshold=options[i].value;
-                            else if(!strcmp(options[i].name, "TEMP_MAX")) temp_max=options[i].value;
-                            else if(!strcmp(options[i].name, "HIGHEST_TEMP_CURRENT")) snprintf(highest_temp_current_char, 20, "%d", options[i].value);
-                            else if(!strcmp(options[i].name, "RECHARGE_TEMP")) recharge_temp=options[i].value;
-                        }
+                        read_option(&option_last_modify_time, 1, tmp, 1, &cycle_time, &option_force_temp, current_max_char, &step_charging_disabled,
+                                    &temp_ctrl, &step_charging_disabled_threshold , &temp_max, highest_temp_current_char, &recharge_temp);
                         set_array_value(current_limit_file, current_limit_file_num, "-1");
                         if(force_temp && option_force_temp == 1 && !has_force_temp) has_force_temp=1;
                         check_read_file(temp_sensor);

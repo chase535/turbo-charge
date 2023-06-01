@@ -8,7 +8,9 @@
 #include "read_option.h"
 #include "printf_with_time.h"
 
-void read_option(uint *last_modify_time, uchar num, uchar tmp[], uchar is_temp_wall)
+void read_option(uint *last_modify_time, uchar num, uchar tmp[], uchar is_temp_wall, int *cycle_time,
+                uchar *option_force_temp, char current_max_char[20], int *step_charging_disabled, int *temp_ctrl,
+                int *step_charging_disabled_threshold, int *temp_max, char highest_temp_current_char[20], int *recharge_temp)
 {
     FILE *fc;
     char option_tmp[42], option[100], *value;
@@ -81,5 +83,15 @@ void read_option(uint *last_modify_time, uchar num, uchar tmp[], uchar is_temp_w
             else if(value_stat[opt] == 4) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "配置文件中%s的值为0，这是不被允许的，故程序使用默认值%d", options[opt].name, options[opt].value);
             if(!(value_stat[opt] == 10 || value_stat[opt] == 100)) printf_with_time(chartmp);
         }
+        if(!strcmp(options[opt].name, "CYCLE_TIME")) *cycle_time=options[opt].value;
+        else if(!strcmp(options[opt].name, "FORCE_TEMP")) *option_force_temp=options[opt].value;
+        else if(!strcmp(options[opt].name, "CURRENT_MAX")) snprintf(current_max_char, 20, "%d", options[opt].value);
+        else if(!strcmp(options[opt].name, "STEP_CHARGING_DISABLED")) *step_charging_disabled=options[opt].value;
+        else if(!strcmp(options[opt].name, "TEMP_CTRL")) *temp_ctrl=options[opt].value;
+        else if(!strcmp(options[opt].name, "STEP_CHARGING_DISABLED_THRESHOLD")) *step_charging_disabled_threshold=options[opt].value;
+        else if(!strcmp(options[opt].name, "TEMP_MAX")) *temp_max=options[opt].value;
+        else if(!strcmp(options[opt].name, "HIGHEST_TEMP_CURRENT")) snprintf(highest_temp_current_char, 20, "%d", options[opt].value);
+        else if(!strcmp(options[opt].name, "RECHARGE_TEMP")) *recharge_temp=options[opt].value;
+        else if(!strcmp(options[opt].name, "BYPASS_CHARGE")) bypass_charge=options[opt].value;
     }
 }
