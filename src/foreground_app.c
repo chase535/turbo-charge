@@ -13,25 +13,31 @@ void *get_foreground_appname()
     FILE *fp=NULL;
     while(bypass_charge == 1)
     {
+        tmpchar1=NULL;
+        tmpchar2=NULL;
         fp=popen("/system/bin/dumpsys activity lru | grep ' TOP'","r");
-        if(fp == NULL)
+        if(fp == NULL) goto can_not_get_fp_null;
+        fgets(result,sizeof(result),fp);
+        tmpchar1=strstr(result," TOP");
+        if(tmpchar1 == NULL)
         {
             can_not_get:
+            pclose(fp);
+            fp=NULL;
+            can_not_get_fp_null:
             printf_with_time("无法获取前台应用包名！");
             sleep(1);
             continue;
         }
-        fread(result,1,sizeof(result),fp);
-        tmpchar1=strstr(result," TOP");
-        if(tmpchar1 == NULL) goto can_not_get;
         tmpchar2=strstr(tmpchar1,":");
         if(tmpchar2 == NULL) goto can_not_get;
         tmpchar1=strstr(tmpchar2,"/");
         if(tmpchar1 == NULL) goto can_not_get;
-        memcpy((void *)ForegroundAppName,tmpchar2+1,(tmpchar1-tmpchar2)-2);
-        tmpchar1=NULL;
-        tmpchar2=NULL;
-        printf("%s",ForegroundAppName);
+        *tmpchar1='\0';
+        strncpy((char *)ForegroundAppName,tmpchar2+1,sizeof(ForegroundAppName)/sizeof(char)-1);
+        pclose(fp);
+        fp=NULL;
+        printf("%s\n",ForegroundAppName);
         sleep(1);
     }
     memset((void *)ForegroundAppName,0,sizeof(ForegroundAppName));
