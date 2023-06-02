@@ -7,17 +7,31 @@
 #include "printf_with_time.h"
 #include "foreground_app.h"
 
-void *get_foreground_appname()
+void *get_foreground_appname(void *battery_status)
 {
-    char result[200],*tmpchar1=NULL,*tmpchar2=NULL;
+    char result[200],charge[20],*tmpchar1=NULL,*tmpchar2=NULL;
     FILE *fp=NULL;
     while(bypass_charge == 1)
     {
-        tmpchar1=NULL;
-        tmpchar2=NULL;
-        fp=popen("/system/bin/dumpsys activity lru | grep ' TOP'","r");
+        if(*((int *)battery_status))
+        {
+            check_read_file("/sys/class/power_supply/battery/status");
+            fp=fopen("/sys/class/power_supply/battery/status", "rt");
+            fgets(charge, 20, fp);
+            fclose(fp);
+            fp=NULL;
+            line_feed(charge);
+            if(!strcmp(charge, "Discharging"))
+            {
+                printf_with_time("手机未在充电状态，旁路供电功能暂时停用");
+                break;
+            }
+        }
+        fp=popen("dumpsys activity lru | grep ' TOP'","r");
         if(fp == NULL) goto can_not_get_fp_null;
         fgets(result,sizeof(result),fp);
+        pclose(fp);
+        fp=NULL;
         tmpchar1=strstr(result," TOP");
         if(tmpchar1 == NULL)
         {
@@ -35,12 +49,10 @@ void *get_foreground_appname()
         if(tmpchar1 == NULL) goto can_not_get;
         *tmpchar1='\0';
         strncpy((char *)ForegroundAppName,tmpchar2+1,sizeof(ForegroundAppName)/sizeof(char)-1);
-        pclose(fp);
-        fp=NULL;
-        printf("%s\n",ForegroundAppName);
+        tmpchar1=NULL;
+        tmpchar2=NULL;
         sleep(1);
     }
     memset((void *)ForegroundAppName,0,sizeof(ForegroundAppName));
-    pthread_exit(NULL);
     return NULL;
 }
