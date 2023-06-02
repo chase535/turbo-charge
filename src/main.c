@@ -48,12 +48,6 @@ void line_feed(char *line)
 
 void check_read_file(char *file)
 {
-    if(file == NULL)
-    {
-        snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "指针为空，出现异常错误，程序强制退出！");
-        printf_with_time(chartmp);
-        exit(789);
-    }
     if(!access(file, F_OK))
     {
         if(access(file, R_OK))
@@ -116,9 +110,9 @@ int main()
         if(battery_status && !battery_capacity)
             printf_with_time("由于找不到/sys/class/power_supply/battery/capacity文件，电量控制功能失效！");
         else if(!battery_status && battery_capacity)
-            printf_with_time("由于找不到/sys/class/power_supply/battery/status文件，电量控制功能失效，且旁路供电功能无法根据手机的充电状态而自动启停！");
+            printf_with_time("由于找不到/sys/class/power_supply/battery/status文件，电量控制功能失效，且“伪”旁路供电功能无法根据手机的充电状态而自动启停！");
         else
-            printf_with_time("由于找不到/sys/class/power_supply/battery/status和/sys/class/power_supply/battery/capacity文件，电量控制功能失效，且旁路供电功能无法根据手机的充电状态而自动启停！");
+            printf_with_time("由于找不到/sys/class/power_supply/battery/status和/sys/class/power_supply/battery/capacity文件，电量控制功能失效，且“伪”旁路供电功能无法根据手机的充电状态而自动启停！");
     }
     else
     {
@@ -184,7 +178,7 @@ int main()
     if(!current_max_file_num)
     {
         current_change=0;
-        printf_with_time("无法在/sys/class/power_supply中的所有文件夹内找到constant_charge_current_max、fast_charge_current、thermal_input_current文件，有关电流的所有功能（包括旁路供电功能）失效！");
+        printf_with_time("无法在/sys/class/power_supply中的所有文件夹内找到constant_charge_current_max、fast_charge_current、thermal_input_current文件，有关电流的所有功能（包括“伪”旁路供电功能）失效！");
     }
     if(!battery_status || !temp_file_num)
     {

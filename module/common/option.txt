@@ -41,5 +41,5 @@ HIGHEST_TEMP_CURRENT=2000000
 RECHARGE_TEMP=45
 
 #是否启用“伪”旁路供电功能（1为启用，其他数字为禁用）
-#开启后请配置同目录下的bypass_charge.txt文件
+#开启后请配置/data/adb/turbo-charge/bypass_charge.txt文件
 BYPASS_CHARGE=0
