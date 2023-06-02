@@ -415,7 +415,7 @@ int main()
                 {
                     snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "手机温度大于等于降低充电电流的温度阈值，限制充电电流为%sμA", highest_temp_current_char);
                     printf_with_time(chartmp);
-                    while(1)
+                    while(!is_bypass)
                     {
                         read_option(&option_last_modify_time, 1, tmp, 1, &cycle_time, &option_force_temp, current_max_char, &step_charging_disabled,
                                     &temp_ctrl, &step_charging_disabled_threshold , &temp_max, highest_temp_current_char, &recharge_temp);
@@ -428,12 +428,6 @@ int main()
                         fq=NULL;
                         line_feed(thermal);
                         temp_int=atoi(thermal);
-                        if(bypass_charge == 1)
-                        {
-                            snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "由于启用了旁路供电功能，温控功能失效");
-                            printf_with_time(chartmp);
-                            break;
-                        }
                         if(tmp[3])
                         {
                             if(temp_int < temp_max*1000)
