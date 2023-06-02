@@ -335,7 +335,11 @@ int main()
                 else if(bypass_charge == 1 && strlen((char *)ForegroundAppName))
                 {
                     bypass_charge_ctl(last_appname, &is_bypass, current_max_file, current_max_file_num);
-                    if(is_bypass) continue;
+                    if(is_bypass)
+                    {
+                        sleep(cycle_time);
+                        continue;
+                    }
                 }
             }
             if(current_change) set_array_value(current_max_file, current_max_file_num, current_max_char);
@@ -383,7 +387,11 @@ int main()
                 else if(bypass_charge == 1 && strlen((char *)ForegroundAppName))
                 {
                     bypass_charge_ctl(last_appname, &is_bypass, current_max_file, current_max_file_num);
-                    if(is_bypass) continue;
+                    if(is_bypass)
+                    {
+                        sleep(cycle_time);
+                        continue;
+                    }
                 }
             }
             if(temp_ctrl == 1 && temp_sensor_num != 100 && current_change)
