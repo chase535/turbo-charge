@@ -23,7 +23,7 @@ void *get_foreground_appname(void *battery_status)
             line_feed(charge);
             if(!strcmp(charge, "Discharging"))
             {
-                printf_with_time("手机未在充电状态，旁路供电功能暂时停用");
+                printf_with_time("手机未在充电状态，“伪”旁路供电功能暂时停用");
                 break;
             }
         }

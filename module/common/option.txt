@@ -40,6 +40,6 @@ HIGHEST_TEMP_CURRENT=2000000
 #恢复快充的温度阈值（单位:℃）
 RECHARGE_TEMP=45
 
-#是否启用旁路充电功能（1为启用，其他数字为禁用）
+#是否启用“伪”旁路供电功能（1为启用，其他数字为禁用）
 #开启后请配置同目录下的bypass_charge.txt文件
 BYPASS_CHARGE=0

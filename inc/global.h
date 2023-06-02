@@ -1,6 +1,7 @@
 #define OPTION_QUANTITY 13
 #define TEMP_SENSOR_QUANTITY 12
 #define PRINTF_WITH_TIME_MAX_SIZE 400
+#define BYPASS_CHARGE_CURRENT "500000"
 
 struct option_struct
 {
