@@ -341,6 +341,7 @@ int main()
                         continue;
                     }
                 }
+                if(strlen(last_appname)) memset(last_appname,0,sizeof(last_appname));
             }
             if(current_change) set_array_value(current_max_file, current_max_file_num, current_max_char);
             sleep(cycle_time);
@@ -393,6 +394,7 @@ int main()
                         continue;
                     }
                 }
+                if(strlen(last_appname)) memset(last_appname,0,sizeof(last_appname));
             }
             if(temp_ctrl == 1 && temp_sensor_num != 100 && current_change)
             {
