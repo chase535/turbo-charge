@@ -230,7 +230,7 @@ on_install()
     run_bypass_charge
     ui_print " "
     cp -f ${TMPDIR}/turbo-charge ${MODPATH}
-    [[ -f /data/adb/turbo-charge/bypass_charge.txt ]] && grep -v "#" /data/adb/turbo-charge/bypass_charge.txt >> ${TMPDIR}/bypass_charge.txt
+    [[ -f /data/adb/turbo-charge/bypass_charge.txt ]] && grep -v -E "#|^$" /data/adb/turbo-charge/bypass_charge.txt >> ${TMPDIR}/bypass_charge.txt
     [[ ! -d /data/adb/turbo-charge ]] && mkdir -p /data/adb/turbo-charge
     cp -f ${TMPDIR}/option.txt ${TMPDIR}/bypass_charge.txt /data/adb/turbo-charge
     for k in /system/bin /system/etc/init /system/etc/perf /system/vendor/bin /system/vendor/etc /system/vendor/etc/init /system/vendor/etc/perf; do
