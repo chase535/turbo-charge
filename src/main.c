@@ -329,11 +329,11 @@ int main()
             {
                 if(bypass_charge == 1 && !strlen((char *)ForegroundAppName))
                 {
-                    strcpy(ForegroundAppName,"chase535");
+                    strcpy((char *)ForegroundAppName,"chase535");
                     pthread_create(&thread1, NULL, get_foreground_appname, (void *)&battery_status);
                     pthread_detach(thread1);
                 }
-                else if(bypass_charge == 1 && strlen((char *)ForegroundAppName) && !strcmp(ForegroundAppName,"chase535"))
+                else if(bypass_charge == 1 && strlen((char *)ForegroundAppName) && !strcmp((char *)ForegroundAppName,"chase535"))
                 {
                     bypass_charge_ctl(last_appname, &is_bypass, current_max_file, current_max_file_num);
                     if(is_bypass)
