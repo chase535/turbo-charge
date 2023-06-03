@@ -26,6 +26,9 @@ check_file()
     if [[ ! -f "/sys/class/power_supply/battery/charging_enabled" && ! -f "/sys/class/power_supply/battery/battery_charging_enabled" && ! -f "/sys/class/power_supply/battery/input_suspend" && ! -f "/sys/class/qcom-battery/restricted_charging" ]]; then
         no_suspend_file=1
     fi
+    if [[ -n "${no_battery_status}" ]]; then
+        ui_print " ！由于找不到有关文件，“伪”旁路供电功能无法根据手机的充电状态而自动启停，详情请看程序运行时的log文件！"
+    fi
     if [[ -n "${no_battery_status}" || -n "${no_battery_capacity}" || -n "${no_suspend_file}" ]]; then
         ui_print " ！由于找不到有关文件，电量控制功能失效，详情请看程序运行时的log文件！"
         no_power_control=1
@@ -37,7 +40,7 @@ check_file()
         ui_print " ！由于找不到部分有关文件，阶梯式充电控制的部分功能失效，详情请看程序运行时的log文件！"
     fi
     if [[ -z "${current_max_file}" ]]; then
-        ui_print " ！由于找不到有关文件，有关电流的所有功能失效，详情请看程序运行时的log文件！"
+        ui_print " ！由于找不到有关文件，有关电流的所有功能（包括“伪”旁路供电功能）失效，详情请看程序运行时的log文件！"
         no_current_change=1
     fi
     if [[ -z "${temp_file}" || -n "${no_battery_status}" ]]; then
@@ -159,8 +162,8 @@ run_temp()
 {
     ui_print " "
     ui_print "--- 请选择是否添加温控（默认添加） ---"
-    ui_print "  音量+键 = 添加温控，当温度高于52℃时限制最高充电电流为2A，低于45℃时恢复"
-    ui_print "  音量-键 = 不添加温控，真·极速快充，高温伤手又伤机，谨慎选择！"
+    ui_print "  音量+键 = 添加，当温度高于52℃时限制最高充电电流为2A，低于45℃时恢复"
+    ui_print "  音量-键 = 不添加，真·极速快充，高温伤手又伤机，谨慎选择！"
     ui_print " "
     if ${KEYTEST}; then
         ui_print "- 不添加温控"
@@ -174,8 +177,8 @@ run_power_ctrl()
 {
     ui_print " "
     ui_print "--- 请选择是否添加电量控制（默认不添加） ---"
-    ui_print "  音量+键 = 不添加电量控制"
-    ui_print "  音量-键 = 添加电量控制，默认为电量到达95%时断电，小于等于80%时恢复充电"
+    ui_print "  音量+键 = 不添加"
+    ui_print "  音量-键 = 添加，默认为电量到达95%时断电，小于等于80%时恢复充电"
     ui_print " "
     if ${KEYTEST}; then
         ui_print "- 添加电量控制"
@@ -185,12 +188,28 @@ run_power_ctrl()
     fi
 }
 
+run_bypass_charge()
+{
+    ui_print " "
+    ui_print "--- 请选择是否启用“伪”旁路供电功能（默认禁用） ---"
+    ui_print "  音量+键 = 禁用"
+    ui_print "  音量-键 = 启用，注意并不是真正的旁路供电，只是将充电电流调到很低"
+    ui_print " "
+    if ${KEYTEST}; then
+        ui_print "- 启用“伪”旁路供电功能"
+        ui_print "- “伪”旁路供电的配置文件在/data/adb/turbo-charge/bypass_charge.txt"
+        sed -i 's/BYPASS_CHARGE=0/BYPASS_CHARGE=1/g' ${TMPDIR}/option.txt
+    else
+        ui_print "- 禁用“伪”旁路供电功能"
+    fi
+}
+
 run_step_charge()
 {
     ui_print " "
     ui_print "--- 请选择是否关闭阶梯式充电（默认不关闭） ---"
-    ui_print "  音量+键 = 不关闭阶梯式充电"
-    ui_print "  音量-键 = 关闭阶梯式充电"
+    ui_print "  音量+键 = 不关闭"
+    ui_print "  音量-键 = 关闭"
     ui_print " "
     if ${KEYTEST}; then
         ui_print "- 关闭阶梯式充电"
@@ -208,10 +227,12 @@ on_install()
     run_step_charge
     run_temp
     run_power_ctrl
+    run_bypass_charge
     ui_print " "
     cp -f ${TMPDIR}/turbo-charge ${MODPATH}
+    [[ -f /data/adb/turbo-charge/bypass_charge.txt ]] && grep -v -E "#|^$" /data/adb/turbo-charge/bypass_charge.txt >> ${TMPDIR}/bypass_charge.txt
     [[ ! -d /data/adb/turbo-charge ]] && mkdir -p /data/adb/turbo-charge
-    cp -f ${TMPDIR}/option.txt /data/adb/turbo-charge
+    cp -f ${TMPDIR}/option.txt ${TMPDIR}/bypass_charge.txt /data/adb/turbo-charge
     for k in /system/bin /system/etc/init /system/etc/perf /system/vendor/bin /system/vendor/etc /system/vendor/etc/init /system/vendor/etc/perf; do
         all_thermal="${all_thermal} $(find ${k} -maxdepth 1 -type f -name '*thermal*' 2>/dev/null)"
     done

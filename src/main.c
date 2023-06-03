@@ -5,6 +5,7 @@
 #include "unistd.h"
 #include "regex.h"
 #include "malloc.h"
+#include "pthread.h"
 #include "sys/stat.h"
 
 #include "main.h"
@@ -12,6 +13,7 @@
 #include "some_ctrl.h"
 #include "printf_with_time.h"
 #include "value_set.h"
+#include "foreground_app.h"
 
 int list_dir(char *path, char ***ppp)
 {
@@ -46,12 +48,6 @@ void line_feed(char *line)
 
 void check_read_file(char *file)
 {
-    if(file == NULL)
-    {
-        snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "指针为空，出现异常错误，程序强制退出！");
-        printf_with_time(chartmp);
-        exit(789);
-    }
     if(!access(file, F_OK))
     {
         if(access(file, R_OK))
@@ -94,14 +90,15 @@ int main()
 {
     FILE *fq;
     char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10];
-    char *temp_tmp,*temp_sensor,*temp_sensor_dir,*buffer,*msg,current_max_char[20],highest_temp_current_char[20],thermal[15];
+    char *temp_tmp,*temp_sensor,*temp_sensor_dir,*buffer,*msg,current_max_char[20],highest_temp_current_char[20],thermal[15],last_appname[100];
     uchar step_charge=1,step_charge_file=0,power_control=1,force_temp=1,has_force_temp=0,option_force_temp=1,current_change=1,battery_status=1,battery_capacity=1,tmp[5]={0};
     int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
-    int step_charging_disabled=0,cycle_time=0,step_charging_disabled_threshold=0,temp_ctrl=0,temp_max=0,recharge_temp=0;
+    int step_charging_disabled=0,cycle_time=0,step_charging_disabled_threshold=0,temp_ctrl=0,temp_max=0,recharge_temp=0,is_bypass=0;
     uint option_last_modify_time=0;
     regex_t temp_re,current_max_re,current_limit_re;
     regmatch_t temp_pmatch,current_max_pmatch,current_limit_pmatch;
     struct stat statbuf;
+    pthread_t thread1;
     printf("作者：酷安@诺鸡鸭\n");
     printf("GitHub开源地址：https://github.com/chase535/turbo-charge\n\n");
     fflush(stdout);
@@ -113,9 +110,9 @@ int main()
         if(battery_status && !battery_capacity)
             printf_with_time("由于找不到/sys/class/power_supply/battery/capacity文件，电量控制功能失效！");
         else if(!battery_status && battery_capacity)
-            printf_with_time("由于找不到/sys/class/power_supply/battery/status文件，电量控制功能失效！");
+            printf_with_time("由于找不到/sys/class/power_supply/battery/status文件，电量控制功能失效，且“伪”旁路供电功能无法根据手机的充电状态而自动启停！");
         else
-            printf_with_time("由于找不到/sys/class/power_supply/battery/status和/sys/class/power_supply/battery/capacity文件，电量控制功能失效！");
+            printf_with_time("由于找不到/sys/class/power_supply/battery/status和/sys/class/power_supply/battery/capacity文件，电量控制功能失效，且“伪”旁路供电功能无法根据手机的充电状态而自动启停！");
     }
     else
     {
@@ -181,7 +178,7 @@ int main()
     if(!current_max_file_num)
     {
         current_change=0;
-        printf_with_time("无法在/sys/class/power_supply中的所有文件夹内找到constant_charge_current_max、fast_charge_current、thermal_input_current文件，有关电流的所有功能失效！");
+        printf_with_time("无法在/sys/class/power_supply中的所有文件夹内找到constant_charge_current_max、fast_charge_current、thermal_input_current文件，有关电流的所有功能（包括“伪”旁路供电功能）失效！");
     }
     if(!battery_status || !temp_file_num)
     {
@@ -300,8 +297,8 @@ int main()
             printf_with_time(chartmp);
         }
     }
-    check_read_file(option_file);
-    read_option(&option_last_modify_time, 0, tmp, 0);
+    read_option(&option_last_modify_time, 0, tmp, 0, &cycle_time, &option_force_temp, current_max_char, &step_charging_disabled,
+                &temp_ctrl, &step_charging_disabled_threshold , &temp_max, highest_temp_current_char, &recharge_temp);
     printf_with_time("文件检测完毕，程序开始运行");
     set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
     set_value("/sys/class/power_supply/battery/system_temp_level", "1");
@@ -316,23 +313,11 @@ int main()
     charge_ctl("1");
     while(1)
     {
-        read_option(&option_last_modify_time, 1, tmp, 0);
-        for(i=0;i < OPTION_QUANTITY;i++)
-        {
-            if(!strcmp(options[i].name, "CYCLE_TIME")) cycle_time=options[i].value;
-            else if(!strcmp(options[i].name, "FORCE_TEMP")) option_force_temp=options[i].value;
-            else if(!strcmp(options[i].name, "CURRENT_MAX")) snprintf(current_max_char, 20, "%d", options[i].value);
-            else if(!strcmp(options[i].name, "STEP_CHARGING_DISABLED")) step_charging_disabled=options[i].value;
-            else if(!strcmp(options[i].name, "TEMP_CTRL")) temp_ctrl=options[i].value;
-            else if(!strcmp(options[i].name, "STEP_CHARGING_DISABLED_THRESHOLD")) step_charging_disabled_threshold=options[i].value;
-            else if(!strcmp(options[i].name, "TEMP_MAX")) temp_max=options[i].value;
-            else if(!strcmp(options[i].name, "HIGHEST_TEMP_CURRENT")) snprintf(highest_temp_current_char, 20, "%d", options[i].value);
-            else if(!strcmp(options[i].name, "RECHARGE_TEMP")) recharge_temp=options[i].value;
-        }
+        read_option(&option_last_modify_time, 1, tmp, 0, &cycle_time, &option_force_temp, current_max_char, &step_charging_disabled,
+                    &temp_ctrl, &step_charging_disabled_threshold , &temp_max, highest_temp_current_char, &recharge_temp);
         set_array_value(current_limit_file, current_limit_file_num, "-1");
         if(!battery_status)
         {
-            if(current_change) set_array_value(current_max_file, current_max_file_num, current_max_char);
             if(step_charge == 1)
             {
                 if(step_charging_disabled == 1) (atoi(power) < step_charging_disabled_threshold)?step_charge_ctl("1"):step_charge_ctl("0");
@@ -340,6 +325,26 @@ int main()
             }
             else if(step_charge == 2)
                 (step_charging_disabled == 1)?step_charge_ctl("0"):step_charge_ctl("1");
+            if(current_change)
+            {
+                if(bypass_charge == 1 && !strlen((char *)ForegroundAppName))
+                {
+                    strcpy((char *)ForegroundAppName, "chase535");
+                    pthread_create(&thread1, NULL, get_foreground_appname, NULL);
+                    pthread_detach(thread1);
+                }
+                else if(bypass_charge == 1 && strlen((char *)ForegroundAppName) && !strcmp((char *)ForegroundAppName, "chase535"))
+                {
+                    bypass_charge_ctl(last_appname, &is_bypass, current_max_file, current_max_file_num);
+                    if(is_bypass)
+                    {
+                        sleep(cycle_time);
+                        continue;
+                    }
+                }
+                else if(strlen(last_appname)) memset(last_appname, 0, sizeof(last_appname));
+            }
+            if(current_change) set_array_value(current_max_file, current_max_file_num, current_max_char);
             sleep(cycle_time);
             continue;
         }
@@ -374,6 +379,24 @@ int main()
             if(force_temp && option_force_temp == 1) set_array_value(temp_file, temp_file_num, "280");
             else if(has_force_temp) set_temp(temp_sensor, temp_file, temp_file_num, 0);
             if(power_control) powel_ctl(tmp);
+            if(current_change)
+            {
+                if(bypass_charge == 1 && !strlen((char *)ForegroundAppName))
+                {
+                    pthread_create(&thread1, NULL, get_foreground_appname, NULL);
+                    pthread_detach(thread1);
+                }
+                else if(bypass_charge == 1 && strlen((char *)ForegroundAppName))
+                {
+                    bypass_charge_ctl(last_appname, &is_bypass, current_max_file, current_max_file_num);
+                    if(is_bypass)
+                    {
+                        sleep(cycle_time);
+                        continue;
+                    }
+                }
+                else if(strlen(last_appname)) memset(last_appname, 0, sizeof(last_appname));
+            }
             if(temp_ctrl == 1 && temp_sensor_num != 100 && current_change)
             {
                 check_read_file(temp_sensor);
@@ -387,21 +410,10 @@ int main()
                 {
                     snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "手机温度大于等于降低充电电流的温度阈值，限制充电电流为%sμA", highest_temp_current_char);
                     printf_with_time(chartmp);
-                    while(1)
+                    while(!is_bypass)
                     {
-                        read_option(&option_last_modify_time, 1, tmp, 1);
-                        for(i=0;i < OPTION_QUANTITY;i++)
-                        {
-                            if(!strcmp(options[i].name, "CYCLE_TIME")) cycle_time=options[i].value;
-                            else if(!strcmp(options[i].name, "FORCE_TEMP")) option_force_temp=options[i].value;
-                            else if(!strcmp(options[i].name, "CURRENT_MAX")) snprintf(current_max_char, 20, "%d", options[i].value);
-                            else if(!strcmp(options[i].name, "STEP_CHARGING_DISABLED")) step_charging_disabled=options[i].value;
-                            else if(!strcmp(options[i].name, "TEMP_CTRL")) temp_ctrl=options[i].value;
-                            else if(!strcmp(options[i].name, "STEP_CHARGING_DISABLED_THRESHOLD")) step_charging_disabled_threshold=options[i].value;
-                            else if(!strcmp(options[i].name, "TEMP_MAX")) temp_max=options[i].value;
-                            else if(!strcmp(options[i].name, "HIGHEST_TEMP_CURRENT")) snprintf(highest_temp_current_char, 20, "%d", options[i].value);
-                            else if(!strcmp(options[i].name, "RECHARGE_TEMP")) recharge_temp=options[i].value;
-                        }
+                        read_option(&option_last_modify_time, 1, tmp, 1, &cycle_time, &option_force_temp, current_max_char, &step_charging_disabled,
+                                    &temp_ctrl, &step_charging_disabled_threshold , &temp_max, highest_temp_current_char, &recharge_temp);
                         set_array_value(current_limit_file, current_limit_file_num, "-1");
                         if(force_temp && option_force_temp == 1 && !has_force_temp) has_force_temp=1;
                         check_read_file(temp_sensor);
@@ -480,6 +492,12 @@ int main()
             {
                 printf_with_time("充电器断开连接");
                 tmp[0]=1;
+            }
+            if(strlen((char *)ForegroundAppName))
+            {
+                printf_with_time("手机未在充电状态，“伪”旁路供电功能暂时停用");
+                pthread_cancel(thread1);
+                memset((void *)ForegroundAppName, 0, sizeof(ForegroundAppName));
             }
             if(step_charge == 1)
             {

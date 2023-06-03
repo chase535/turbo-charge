@@ -100,3 +100,48 @@ void powel_ctl(uchar tmp[])
         charge_ctl("1");
     }
 }
+
+void bypass_charge_ctl(char last_appname[100], int *is_bypass, char **current_max_file, int current_max_file_num)
+{
+    char name[100];
+    uchar in_list=0;
+    FILE *fp;
+    check_read_file(bypass_charge_file);
+    fp=fopen(bypass_charge_file, "rt");
+    while(fgets(name, sizeof(name), fp) != NULL)
+    {
+        line_feed(name);
+        if(!strlen(name) || (strstr(name, "#") != NULL && !strstr(name, "#"))) continue;
+        if(!strcmp((char *)ForegroundAppName, name)) in_list=1;
+    }
+    fclose(fp);
+    fp=NULL;
+    if(in_list)
+    {
+        if(!(*is_bypass))
+        {
+            snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "当前前台应用为%s，位于旁路供电配置列表中，开始“伪”旁路供电", ForegroundAppName);
+            printf_with_time(chartmp);
+        }
+        else
+        {
+            if(strcmp(last_appname, (char *)ForegroundAppName))
+            {
+                snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "前台应用切换为%s，位于旁路供电配置列表中，保持“伪”旁路供电", ForegroundAppName);
+                printf_with_time(chartmp);
+            }
+        }
+        *is_bypass=1;
+        set_array_value(current_max_file, current_max_file_num, BYPASS_CHARGE_CURRENT);
+    }
+    else
+    {
+        if(*is_bypass)
+        {
+            snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "前台应用切换为%s，不在旁路供电配置列表中，恢复正常充电", ForegroundAppName);
+            printf_with_time(chartmp);
+            *is_bypass=0;
+        }
+    }
+    strcpy(last_appname, (char *)ForegroundAppName);
+}
