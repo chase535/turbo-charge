@@ -330,7 +330,7 @@ int main()
                 if(bypass_charge == 1 && !strlen((char *)ForegroundAppName))
                 {
                     strcpy((char *)ForegroundAppName,"chase535");
-                    pthread_create(&thread1, NULL, get_foreground_appname, (void *)&battery_status);
+                    pthread_create(&thread1, NULL, get_foreground_appname, NULL);
                     pthread_detach(thread1);
                 }
                 else if(bypass_charge == 1 && strlen((char *)ForegroundAppName) && !strcmp((char *)ForegroundAppName,"chase535"))
@@ -383,7 +383,7 @@ int main()
             {
                 if(bypass_charge == 1 && !strlen((char *)ForegroundAppName))
                 {
-                    pthread_create(&thread1, NULL, get_foreground_appname, (void *)&battery_status);
+                    pthread_create(&thread1, NULL, get_foreground_appname, NULL);
                     pthread_detach(thread1);
                 }
                 else if(bypass_charge == 1 && strlen((char *)ForegroundAppName))
@@ -483,6 +483,7 @@ int main()
         }
         else
         {
+            memset(thread1,0,sizeof(thread1));
             if(!tmp[1] && !tmp[0])
             {
                 printf_with_time("充电器未连接");
@@ -492,6 +493,12 @@ int main()
             {
                 printf_with_time("充电器断开连接");
                 tmp[0]=1;
+            }
+            if(strlen(ForegroundAppName))
+            {
+                printf_with_time("手机未在充电状态，“伪”旁路供电功能暂时停用");
+                pthread_cancel(thread1);
+                memset((void *)ForegroundAppName,0,sizeof(ForegroundAppName));
             }
             if(step_charge == 1)
             {

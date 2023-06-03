@@ -3,6 +3,6 @@
 
 #include "main.h"
 
-void *get_foreground_appname(void *battery_status);
+void *get_foreground_appname();
 
 #endif
