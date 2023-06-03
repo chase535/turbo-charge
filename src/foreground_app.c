@@ -27,6 +27,7 @@ void *get_foreground_appname()
             can_not_get_fp_null:
             printf_with_time("无法获取前台应用包名！");
             sleep(5);
+            pthread_testcancel();
             continue;
         }
         tmpchar2=strstr(tmpchar1, ":");
