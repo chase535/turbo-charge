@@ -112,7 +112,7 @@ void bypass_charge_ctl(char last_appname[100], int *is_bypass, char **current_ma
     {
         line_feed(name);
         if(!strlen(name) || (strstr(name, "#") != NULL && !strstr(name, "#"))) continue;
-        if(!strcmp((char *)ForegroundAppName,name)) in_list=1;
+        if(!strcmp((char *)ForegroundAppName, name)) in_list=1;
     }
     fclose(fp);
     fp=NULL;
@@ -125,7 +125,7 @@ void bypass_charge_ctl(char last_appname[100], int *is_bypass, char **current_ma
         }
         else
         {
-            if(strcmp(last_appname,(char *)ForegroundAppName))
+            if(strcmp(last_appname, (char *)ForegroundAppName))
             {
                 snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "前台应用切换为%s，位于旁路供电配置列表中，保持“伪”旁路供电", ForegroundAppName);
                 printf_with_time(chartmp);
@@ -143,5 +143,5 @@ void bypass_charge_ctl(char last_appname[100], int *is_bypass, char **current_ma
             *is_bypass=0;
         }
     }
-    strcpy(last_appname,(char *)ForegroundAppName);
+    strcpy(last_appname, (char *)ForegroundAppName);
 }

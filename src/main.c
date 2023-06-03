@@ -329,11 +329,11 @@ int main()
             {
                 if(bypass_charge == 1 && !strlen((char *)ForegroundAppName))
                 {
-                    strcpy((char *)ForegroundAppName,"chase535");
+                    strcpy((char *)ForegroundAppName, "chase535");
                     pthread_create(&thread1, NULL, get_foreground_appname, NULL);
                     pthread_detach(thread1);
                 }
-                else if(bypass_charge == 1 && strlen((char *)ForegroundAppName) && !strcmp((char *)ForegroundAppName,"chase535"))
+                else if(bypass_charge == 1 && strlen((char *)ForegroundAppName) && !strcmp((char *)ForegroundAppName, "chase535"))
                 {
                     bypass_charge_ctl(last_appname, &is_bypass, current_max_file, current_max_file_num);
                     if(is_bypass)
@@ -342,7 +342,7 @@ int main()
                         continue;
                     }
                 }
-                else if(strlen(last_appname)) memset(last_appname,0,sizeof(last_appname));
+                else if(strlen(last_appname)) memset(last_appname, 0, sizeof(last_appname));
             }
             if(current_change) set_array_value(current_max_file, current_max_file_num, current_max_char);
             sleep(cycle_time);
@@ -395,7 +395,7 @@ int main()
                         continue;
                     }
                 }
-                else if(strlen(last_appname)) memset(last_appname,0,sizeof(last_appname));
+                else if(strlen(last_appname)) memset(last_appname, 0, sizeof(last_appname));
             }
             if(temp_ctrl == 1 && temp_sensor_num != 100 && current_change)
             {
@@ -483,7 +483,6 @@ int main()
         }
         else
         {
-            memset(thread1,0,sizeof(thread1));
             if(!tmp[1] && !tmp[0])
             {
                 printf_with_time("充电器未连接");
@@ -494,11 +493,11 @@ int main()
                 printf_with_time("充电器断开连接");
                 tmp[0]=1;
             }
-            if(strlen(ForegroundAppName))
+            if(strlen((char *)ForegroundAppName))
             {
                 printf_with_time("手机未在充电状态，“伪”旁路供电功能暂时停用");
                 pthread_cancel(thread1);
-                memset((void *)ForegroundAppName,0,sizeof(ForegroundAppName));
+                memset((void *)ForegroundAppName, 0, sizeof(ForegroundAppName));
             }
             if(step_charge == 1)
             {
