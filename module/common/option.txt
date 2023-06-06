@@ -43,5 +43,6 @@ RECHARGE_TEMP=45
 #是否启用“伪”旁路供电功能（1为启用，其他数字为禁用）
 #使用多线程+popen执行Shell命令来获取前台应用，所以开启后会消耗更多的系统资源
 #为尽量减少系统资源的消耗，每5秒获取一次前台应用包名，不可更改
+#未经完全测试，如果无效请及时去Github提Issue
 #开启后请配置/data/adb/turbo-charge/bypass_charge.txt文件
 BYPASS_CHARGE=0
