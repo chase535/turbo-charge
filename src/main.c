@@ -301,6 +301,7 @@ int main()
     read_options(&option_last_modify_time, 0, tmp, 0);
     snprintf(current_max_char, 20, "%d", read_one_option("CURRENT_MAX"));
     snprintf(highest_temp_current_char, 20, "%d", read_one_option("HIGHEST_TEMP_CURRENT"));
+    bypass_charge=read_one_option("BYPASS_CHARGE");
     printf_with_time("文件检测完毕，程序开始运行");
     set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
     set_value("/sys/class/power_supply/battery/system_temp_level", "1");
@@ -318,6 +319,7 @@ int main()
         read_options(&option_last_modify_time, 1, tmp, 0);
         snprintf(current_max_char, 20, "%d", read_one_option("CURRENT_MAX"));
         snprintf(highest_temp_current_char, 20, "%d", read_one_option("HIGHEST_TEMP_CURRENT"));
+        bypass_charge=read_one_option("BYPASS_CHARGE");
         set_array_value(current_limit_file, current_limit_file_num, "-1");
         if(!battery_status)
         {
@@ -399,6 +401,7 @@ int main()
                         read_options(&option_last_modify_time, 1, tmp, 1);
                         snprintf(current_max_char, 20, "%d", read_one_option("CURRENT_MAX"));
                         snprintf(highest_temp_current_char, 20, "%d", read_one_option("HIGHEST_TEMP_CURRENT"));
+                        bypass_charge=read_one_option("BYPASS_CHARGE");
                         set_array_value(current_limit_file, current_limit_file_num, "-1");
                         if(force_temp && read_one_option("FORCE_TEMP") == 1 && !has_force_temp) has_force_temp=1;
                         check_read_file(temp_sensor);
