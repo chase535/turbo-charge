@@ -8,7 +8,7 @@
 #include "read_option.h"
 #include "printf_with_time.h"
 
-void read_options(uint *last_modify_time, uchar num, uchar tmp[5], uchar is_temp_wall)
+void read_options(uint *last_modify_time, uchar num, uchar tmp[], uchar is_temp_wall)
 {
     FILE *fc;
     char option_tmp[42], option[100], *value;
