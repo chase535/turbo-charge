@@ -93,7 +93,7 @@ int main()
     char *temp_tmp,*temp_sensor,*temp_sensor_dir,*buffer,*msg,current_max_char[20],highest_temp_current_char[20],thermal[15],last_appname[100];
     uchar step_charge=1,step_charge_file=0,power_control=1,force_temp=1,has_force_temp=0,current_change=1,battery_status=1,battery_capacity=1,tmp[5]={0};
     int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0;
-    int power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0,is_bypass=0;
+    int power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0,is_bypass=0,can_get_foreground=0;
     uint option_last_modify_time=0;
     regex_t temp_re,current_max_re,current_limit_re;
     regmatch_t temp_pmatch,current_max_pmatch,current_limit_pmatch;
@@ -297,6 +297,7 @@ int main()
             printf_with_time(chartmp);
         }
     }
+    can_get_foreground=check_android_version();
     read_options(&option_last_modify_time, 0, tmp, 0);
     snprintf(current_max_char, 20, "%d", read_one_option("CURRENT_MAX"));
     snprintf(highest_temp_current_char, 20, "%d", read_one_option("HIGHEST_TEMP_CURRENT"));
@@ -327,24 +328,14 @@ int main()
             }
             else if(step_charge == 2)
                 (read_one_option("STEP_CHARGING_DISABLED") == 1)?step_charge_ctl("0"):step_charge_ctl("1");
-            if(current_change)
+            if(current_change && can_get_foreground)
             {
-                if(bypass_charge == 1 && !strlen((char *)ForegroundAppName))
+                bypass_charge_ctl(&thread1, &can_get_foreground, last_appname, &is_bypass, current_max_file, current_max_file_num);
+                if(is_bypass)
                 {
-                    strcpy((char *)ForegroundAppName, "chase535");
-                    pthread_create(&thread1, NULL, get_foreground_appname, NULL);
-                    pthread_detach(thread1);
+                    sleep(read_one_option("CYCLE_TIME"));
+                    continue;
                 }
-                else if(bypass_charge == 1 && strlen((char *)ForegroundAppName) && !strcmp((char *)ForegroundAppName, "chase535"))
-                {
-                    bypass_charge_ctl(last_appname, &is_bypass, current_max_file, current_max_file_num);
-                    if(is_bypass)
-                    {
-                        sleep(read_one_option("CYCLE_TIME"));
-                        continue;
-                    }
-                }
-                else if(strlen(last_appname)) memset(last_appname, 0, sizeof(last_appname));
             }
             if(current_change) set_array_value(current_max_file, current_max_file_num, current_max_char);
             sleep(read_one_option("CYCLE_TIME"));
@@ -381,23 +372,14 @@ int main()
             if(force_temp && read_one_option("FORCE_TEMP") == 1) set_array_value(temp_file, temp_file_num, "280");
             else if(has_force_temp) set_temp(temp_sensor, temp_file, temp_file_num, 0);
             if(power_control) powel_ctl(tmp);
-            if(current_change)
+            if(current_change && can_get_foreground)
             {
-                if(bypass_charge == 1 && !strlen((char *)ForegroundAppName))
+                bypass_charge_ctl(&thread1, &can_get_foreground, last_appname, &is_bypass, current_max_file, current_max_file_num);
+                if(is_bypass)
                 {
-                    pthread_create(&thread1, NULL, get_foreground_appname, NULL);
-                    pthread_detach(thread1);
+                    sleep(read_one_option("CYCLE_TIME"));
+                    continue;
                 }
-                else if(bypass_charge == 1 && strlen((char *)ForegroundAppName))
-                {
-                    bypass_charge_ctl(last_appname, &is_bypass, current_max_file, current_max_file_num);
-                    if(is_bypass)
-                    {
-                        sleep(read_one_option("CYCLE_TIME"));
-                        continue;
-                    }
-                }
-                else if(strlen(last_appname)) memset(last_appname, 0, sizeof(last_appname));
             }
             if(read_one_option("TEMP_CTRL") == 1 && temp_sensor_num != 100 && current_change)
             {

@@ -3,6 +3,7 @@
 
 #include "main.h"
 
-void *get_foreground_appname();
+int check_android_version();
+void *get_foreground_appname(void *android_version);
 
 #endif
