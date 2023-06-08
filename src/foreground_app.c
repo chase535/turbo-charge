@@ -25,7 +25,7 @@ int check_android_version()
     fgets(android_version_char, sizeof(android_version_char), fp);
     line_feed(android_version_char);
     status=pclose(fp);
-    if(status == -1 || !WIFEXITED(status) || !strlen(android_version_char))
+    if(status == -1 || !WIFEXITED(status) || WEXITSTATUS(status) || !strlen(android_version_char))
     {
         printf_with_time("无法获取安卓版本，而安卓7-9、10+获取前台应用的命令不同，故无法获取前台应用包名，“伪”旁路供电功能失效！");
         fp=NULL;
@@ -61,7 +61,7 @@ void *get_foreground_appname(void *android_version)
             pthread_testcancel();
             continue;
         }
-        else if(!WIFEXITED(status))
+        else if(!WIFEXITED(status) || WEXITSTATUS(status))
         {
             snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "Shell命令执行出错：%s", strerror(errno));
             printf_with_time(chartmp);
