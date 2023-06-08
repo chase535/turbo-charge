@@ -120,7 +120,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
         {
             if(*screen_is_off)
             {
-                if(*is_bypass) printf_with_time("手机屏幕开启，恢复关闭前状态");
+                if(*is_bypass) printf_with_time("手机屏幕开启，恢复“伪”旁路供电模式");
                 *screen_is_off=0;
             }
             check_read_file(bypass_charge_file);
@@ -137,14 +137,14 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
             {
                 if(!(*is_bypass))
                 {
-                    snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "当前前台应用为%s，位于旁路供电配置列表中，开始“伪”旁路供电", ForegroundAppName);
+                    snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "当前前台应用为%s，位于旁路供电配置列表中，进入“伪”旁路供电模式", ForegroundAppName);
                     printf_with_time(chartmp);
                 }
                 else
                 {
                     if(strcmp(last_appname, (char *)ForegroundAppName))
                     {
-                        snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "前台应用切换为%s，位于旁路供电配置列表中，保持“伪”旁路供电", ForegroundAppName);
+                        snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "前台应用切换为%s，位于旁路供电配置列表中，保持“伪”旁路供电模式", ForegroundAppName);
                         printf_with_time(chartmp);
                     }
                 }
@@ -155,7 +155,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
             {
                 if(*is_bypass)
                 {
-                    snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "前台应用切换为%s，不在旁路供电配置列表中，恢复正常充电", ForegroundAppName);
+                    snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "前台应用切换为%s，不在旁路供电配置列表中，恢复正常充电模式", ForegroundAppName);
                     printf_with_time(chartmp);
                     *is_bypass=0;
                 }
@@ -166,7 +166,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
         {
             if(!(*screen_is_off))
             {
-                if(*is_bypass) printf_with_time("手机屏幕关闭，恢复正常充电");
+                if(*is_bypass) printf_with_time("手机屏幕关闭，暂时进入正常充电模式");
                 *screen_is_off=1;
             }
         }
