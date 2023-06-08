@@ -3,6 +3,7 @@
 
 #include "printf_with_time.h"
 
+//获取本地时间并将时间转换为北京时间(UTC+8)
 struct tm *get_utc8_time(void)
 {
     time_t cur_time;
@@ -60,9 +61,11 @@ struct tm *get_utc8_time(void)
     return ptm;
 }
 
+//打印时间及相应字符串
 void printf_with_time(char *dat)
 {
     struct tm *time_get=get_utc8_time();
     printf("[ %04d.%02d.%02d %02d:%02d:%02d UTC+8 ] %s\n", time_get->tm_year, time_get->tm_mon, time_get->tm_mday, time_get->tm_hour, time_get->tm_min, time_get->tm_sec, dat);
+    //如果是写入文件，则必须加上这句话，不然只能等缓冲区满了后才会一次性写入
     fflush(stdout);
 }
