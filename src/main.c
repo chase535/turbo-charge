@@ -486,9 +486,9 @@ int main()
                 printf_with_time("手机未在充电状态，“伪”旁路供电功能暂时停用");
                 pthread_cancel(thread1);
                 sleep(1);
-                if(is_bypass) is_bypass=0;
                 memset((void *)ForegroundAppName, 0, sizeof(ForegroundAppName));
             }
+            if(is_bypass) is_bypass=0;
             if(step_charge == 1)
             {
                 if(read_one_option("STEP_CHARGING_DISABLED") == 1) (atoi(power) < read_one_option("STEP_CHARGING_DISABLED_THRESHOLD"))?step_charge_ctl("1"):step_charge_ctl("0");
