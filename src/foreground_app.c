@@ -18,7 +18,7 @@ int check_android_version()
     fp=popen("getprop ro.build.version.release", "r");
     if(fp == NULL)
     {
-        printf_with_time("无法创建管道通信，不能执行Shell命令，故无法获取前台应用包名，“伪”旁路供电功能失效！");
+        printf_with_time("无法创建管道通信，故无法获取安卓版本，“伪”旁路供电功能失效！");
         return 0;
     }
     fgets(android_version_char, sizeof(android_version_char), fp);
@@ -26,7 +26,7 @@ int check_android_version()
     status=pclose(fp);
     if(status == -1 || !WIFEXITED(status) || !strlen(android_version_char))
     {
-        printf_with_time("无法获取安卓版本，而安卓7-9、10+获取前台应用的命令不同，故无法获取前台应用包名，“伪”旁路供电功能失效！");
+        printf_with_time("无法获取安卓版本，而只有安卓7及以上能够通过Shell命令获取前台应用，所以必须要获取安卓版本进行判断，“伪”旁路供电功能失效！");
         fp=NULL;
         return 0;
     }
