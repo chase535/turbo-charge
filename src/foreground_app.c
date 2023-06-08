@@ -14,7 +14,7 @@ int check_android_version()
 {
     char android_version_char[5];
     int android_version=0;
-
+    pid_t status=0;
     FILE *fp=NULL;
     fp=popen("getprop ro.build.version.release", "r");
     if(fp == NULL)
@@ -23,7 +23,9 @@ int check_android_version()
         return 0;
     }
     fgets(android_version_char, sizeof(android_version_char), fp);
-    if(pclose(fp) || !strlen(android_version_char))
+    line_feed(android_version_char);
+    status=pclose(fp);
+    if(status == -1 || !WIFEXITED(status) || !strlen(android_version_char))
     {
         printf_with_time("无法获取安卓版本，而安卓7-9、10+获取前台应用的命令不同，故无法获取前台应用包名，“伪”旁路供电功能失效！");
         fp=NULL;
@@ -50,6 +52,7 @@ void *get_foreground_appname(void *android_version)
         fp=(*((int *)android_version) < 10)?popen("dumpsys activity o | grep ' (top-activity)'", "r"):popen("dumpsys activity lru | grep ' TOP'", "r");
         if(fp == NULL) printf_with_time("无法创建管道通信！");
         fgets(result, sizeof(result), fp);
+        line_feed(result);
         status=pclose(fp);
         if(status == -1)
         {
