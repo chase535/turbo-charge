@@ -91,14 +91,14 @@ int main()
     FILE *fq;
     char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10];
     char *temp_tmp,*temp_sensor,*temp_sensor_dir,*buffer,*msg,current_max_char[20],highest_temp_current_char[20],thermal[15],last_appname[100];
-    uchar step_charge=1,step_charge_file=0,power_control=1,force_temp=1,has_force_temp=0,option_force_temp=1,current_change=1,battery_status=1,battery_capacity=1,tmp[5]={0};
-    int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0;
-    int step_charging_disabled=0,cycle_time=0,step_charging_disabled_threshold=0,temp_ctrl=0,temp_max=0,recharge_temp=0,is_bypass=0;
+    uchar step_charge=1,step_charge_file=0,power_control=1,force_temp=1,has_force_temp=0,current_change=1,battery_status=1,battery_capacity=1,tmp[5]={0};
+    int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0;
+    int power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0,is_bypass=0,can_get_foreground=0,screen_is_off=0;
     uint option_last_modify_time=0;
     regex_t temp_re,current_max_re,current_limit_re;
     regmatch_t temp_pmatch,current_max_pmatch,current_limit_pmatch;
-    struct stat statbuf;
     pthread_t thread1;
+    struct stat statbuf;
     printf("作者：酷安@诺鸡鸭\n");
     printf("GitHub开源地址：https://github.com/chase535/turbo-charge\n\n");
     fflush(stdout);
@@ -297,8 +297,11 @@ int main()
             printf_with_time(chartmp);
         }
     }
-    read_option(&option_last_modify_time, 0, tmp, 0, &cycle_time, &option_force_temp, current_max_char, &step_charging_disabled,
-                &temp_ctrl, &step_charging_disabled_threshold , &temp_max, highest_temp_current_char, &recharge_temp);
+    can_get_foreground=check_android_version();
+    read_options(&option_last_modify_time, 0, tmp, 0);
+    snprintf(current_max_char, 20, "%d", read_one_option("CURRENT_MAX"));
+    snprintf(highest_temp_current_char, 20, "%d", read_one_option("HIGHEST_TEMP_CURRENT"));
+    bypass_charge=read_one_option("BYPASS_CHARGE");
     printf_with_time("文件检测完毕，程序开始运行");
     set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
     set_value("/sys/class/power_supply/battery/system_temp_level", "1");
@@ -313,42 +316,34 @@ int main()
     charge_ctl("1");
     while(1)
     {
-        read_option(&option_last_modify_time, 1, tmp, 0, &cycle_time, &option_force_temp, current_max_char, &step_charging_disabled,
-                    &temp_ctrl, &step_charging_disabled_threshold , &temp_max, highest_temp_current_char, &recharge_temp);
+        read_options(&option_last_modify_time, 1, tmp, 0);
+        snprintf(current_max_char, 20, "%d", read_one_option("CURRENT_MAX"));
+        snprintf(highest_temp_current_char, 20, "%d", read_one_option("HIGHEST_TEMP_CURRENT"));
+        bypass_charge=read_one_option("BYPASS_CHARGE");
         set_array_value(current_limit_file, current_limit_file_num, "-1");
         if(!battery_status)
         {
             if(step_charge == 1)
             {
-                if(step_charging_disabled == 1) (atoi(power) < step_charging_disabled_threshold)?step_charge_ctl("1"):step_charge_ctl("0");
+                if(read_one_option("STEP_CHARGING_DISABLED") == 1) (atoi(power) < read_one_option("STEP_CHARGING_DISABLED_THRESHOLD"))?step_charge_ctl("1"):step_charge_ctl("0");
                 else step_charge_ctl("1");
             }
             else if(step_charge == 2)
-                (step_charging_disabled == 1)?step_charge_ctl("0"):step_charge_ctl("1");
-            if(current_change)
+                (read_one_option("STEP_CHARGING_DISABLED") == 1)?step_charge_ctl("0"):step_charge_ctl("1");
+            if(current_change && can_get_foreground)
             {
-                if(bypass_charge == 1 && !strlen((char *)ForegroundAppName))
+                bypass_charge_ctl(&thread1, &can_get_foreground, last_appname, &is_bypass, &screen_is_off, current_max_file, current_max_file_num);
+                if(is_bypass && !screen_is_off)
                 {
-                    strcpy((char *)ForegroundAppName, "chase535");
-                    pthread_create(&thread1, NULL, get_foreground_appname, NULL);
-                    pthread_detach(thread1);
+                    sleep(read_one_option("CYCLE_TIME"));
+                    continue;
                 }
-                else if(bypass_charge == 1 && strlen((char *)ForegroundAppName) && !strcmp((char *)ForegroundAppName, "chase535"))
-                {
-                    bypass_charge_ctl(last_appname, &is_bypass, current_max_file, current_max_file_num);
-                    if(is_bypass)
-                    {
-                        sleep(cycle_time);
-                        continue;
-                    }
-                }
-                else if(strlen(last_appname)) memset(last_appname, 0, sizeof(last_appname));
             }
             if(current_change) set_array_value(current_max_file, current_max_file_num, current_max_char);
-            sleep(cycle_time);
+            sleep(read_one_option("CYCLE_TIME"));
             continue;
         }
-        if(force_temp && option_force_temp == 1 && !has_force_temp) has_force_temp=1;
+        if(force_temp && read_one_option("FORCE_TEMP") == 1 && !has_force_temp) has_force_temp=1;
         check_read_file("/sys/class/power_supply/battery/capacity");
         fq=fopen("/sys/class/power_supply/battery/capacity", "rt");
         fgets(power, 5, fq);
@@ -357,11 +352,11 @@ int main()
         line_feed(power);
         if(step_charge == 1)
         {
-            if(step_charging_disabled == 1) (atoi(power) < step_charging_disabled_threshold)?step_charge_ctl("1"):step_charge_ctl("0");
+            if(read_one_option("STEP_CHARGING_DISABLED") == 1) (atoi(power) < read_one_option("STEP_CHARGING_DISABLED_THRESHOLD"))?step_charge_ctl("1"):step_charge_ctl("0");
             else step_charge_ctl("1");
         }
         else if(step_charge == 2)
-            (step_charging_disabled == 1)?step_charge_ctl("0"):step_charge_ctl("1");
+            (read_one_option("STEP_CHARGING_DISABLED") == 1)?step_charge_ctl("0"):step_charge_ctl("1");
         check_read_file("/sys/class/power_supply/battery/status");
         fq=fopen("/sys/class/power_supply/battery/status", "rt");
         fgets(charge, 20, fq);
@@ -376,28 +371,19 @@ int main()
                 tmp[0]=0;
                 tmp[1]=1;
             }
-            if(force_temp && option_force_temp == 1) set_array_value(temp_file, temp_file_num, "280");
+            if(force_temp && read_one_option("FORCE_TEMP") == 1) set_array_value(temp_file, temp_file_num, "280");
             else if(has_force_temp) set_temp(temp_sensor, temp_file, temp_file_num, 0);
             if(power_control) powel_ctl(tmp);
-            if(current_change)
+            if(current_change && can_get_foreground)
             {
-                if(bypass_charge == 1 && !strlen((char *)ForegroundAppName))
+                bypass_charge_ctl(&thread1, &can_get_foreground, last_appname, &is_bypass, &screen_is_off, current_max_file, current_max_file_num);
+                if(is_bypass && !screen_is_off)
                 {
-                    pthread_create(&thread1, NULL, get_foreground_appname, NULL);
-                    pthread_detach(thread1);
+                    sleep(read_one_option("CYCLE_TIME"));
+                    continue;
                 }
-                else if(bypass_charge == 1 && strlen((char *)ForegroundAppName))
-                {
-                    bypass_charge_ctl(last_appname, &is_bypass, current_max_file, current_max_file_num);
-                    if(is_bypass)
-                    {
-                        sleep(cycle_time);
-                        continue;
-                    }
-                }
-                else if(strlen(last_appname)) memset(last_appname, 0, sizeof(last_appname));
             }
-            if(temp_ctrl == 1 && temp_sensor_num != 100 && current_change)
+            if(read_one_option("TEMP_CTRL") == 1 && temp_sensor_num != 100 && current_change)
             {
                 check_read_file(temp_sensor);
                 fq=fopen(temp_sensor, "rt");
@@ -406,16 +392,18 @@ int main()
                 fq=NULL;
                 line_feed(thermal);
                 temp_int=atoi(thermal);
-                if(temp_int >= temp_max*1000)
+                if(temp_int >= read_one_option("TEMP_MAX")*1000)
                 {
                     snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "手机温度大于等于降低充电电流的温度阈值，限制充电电流为%sμA", highest_temp_current_char);
                     printf_with_time(chartmp);
                     while(!is_bypass)
                     {
-                        read_option(&option_last_modify_time, 1, tmp, 1, &cycle_time, &option_force_temp, current_max_char, &step_charging_disabled,
-                                    &temp_ctrl, &step_charging_disabled_threshold , &temp_max, highest_temp_current_char, &recharge_temp);
+                        read_options(&option_last_modify_time, 1, tmp, 1);
+                        snprintf(current_max_char, 20, "%d", read_one_option("CURRENT_MAX"));
+                        snprintf(highest_temp_current_char, 20, "%d", read_one_option("HIGHEST_TEMP_CURRENT"));
+                        bypass_charge=read_one_option("BYPASS_CHARGE");
                         set_array_value(current_limit_file, current_limit_file_num, "-1");
-                        if(force_temp && option_force_temp == 1 && !has_force_temp) has_force_temp=1;
+                        if(force_temp && read_one_option("FORCE_TEMP") == 1 && !has_force_temp) has_force_temp=1;
                         check_read_file(temp_sensor);
                         fq=fopen(temp_sensor, "rt");
                         fgets(thermal, 10, fq);
@@ -425,7 +413,7 @@ int main()
                         temp_int=atoi(thermal);
                         if(tmp[3])
                         {
-                            if(temp_int < temp_max*1000)
+                            if(temp_int < read_one_option("TEMP_MAX")*1000)
                             {
                                 snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新的降低充电电流的温度阈值高于旧的温度阈值，且手机温度小于新的温度阈值，恢复充电电流为%sμA", current_max_char);
                                 printf_with_time(chartmp);
@@ -452,13 +440,13 @@ int main()
                             tmp[1]=0;
                             break;
                         }
-                        if(temp_int <= recharge_temp*1000)
+                        if(temp_int <= read_one_option("RECHARGE_TEMP")*1000)
                         {
                             snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "手机温度小于等于恢复快充的温度阈值，恢复充电电流为%sμA", current_max_char);
                             printf_with_time(chartmp);
                             break;
                         }
-                        if(!temp_ctrl)
+                        if(!read_one_option("TEMP_CTRL"))
                         {
                             snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "温控关闭，恢复充电电流为%sμA", current_max_char);
                             printf_with_time(chartmp);
@@ -466,16 +454,16 @@ int main()
                         }
                         if(step_charge == 1)
                         {
-                            if(step_charging_disabled == 1) (atoi(power) < step_charging_disabled_threshold)?step_charge_ctl("1"):step_charge_ctl("0");
+                            if(read_one_option("STEP_CHARGING_DISABLED") == 1) (atoi(power) < read_one_option("STEP_CHARGING_DISABLED_THRESHOLD"))?step_charge_ctl("1"):step_charge_ctl("0");
                             else step_charge_ctl("1");
                         }
                         else if(step_charge == 2)
-                            (step_charging_disabled == 1)?step_charge_ctl("0"):step_charge_ctl("1");
+                            (read_one_option("STEP_CHARGING_DISABLED") == 1)?step_charge_ctl("0"):step_charge_ctl("1");
                         set_array_value(current_max_file, current_max_file_num, highest_temp_current_char);
-                        if(force_temp && option_force_temp == 1) set_array_value(temp_file, temp_file_num, "280");
+                        if(force_temp && read_one_option("FORCE_TEMP") == 1) set_array_value(temp_file, temp_file_num, "280");
                         else if(has_force_temp) set_temp(temp_sensor, temp_file, temp_file_num, 0);
                         if(power_control) powel_ctl(tmp);
-                        sleep(cycle_time);
+                        sleep(read_one_option("CYCLE_TIME"));
                     }
                 }
             }
@@ -501,19 +489,19 @@ int main()
             }
             if(step_charge == 1)
             {
-                if(step_charging_disabled == 1) (atoi(power) < step_charging_disabled_threshold)?step_charge_ctl("1"):step_charge_ctl("0");
+                if(read_one_option("STEP_CHARGING_DISABLED") == 1) (atoi(power) < read_one_option("STEP_CHARGING_DISABLED_THRESHOLD"))?step_charge_ctl("1"):step_charge_ctl("0");
                 else step_charge_ctl("1");
             }
             else if(step_charge == 2)
-                (step_charging_disabled == 1)?step_charge_ctl("0"):step_charge_ctl("1");
+                (read_one_option("STEP_CHARGING_DISABLED") == 1)?step_charge_ctl("0"):step_charge_ctl("1");
             if(power_control) powel_ctl(tmp);
             if(has_force_temp)
             {
-                if(option_force_temp == 1) set_temp(temp_sensor, temp_file, temp_file_num, 1);
+                if(read_one_option("FORCE_TEMP") == 1) set_temp(temp_sensor, temp_file, temp_file_num, 1);
                 else set_temp(temp_sensor, temp_file, temp_file_num, 0);
             }
         }
-        sleep(cycle_time);
+        sleep(read_one_option("CYCLE_TIME"));
     }
     return 0;
 }
