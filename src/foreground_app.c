@@ -3,6 +3,7 @@
 #include "string.h"
 #include "unistd.h"
 #include "pthread.h"
+#include "errno.h"
 #include "sys/wait.h"
 #include "sys/types.h"
 
@@ -62,7 +63,7 @@ void *get_foreground_appname(void *android_version)
         }
         else if(!WIFEXITED(status) || WEXITSTATUS(status))
         {
-            snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "Shell命令执行出错！");
+            snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "Shell命令执行出错：%s", WEXITSTATUS(status));
             printf_with_time(chartmp);
             sleep(5);
             pthread_testcancel();
