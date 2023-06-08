@@ -4,6 +4,8 @@
 #include "unistd.h"
 #include "pthread.h"
 #include "errno.h"
+#include "sys/wait.h"
+#include "sys/types.h"
 
 #include "printf_with_time.h"
 #include "foreground_app.h"
@@ -12,6 +14,7 @@ int check_android_version()
 {
     char android_version_char[5];
     int android_version=0;
+
     FILE *fp=NULL;
     fp=popen("getprop ro.build.version.release", "r");
     if(fp == NULL)
@@ -40,13 +43,22 @@ int check_android_version()
 void *get_foreground_appname(void *android_version)
 {
     char result[200],*tmpchar1=NULL,*tmpchar2=NULL;
+    pid_t status=0;
     FILE *fp=NULL;
     while(bypass_charge == 1)
     {
         fp=(*((int *)android_version) < 10)?popen("dumpsys activity o | grep ' (top-activity)'", "r"):popen("dumpsys activity lru | grep ' TOP'", "r");
         if(fp == NULL) printf_with_time("无法创建管道通信！");
         fgets(result, sizeof(result), fp);
-        if(pclose(fp))
+        status=pclose(fp);
+        if(status == -1)
+        {
+            printf_with_time("无法关闭管道通信！");
+            sleep(5);
+            pthread_testcancel();
+            continue;
+        }
+        else if(!WIFEXITED(status))
         {
             snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "Shell命令执行出错：%s", strerror(errno));
             printf_with_time(chartmp);
@@ -55,18 +67,16 @@ void *get_foreground_appname(void *android_version)
             continue;
         }
         fp=NULL;
-        tmpchar1=strstr(result, " TOP");
+        tmpchar1=(*((int *)android_version) < 10)?strstr(result, "/TOP"):strstr(result, " TOP");
         if(tmpchar1 == NULL)
         {
             can_not_get:
-            pclose(fp);
-            fp=NULL;
             printf_with_time("无法获取前台应用包名！");
             sleep(5);
             pthread_testcancel();
             continue;
         }
-        tmpchar2=(*((int *)android_version) < 10)?strstr(strstr(tmpchar1, ":"), ":"):strstr(tmpchar1, ":");
+        tmpchar2=(*((int *)android_version) < 10)?strstr(strstr(tmpchar1, ":")+1, ":"):strstr(tmpchar1, ":");
         if(tmpchar2 == NULL) goto can_not_get;
         tmpchar1=strstr(tmpchar2, "/");
         if(tmpchar1 == NULL) goto can_not_get;

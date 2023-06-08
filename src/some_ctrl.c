@@ -114,7 +114,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
         pthread_create(thread1, NULL, get_foreground_appname, (void *)android_version);
         pthread_detach(*thread1);
     }
-    else if(bypass_charge == 1 && strlen((char *)ForegroundAppName) && !strcmp((char *)ForegroundAppName, "chase535"))
+    else if(bypass_charge == 1 && strlen((char *)ForegroundAppName) && strcmp((char *)ForegroundAppName, "chase535"))
     {
         check_read_file(bypass_charge_file);
         fp=fopen(bypass_charge_file, "rt");
