@@ -3,7 +3,6 @@
 #include "string.h"
 #include "unistd.h"
 #include "pthread.h"
-#include "errno.h"
 #include "sys/wait.h"
 #include "sys/types.h"
 
