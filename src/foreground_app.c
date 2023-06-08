@@ -43,7 +43,7 @@ int check_android_version()
 
 void *get_foreground_appname(void *android_version)
 {
-    char result[200],*tmpchar1=NULL,*tmpchar2=NULL;
+    char result[200],screen[10],*tmpchar1=NULL,*tmpchar2=NULL;
     pid_t status=0;
     FILE *fp=NULL;
     while(bypass_charge == 1)
@@ -55,6 +55,7 @@ void *get_foreground_appname(void *android_version)
         status=pclose(fp);
         if(status == -1)
         {
+            close_pipe_err:
             printf_with_time("无法关闭管道通信！");
             sleep(5);
             pthread_testcancel();
@@ -62,12 +63,33 @@ void *get_foreground_appname(void *android_version)
         }
         else if(!WIFEXITED(status))
         {
-            printf_with_time("Shell命令执行出错！");
+            printf_with_time("获取前台应用包名的Shell命令执行出错！");
             sleep(5);
             pthread_testcancel();
             continue;
         }
         fp=NULL;
+        fp=popen("dumpsys deviceidle | grep 'mScreenOn'", "r");
+        if(fp == NULL) printf_with_time("无法创建管道通信！");
+        fgets(screen, sizeof(screen), fp);
+        line_feed(screen);
+        status=pclose(fp);
+        if(status == -1) goto close_pipe_err;
+        else if(!WIFEXITED(status))
+        {
+            printf_with_time("获取屏幕是否开启的Shell命令执行出错！");
+            sleep(5);
+            pthread_testcancel();
+            continue;
+        }
+        fp=NULL;
+        if(strcmp(strstr(screen, "=")+1, "true"))
+        {
+            strcpy((char *)ForegroundAppName, "screen_is_off");
+            sleep(5);
+            pthread_testcancel();
+            continue;
+        }
         tmpchar1=(*((int *)android_version) < 10)?strstr(result, "/TOP"):strstr(result, " TOP");
         if(tmpchar1 == NULL)
         {

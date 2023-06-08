@@ -93,7 +93,7 @@ int main()
     char *temp_tmp,*temp_sensor,*temp_sensor_dir,*buffer,*msg,current_max_char[20],highest_temp_current_char[20],thermal[15],last_appname[100];
     uchar step_charge=1,step_charge_file=0,power_control=1,force_temp=1,has_force_temp=0,current_change=1,battery_status=1,battery_capacity=1,tmp[5]={0};
     int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0;
-    int power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0,is_bypass=0,can_get_foreground=0;
+    int power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0,is_bypass=0,can_get_foreground=0,screen_is_off=0;
     uint option_last_modify_time=0;
     regex_t temp_re,current_max_re,current_limit_re;
     regmatch_t temp_pmatch,current_max_pmatch,current_limit_pmatch;
@@ -332,8 +332,8 @@ int main()
                 (read_one_option("STEP_CHARGING_DISABLED") == 1)?step_charge_ctl("0"):step_charge_ctl("1");
             if(current_change && can_get_foreground)
             {
-                bypass_charge_ctl(&thread1, &can_get_foreground, last_appname, &is_bypass, current_max_file, current_max_file_num);
-                if(is_bypass)
+                bypass_charge_ctl(&thread1, &can_get_foreground, last_appname, &is_bypass, &screen_is_off, current_max_file, current_max_file_num);
+                if(is_bypass && !screen_is_off)
                 {
                     sleep(read_one_option("CYCLE_TIME"));
                     continue;
@@ -376,8 +376,8 @@ int main()
             if(power_control) powel_ctl(tmp);
             if(current_change && can_get_foreground)
             {
-                bypass_charge_ctl(&thread1, &can_get_foreground, last_appname, &is_bypass, current_max_file, current_max_file_num);
-                if(is_bypass)
+                bypass_charge_ctl(&thread1, &can_get_foreground, last_appname, &is_bypass, &screen_is_off, current_max_file, current_max_file_num);
+                if(is_bypass && !screen_is_off)
                 {
                     sleep(read_one_option("CYCLE_TIME"));
                     continue;

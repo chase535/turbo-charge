@@ -103,7 +103,7 @@ void powel_ctl(uchar tmp[])
     }
 }
 
-void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appname[100], int *is_bypass, char **current_max_file, int current_max_file_num)
+void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appname[100], int *is_bypass, int *screen_is_off, char **current_max_file, int current_max_file_num)
 {
     char name[100];
     uchar in_list=0;
@@ -116,44 +116,60 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
     }
     else if(bypass_charge == 1 && strlen((char *)ForegroundAppName) && strcmp((char *)ForegroundAppName, "chase535"))
     {
-        check_read_file(bypass_charge_file);
-        fp=fopen(bypass_charge_file, "rt");
-        while(fgets(name, sizeof(name), fp) != NULL)
+        if(strcmp((char *)ForegroundAppName, "screen_is_off"))
         {
-            line_feed(name);
-            if(!strlen(name) || (strstr(name, "#") != NULL && !strstr(name, "#"))) continue;
-            if(!strcmp((char *)ForegroundAppName, name)) in_list=1;
-        }
-        fclose(fp);
-        fp=NULL;
-        if(in_list)
-        {
-            if(!(*is_bypass))
+            if(*screen_is_off)
             {
-                snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "当前前台应用为%s，位于旁路供电配置列表中，开始“伪”旁路供电", ForegroundAppName);
-                printf_with_time(chartmp);
+                if(*is_bypass) printf_with_time("手机屏幕开启，恢复关闭前状态");
+                *screen_is_off=0;
+            }
+            check_read_file(bypass_charge_file);
+            fp=fopen(bypass_charge_file, "rt");
+            while(fgets(name, sizeof(name), fp) != NULL)
+            {
+                line_feed(name);
+                if(!strlen(name) || (strstr(name, "#") != NULL && !strstr(name, "#"))) continue;
+                if(!strcmp((char *)ForegroundAppName, name)) in_list=1;
+            }
+            fclose(fp);
+            fp=NULL;
+            if(in_list)
+            {
+                if(!(*is_bypass))
+                {
+                    snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "当前前台应用为%s，位于旁路供电配置列表中，开始“伪”旁路供电", ForegroundAppName);
+                    printf_with_time(chartmp);
+                }
+                else
+                {
+                    if(strcmp(last_appname, (char *)ForegroundAppName))
+                    {
+                        snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "前台应用切换为%s，位于旁路供电配置列表中，保持“伪”旁路供电", ForegroundAppName);
+                        printf_with_time(chartmp);
+                    }
+                }
+                *is_bypass=1;
+                set_array_value(current_max_file, current_max_file_num, BYPASS_CHARGE_CURRENT);
             }
             else
             {
-                if(strcmp(last_appname, (char *)ForegroundAppName))
+                if(*is_bypass)
                 {
-                    snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "前台应用切换为%s，位于旁路供电配置列表中，保持“伪”旁路供电", ForegroundAppName);
+                    snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "前台应用切换为%s，不在旁路供电配置列表中，恢复正常充电", ForegroundAppName);
                     printf_with_time(chartmp);
+                    *is_bypass=0;
                 }
             }
-            *is_bypass=1;
-            set_array_value(current_max_file, current_max_file_num, BYPASS_CHARGE_CURRENT);
+            strcpy(last_appname, (char *)ForegroundAppName);
         }
         else
         {
-            if(*is_bypass)
+            if(!(*screen_is_off))
             {
-                snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "前台应用切换为%s，不在旁路供电配置列表中，恢复正常充电", ForegroundAppName);
-                printf_with_time(chartmp);
-                *is_bypass=0;
+                if(*is_bypass) printf_with_time("手机屏幕关闭，恢复正常充电");
+                *screen_is_off=1;
             }
         }
-        strcpy(last_appname, (char *)ForegroundAppName);
     }
     else if(strlen(last_appname)) memset(last_appname, 0, 100*sizeof(char));
 }
