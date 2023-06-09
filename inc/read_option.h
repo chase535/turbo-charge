@@ -3,7 +3,7 @@
 
 #include "main.h"
 
-void read_options(uint *last_modify_time, uchar num, uchar tmp[], uchar is_temp_wall);
+void *read_options();
 int read_one_option(char *name);
 
 #endif

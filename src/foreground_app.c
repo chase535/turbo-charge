@@ -7,6 +7,8 @@
 #include "sys/types.h"
 
 #include "printf_with_time.h"
+#include "my_thread.h"
+#include "read_option.h"
 #include "foreground_app.h"
 
 /*
@@ -16,11 +18,18 @@
 */
 void *get_foreground_appname(void *android_version)
 {
-    char result[200],screen[50],*tmpchar1=NULL,*tmpchar2=NULL;
-    pid_t status=0;
-    FILE *fp=NULL;
-    while(bypass_charge == 1)
+    while(1)
     {
+        //在循环体内定义变量，这样变量仅存在于单次循环，每次循环结束后变量自动释放，循环开始时变量重新定义
+        char result[200],screen[50],*tmpchar1=NULL,*tmpchar2=NULL;
+        pid_t status=0;
+        FILE *fp=NULL;
+        //由于牵扯到多进程的相互同步，需要使用互斥锁，所以在循环体内进行判断是否启用，而不是将此作为循环条件
+        if(read_one_option("BYPASS_CHARGE") != 1)
+        {
+            pthread_mutex_unlock(&mutex_options);
+            break;
+        }
         //判断是否为锁屏状态，如果是则无法获取应用包名，直接将全局变量ForegroundAppName赋值为screen_is_off
         fp=popen("dumpsys deviceidle | grep 'mScreenOn'", "r");
         if(fp == NULL) printf_with_time("无法创建管道通信，跳过本次循环！");
@@ -43,7 +52,9 @@ void *get_foreground_appname(void *android_version)
         //若为true则没有锁屏，若为false则处于锁屏状态
         if(strcmp(strstr(screen, "=")+1, "true"))
         {
+            pthread_mutex_lock(&mutex_foreground_app);
             strcpy((char *)ForegroundAppName, "screen_is_off");
+            pthread_mutex_unlock(&mutex_foreground_app);
             sleep(5);
             pthread_testcancel();
             continue;
@@ -98,14 +109,16 @@ void *get_foreground_appname(void *android_version)
         *tmpchar1='\0';
         pthread_testcancel();
         //将前台应用包名赋值给ForegroundAppName
+        pthread_mutex_lock(&mutex_foreground_app);
         strncpy((char *)ForegroundAppName, tmpchar2+1, sizeof(ForegroundAppName)/sizeof(char)-1);
-        tmpchar1=NULL;
-        tmpchar2=NULL;
+        pthread_mutex_unlock(&mutex_foreground_app);
         sleep(5);
         pthread_testcancel();
     }
     //如果配置文件的BYPASS_CHARGE值不为1，则退出循环并将ForegroundAppName清空
+    pthread_mutex_lock(&mutex_foreground_app);
     memset((void *)ForegroundAppName, 0, sizeof(ForegroundAppName));
+    pthread_mutex_unlock(&mutex_foreground_app);
     return NULL;
 }
 

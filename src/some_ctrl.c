@@ -5,7 +5,9 @@
 #include "pthread.h"
 
 #include "some_ctrl.h"
+#include "read_option.h"
 #include "value_set.h"
+#include "my_thread.h"
 #include "foreground_app.h"
 #include "printf_with_time.h"
 
@@ -34,74 +36,56 @@ void charge_ctl(char *i)
     }
 }
 
-//电量控制，tmp为数组，用来与主函数进行通信
-void powel_ctl(uchar tmp[])
+//电量控制
+void powel_ctl(int *last_charge_stop, int *charge_is_stop)
 {
-    int power_control=0,charge_stop=0,charge_start=0,i=0;
-    for(i=0;i < OPTION_QUANTITY;i++)
+    int charge_stop=read_one_option("CHARGE_STOP"),power_int=0;
+    char power[10];
+    if(*last_charge_stop == -1) *last_charge_stop=charge_stop;
+    if(read_one_option("POWER_CTRL") == 1)
     {
-        if(!strcmp(options[i].name, "POWER_CTRL")) power_control=options[i].value;
-        else if(!strcmp(options[i].name, "CHARGE_STOP")) charge_stop=options[i].value;
-        else if(!strcmp(options[i].name, "CHARGE_START")) charge_start=options[i].value;
-    }
-    if(power_control == 1)
-    {
-        FILE *fd;
-        struct stat statbuf;
-        check_read_file("/sys/class/power_supply/battery/capacity");
-        stat("/sys/class/power_supply/battery/capacity", &statbuf);
-        char power[statbuf.st_size+1];
-        fd=fopen("/sys/class/power_supply/battery/capacity", "rt");
-        fgets(power, 5, fd);
-        fclose(fd);
-        fd=NULL;
-        line_feed(power);
-        if(tmp[2] && tmp[4])
+        read_file("/sys/class/power_supply/battery/capacity", power, sizeof(power));
+        power_int=atoi(power);
+        if(*last_charge_stop != charge_stop && *charge_is_stop)
         {
-            if(atoi(power) < charge_stop)
+            if(power_int < charge_stop)
             {
-                snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新的停止充电的电量阈值高于旧的电量阈值，且手机当前电量为%s%%，小于新的电量阈值，恢复充电", power);
+                snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "手机当前电量为%d%%，小于新的电量阈值，恢复充电", power_int);
                 printf_with_time(chartmp);
+                *charge_is_stop=0;
                 charge_ctl("1");
-                tmp[2]=0;
             }
             else
             {
-                snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新的停止充电的电量阈值高于旧的电量阈值，但手机当前电量为%s%%，大于等于新的电量阈值，停止充电", power);
+                snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "手机当前电量为%d%%，大于等于新的电量阈值，保持停止充电状态", power_int);
                 printf_with_time(chartmp);
                 charge_ctl("0");
-                tmp[2]=1;
             }
-            tmp[4]=0;
+            *last_charge_stop=charge_stop;
         }
-        if(atoi(power) >= charge_stop)
+        if(power_int >= charge_stop && !(*charge_is_stop))
         {
-            if(!tmp[2])
-            {
-                snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "当前电量为%s%%，大于等于停止充电的电量阈值，停止充电", power);
-                printf_with_time(chartmp);
-                tmp[2]=1;
-            }
+            snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "当前电量为%d%%，大于等于停止充电的电量阈值，停止充电", power_int);
+            printf_with_time(chartmp);
+            *charge_is_stop=1;
             charge_ctl("0");
         }
-        if(atoi(power) <= charge_start)
+        if(power_int <= read_one_option("CHARGE_START") && *charge_is_stop)
         {
-            if(tmp[2])
-            {
-                snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "当前电量为%s%%，小于等于恢复充电的电量阈值，恢复充电", power);
-                printf_with_time(chartmp);
-                tmp[2]=0;
-            }
+            snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "当前电量为%d%%，小于等于恢复充电的电量阈值，恢复充电", power_int);
+            printf_with_time(chartmp);
+            *charge_is_stop=0;
             charge_ctl("1");
         }
     }
     else
     {
-        if(tmp[2])
+        if(*charge_is_stop)
         {
             printf_with_time("电量控制关闭，恢复充电");
-            tmp[2]=0;
+            *charge_is_stop=0;
         }
+        if(*last_charge_stop != charge_stop) *last_charge_stop=charge_stop;
         charge_ctl("1");
     }
 }
@@ -122,19 +106,19 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
     uchar in_list=0;
     FILE *fp;
     /*
-    为了不使获取前台应用包名拖累主程序的执行效率，所以使用了子进程方案
-    如果配置文件的BYPASS_CHARGE值为1且ForegroundAppName值为空(没有子进程正在执行)，则创建子进程
-    此子进程用来获取前台应用包名
-    bypass_charge为全局变量，在读取配置文件时跟随配置文件的BYPASS_CHARGE实时进行更改
+    为了不使获取前台应用包名拖累主程序的执行效率，所以使用了子线程方案
+    如果配置文件的BYPASS_CHARGE值为1且ForegroundAppName值为空(没有子线程正在执行)，则创建子线程
+    此子线程用来获取前台应用包名
     */
-    if(bypass_charge == 1 && !strlen((char *)ForegroundAppName))
+    pthread_mutex_lock(&mutex_foreground_app);
+    if(read_one_option("BYPASS_CHARGE") == 1 && !strlen((char *)ForegroundAppName))
     {
         strcpy((char *)ForegroundAppName, "chase535");
         pthread_create(thread1, NULL, get_foreground_appname, (void *)android_version);
         pthread_detach(*thread1);
     }
     //如果ForegroundAppName值不是初始值，则代表获取到了前台应用包名，则进行匹配并作出相应行动
-    else if(bypass_charge == 1 && strlen((char *)ForegroundAppName) && strcmp((char *)ForegroundAppName, "chase535"))
+    else if(read_one_option("BYPASS_CHARGE") == 1 && strlen((char *)ForegroundAppName) && strcmp((char *)ForegroundAppName, "chase535"))
     {
         //如果手机从锁屏状态恢复且在锁屏前处于“伪”旁路供电模式，则恢复此模式
         if(strcmp((char *)ForegroundAppName, "screen_is_off"))
@@ -163,7 +147,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
                 //如果之前不在“伪”旁路供电模式而切换应用后在了，就打印相关信息
                 if(!(*is_bypass))
                 {
-                    snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "当前前台应用为%s，位于旁路供电配置列表中，进入“伪”旁路供电模式", ForegroundAppName);
+                    snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "当前前台应用为%s，位于“伪”旁路供电配置列表中，进入“伪”旁路供电模式", ForegroundAppName);
                     printf_with_time(chartmp);
                     *is_bypass=1;
                 }
@@ -172,7 +156,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
                 {
                     if(strcmp(last_appname, (char *)ForegroundAppName))
                     {
-                        snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "前台应用切换为%s，位于旁路供电配置列表中，保持“伪”旁路供电模式", ForegroundAppName);
+                        snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "前台应用切换为%s，位于“伪”旁路供电配置列表中，保持“伪”旁路供电模式", ForegroundAppName);
                         printf_with_time(chartmp);
                     }
                 }
@@ -184,7 +168,9 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
                 //如果之前在“伪”旁路供电模式而切换应用后不在，就打印相关信息
                 if(*is_bypass)
                 {
-                    snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "前台应用切换为%s，不在旁路供电配置列表中，恢复正常充电模式", ForegroundAppName);
+                    //分为两种情况，一种为未切换前台应用但应用包名从“伪”旁路供电配置列表中移除，一种为切换到了“伪”旁路供电配置列表中没有的应用
+                    if(!strcmp(last_appname, (char *)ForegroundAppName)) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "%s已从“伪”旁路供电配置列表中移除，恢复正常充电模式", ForegroundAppName);
+                    else snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "前台应用切换为%s，不在“伪”旁路供电配置列表中，恢复正常充电模式", ForegroundAppName);
                     printf_with_time(chartmp);
                     *is_bypass=0;
                 }
@@ -201,6 +187,11 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
             }
         }
     }
-    //子进程结束运行或者获取不到前台应用包名，则清空上一次获取到的前台应用包名
-    else if(strlen(last_appname)) memset(last_appname, 0, 100*sizeof(char));
+    //子线程结束运行或者获取不到前台应用包名，则清空上一次获取到的前台应用包名并恢复正常充电模式
+    else
+    {
+        if(strlen(last_appname)) memset(last_appname, 0, 100*sizeof(char));
+        if(*is_bypass) *is_bypass=0;
+    }
+    pthread_mutex_unlock(&mutex_foreground_app);
 }
