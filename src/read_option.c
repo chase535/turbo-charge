@@ -28,7 +28,11 @@ void *read_options()
         check_read_file(option_file);
         //先获取文件修改时间，若本次的文件修改时间与上次相等，证明配置文件未修改，跳过读取
         stat(option_file, &statbuf);
-        if(statbuf.st_mtime == option_last_modify_time) continue;
+        if(statbuf.st_mtime == option_last_modify_time)
+        {
+            sleep(5);
+            continue;
+        }
         pthread_mutex_lock(&mutex_options);
         fc=fopen(option_file, "rt");
         while(fgets(option, sizeof(option), fc) != NULL)
