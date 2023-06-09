@@ -52,19 +52,13 @@ tempwall为是否启用超过一定温度时强制向温度文件写入28℃
 */
 void set_temp(char *temp_sensor, char **temp_file, int temp_file_num, uchar tempwall)
 {
-    FILE *fq;
     char thermal[15],bat_temp[6];
     int temp_int=0;
     //读取温度文件
-    check_read_file(temp_sensor);
-    fq=fopen(temp_sensor, "rt");
-    fgets(thermal, 10, fq);
-    fclose(fq);
-    fq=NULL;
-    line_feed(thermal);
+    read_file(temp_sensor, thermal, sizeof(thermal));
     temp_int=atoi(thermal);
-    //若温度为正数，则将温度扩展为6位数并取前3位
-    //若温度为负数，则将温度扩展为负号+5位数并取负号+前3位
+    //若温度为正数，则将温度扩展为6位数并取前3位数
+    //若温度为负数，则将温度扩展为负号+5位数并取负号+前3位数
     (temp_int < 0)?snprintf(bat_temp, 5, "%06d", temp_int):snprintf(bat_temp, 4, "%05d", temp_int);
     temp_int=atoi(bat_temp);
     snprintf(bat_temp, 6, "%d", temp_int);

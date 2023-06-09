@@ -11,6 +11,7 @@
 #include "main.h"
 #include "read_option.h"
 #include "some_ctrl.h"
+#include "my_thread.h"
 #include "printf_with_time.h"
 #include "value_set.h"
 #include "foreground_app.h"
@@ -85,6 +86,18 @@ void check_read_file(char *file)
     }
 }
 
+//读取文件内容，若文件不存在则程序强制退出
+void read_file(char *file_path, char *char_var, int max_char_num)
+{
+    FILE *fp;
+    check_read_file(file_path);
+    fp=fopen(file_path, "rt");
+    fgets(char_var, max_char_num, fp);
+    fclose(fp);
+    fp=NULL;
+    line_feed(char_var);
+}
+
 //完全释放由melloc、celloc申请的二级指针的内存
 void free_celloc_memory(char ***addr, int num)
 {
@@ -108,13 +121,12 @@ int main()
     FILE *fq;
     char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10];
     char *temp_tmp,*temp_sensor,*temp_sensor_dir,*buffer,*msg,current_max_char[20],highest_temp_current_char[20],thermal[15],last_appname[100];
-    uchar step_charge=1,step_charge_file=0,power_control=1,force_temp=1,has_force_temp=0,current_change=1,battery_status=1,battery_capacity=1,tmp[5]={0};
-    int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0;
-    int power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0,is_bypass=0,can_get_foreground=0,screen_is_off=0;
-    uint option_last_modify_time=0;
+    uchar step_charge=1,step_charge_file=0,power_control=1,force_temp=1,has_force_temp=0,current_change=1,battery_status=1,battery_capacity=1;
+    int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,last_charge_stop=-1,charge_is_stop=0,is_first_time=1;
+    int power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0,is_bypass=0,can_get_foreground=0,screen_is_off=0,last_temp_max=-1,last_charge_status=0;
     regex_t temp_re,current_max_re,current_limit_re;
     regmatch_t temp_pmatch,current_max_pmatch,current_limit_pmatch;
-    pthread_t thread1;
+    pthread_t thread1,thread2;
     struct stat statbuf;
     printf("作者：酷安@诺鸡鸭\n");
     printf("GitHub开源地址：https://github.com/chase535/turbo-charge\n\n");
@@ -343,12 +355,13 @@ int main()
             printf_with_time(chartmp);
         }
     }
-    //如果有电流文件，则判断安卓版本，为以后“伪”旁路供电做准备
+    //如果有电流文件，则获取安卓版本，为以后“伪”旁路供电做准备
     if(current_change) can_get_foreground=check_android_version();
-    read_options(&option_last_modify_time, 0, tmp, 0);
+    //创建一个子线程用来读取配置文件
+    pthread_create(&thread2, NULL, read_options, NULL);
+    pthread_detach(thread2);
     snprintf(current_max_char, 20, "%d", read_one_option("CURRENT_MAX"));
     snprintf(highest_temp_current_char, 20, "%d", read_one_option("HIGHEST_TEMP_CURRENT"));
-    bypass_charge=read_one_option("BYPASS_CHARGE");
     printf_with_time("文件检测完毕，程序开始运行");
     //写入初值
     set_value("/sys/kernel/fast_charge/force_fast_charge", "1");
@@ -366,10 +379,8 @@ int main()
     while(1)
     {
         //读配置文件并赋值给程序内部变量
-        read_options(&option_last_modify_time, 1, tmp, 0);
         snprintf(current_max_char, 20, "%d", read_one_option("CURRENT_MAX"));
         snprintf(highest_temp_current_char, 20, "%d", read_one_option("HIGHEST_TEMP_CURRENT"));
-        bypass_charge=read_one_option("BYPASS_CHARGE");
         set_array_value(current_limit_file, current_limit_file_num, "-1");
         //如果无法判断手机的充电状态，则很多功能无法实现，剩余代码很简单
         if(!battery_status)
@@ -399,12 +410,7 @@ int main()
         }
         if(force_temp && read_one_option("FORCE_TEMP") == 1 && !has_force_temp) has_force_temp=1;
         //读取手机电量
-        check_read_file("/sys/class/power_supply/battery/capacity");
-        fq=fopen("/sys/class/power_supply/battery/capacity", "rt");
-        fgets(power, 5, fq);
-        fclose(fq);
-        fq=NULL;
-        line_feed(power);
+        read_file("/sys/class/power_supply/battery/capacity", power, sizeof(power));
         //阶梯充电，无论是否在充电，都会跟随配置文件进行更改
         if(step_charge == 1)
         {
@@ -413,27 +419,22 @@ int main()
         }
         else if(step_charge == 2) (read_one_option("STEP_CHARGING_DISABLED") == 1)?step_charge_ctl("0"):step_charge_ctl("1");
         //读取充电状态
-        check_read_file("/sys/class/power_supply/battery/status");
-        fq=fopen("/sys/class/power_supply/battery/status", "rt");
-        fgets(charge, 20, fq);
-        fclose(fq);
-        fq=NULL;
-        line_feed(charge);
+        read_file("/sys/class/power_supply/battery/status", charge, sizeof(charge));
         //如果手机在充电，则根据配置文件进行相应操作
         if(strcmp(charge, "Discharging"))
         {
-            //此处通过tmp数组来确定上次循环时的充电状态以及是否是程序的第一次循环
-            if(tmp[0] || !tmp[1])
+            //此处通过两个变量来确定上次循环时的充电状态以及是否是程序的第一次循环
+            if(is_first_time || !last_charge_status)
             {
                 printf_with_time("充电器已连接");
-                tmp[0]=0;
-                tmp[1]=1;
+                last_charge_status=1;
+                is_first_time=0;
             }
             //充电时强制显示28度功能
             if(force_temp && read_one_option("FORCE_TEMP") == 1) set_array_value(temp_file, temp_file_num, "280");
             else if(has_force_temp) set_temp(temp_sensor, temp_file, temp_file_num, 0);
             //电量控制功能
-            if(power_control) powel_ctl(tmp);
+            if(power_control) powel_ctl(&last_charge_stop,&charge_is_stop);
             //如果电流文件存在且安卓版本大于等于7，则执行“伪”旁路供电函数
             if(current_change && can_get_foreground)
             {
@@ -449,12 +450,7 @@ int main()
             if(read_one_option("TEMP_CTRL") == 1 && temp_sensor_num != 100 && current_change)
             {
                 //读取温度传感器所获取的温度值
-                check_read_file(temp_sensor);
-                fq=fopen(temp_sensor, "rt");
-                fgets(thermal, 10, fq);
-                fclose(fq);
-                fq=NULL;
-                line_feed(thermal);
+                read_file(temp_sensor, thermal, sizeof(thermal));
                 temp_int=atoi(thermal);
                 //如果温度大于等于配置文件所设置的值，则打印相关信息并进入另一个循环中，等待相关事件的发生后退出二层循环
                 if(temp_int >= read_one_option("TEMP_MAX")*1000)
@@ -465,23 +461,18 @@ int main()
                     while(!is_bypass)
                     {
                         //每次循环重新读取配置文件及温度值
-                        read_options(&option_last_modify_time, 1, tmp, 1);
                         snprintf(current_max_char, 20, "%d", read_one_option("CURRENT_MAX"));
                         snprintf(highest_temp_current_char, 20, "%d", read_one_option("HIGHEST_TEMP_CURRENT"));
-                        bypass_charge=read_one_option("BYPASS_CHARGE");
                         set_array_value(current_limit_file, current_limit_file_num, "-1");
                         if(force_temp && read_one_option("FORCE_TEMP") == 1 && !has_force_temp) has_force_temp=1;
-                        check_read_file(temp_sensor);
-                        fq=fopen(temp_sensor, "rt");
-                        fgets(thermal, 10, fq);
-                        fclose(fq);
-                        fq=NULL;
-                        line_feed(thermal);
+                        read_file(temp_sensor, thermal, sizeof(thermal));
                         temp_int=atoi(thermal);
                         //此tmp数组在读取配置文件的函数中，若配置文件的TEMP_MAX发生改变则会得到相应更改
                         //作用是判断新的降低充电电流的温度阈值与旧的温度阈值的大小
-                        if(tmp[3])
+                        if(last_temp_max == -1) last_temp_max=read_one_option("TEMP_MAX");
+                        if(last_temp_max != read_one_option("TEMP_MAX"))
                         {
+                            last_temp_max=read_one_option("TEMP_MAX");
                             if(temp_int < read_one_option("TEMP_MAX")*1000)
                             {
                                 snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新的降低充电电流的温度阈值高于旧的温度阈值，且手机温度小于新的温度阈值，恢复充电电流为%sμA", current_max_char);
@@ -493,21 +484,15 @@ int main()
                                 snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "新的降低充电电流的温度阈值高于旧的温度阈值，但手机温度大于等于新的温度阈值，限制充电电流为%sμA", highest_temp_current_char);
                                 printf_with_time(chartmp);
                             }
-                            tmp[3]=0;
+                            last_temp_max=read_one_option("TEMP_MAX");
                         }
                         //判断手机充电状态
-                        check_read_file("/sys/class/power_supply/battery/status");
-                        fq=fopen("/sys/class/power_supply/battery/status", "rt");
-                        fgets(charge, 20, fq);
-                        fclose(fq);
-                        fq=NULL;
-                        line_feed(charge);
+                        read_file("/sys/class/power_supply/battery/status", charge, sizeof(charge));
                         if(!strcmp(charge, "Discharging"))
                         {
                             snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "充电器断开连接，恢复充电电流为%sμA", current_max_char);
                             printf_with_time(chartmp);
-                            tmp[0]=1;
-                            tmp[1]=0;
+                            last_charge_status=0;
                             break;
                         }
                         //判断温度是否小于恢复快充的温度阈值
@@ -537,7 +522,7 @@ int main()
                         if(force_temp && read_one_option("FORCE_TEMP") == 1) set_array_value(temp_file, temp_file_num, "280");
                         else if(has_force_temp) set_temp(temp_sensor, temp_file, temp_file_num, 0);
                         //电量控制功能
-                        if(power_control) powel_ctl(tmp);
+                        if(power_control) powel_ctl(&last_charge_stop,&charge_is_stop);
                         sleep(read_one_option("CYCLE_TIME"));
                     }
                 }
@@ -545,40 +530,45 @@ int main()
             //向电流文件中写入最大充电电流
             if(current_change) set_array_value(current_max_file, current_max_file_num, current_max_char);
         }
-        //如果手机未在充电，则只会刷新显示温度，以及若执行了获取前台应用包名的子进程，则取消此子进程
+        //如果手机未在充电，则只会刷新显示温度，以及若执行了获取前台应用包名的子线程，则取消此子线程
         else
         {
-            //此处通过tmp数组来确定上次循环时的充电状态以及是否是程序的第一次循环
-            if(!tmp[1] && !tmp[0])
+            //此处通过两个变量来确定上次循环时的充电状态以及是否是程序的第一次循环
+            if(is_first_time)
             {
                 printf_with_time("充电器未连接");
-                tmp[0]=1;
+                is_first_time=0;
+                last_charge_status=0;
             }
-            else if(!tmp[0])
+            else if(last_charge_status)
             {
                 printf_with_time("充电器断开连接");
-                tmp[0]=1;
+                last_charge_status=0;
             }
-            //通过判断全局变量ForegroundAppName是否为空来判断获取前台应用包名的子进程是否在执行
-            //若在执行，则取消此子进程，并清空ForegroundAppName
+            //通过判断全局变量ForegroundAppName是否为空来判断获取前台应用包名的子线程是否在执行
+            //若在执行，则取消此子线程，并清空ForegroundAppName
+            pthread_mutex_lock(&mutex_foreground_app);
             if(strlen((char *)ForegroundAppName))
             {
+                pthread_mutex_unlock(&mutex_foreground_app);
                 printf_with_time("手机未在充电状态，“伪”旁路供电功能暂时停用");
                 pthread_cancel(thread1);
                 /*
-                在子进程中，使用sleep(5)来实现5秒循环获取前台应用
-                且在sleep(5)后紧跟pthread_testcancel()函数来检查子进程是否收到了取消信号
-                此处等待1秒以确保子进程能够处于等待5秒的过程中
-                这样在5秒过后就能直接在取消点取消子进程，从而使ForegroundAppName不会被子进程重新赋值
+                在子线程中，使用sleep(5)来实现5秒循环获取前台应用
+                且在sleep(5)后紧跟pthread_testcancel()函数来检查子线程是否收到了取消信号
+                此处等待1秒以确保子线程能够处于等待5秒的过程中或使子线程完成等待5秒
+                这样在完成等待后就能直接在取消点取消子线程，从而使ForegroundAppName不会被子线程重新赋值
                 */
                 sleep(1);
+                pthread_mutex_lock(&mutex_foreground_app);
                 memset((void *)ForegroundAppName, 0, sizeof(ForegroundAppName));
             }
+            pthread_mutex_unlock(&mutex_foreground_app);
             //此标识符代表手机是否处于“伪”旁路供电模式
             //如果在停止充电前手机处于“伪”旁路供电模式，则停止充电后将此标识符置0
             if(is_bypass) is_bypass=0;
             //因为断电也有可能是由电量控制引起的，所以此处执行电量控制函数
-            if(power_control) powel_ctl(tmp);
+            if(power_control) powel_ctl(&last_charge_stop,&charge_is_stop);
             //此标识符代表手机是否通过此程序修改了电池温度
             //如果修改了，则电池温度无法再自动刷新，需要通过此程序进行刷新
             if(has_force_temp)
