@@ -6,6 +6,7 @@
 #include "regex.h"
 #include "malloc.h"
 #include "pthread.h"
+#include "time.h"
 #include "sys/stat.h"
 
 #include "main.h"
@@ -59,13 +60,16 @@ void line_feed(char *line)
 
 /*
 检查文件是否可读
-若文件存在且不可读，尝试修改权限后重新检查是否可读
+若文件存在且不可读，延时0.25秒后重新检查
+检查两次是为了兼容在本程序检查时刚好被系统的其他进程锁住（如刚好进行了文件的保存操作）导致的无法读取
+若仍不可读尝试修改权限后重新检查是否可读
 若文件不存在或修改权限后仍不可读，则强制停止程序运行
 */
 void check_read_file(char *file)
 {
     if(!access(file, F_OK))
     {
+        check_permission:
         if(access(file, R_OK))
         {
             //权限0644不得简写成644
@@ -80,9 +84,15 @@ void check_read_file(char *file)
     }
     else
     {
-        snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "找不到%s文件，程序强制退出！", file);
-        printf_with_time(chartmp);
-        exit(999);
+        struct timespec req={0, 250000000L};
+        nanosleep(&req, NULL);
+        if(!access(file, F_OK)) goto check_permission;
+        else
+        {
+            snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "找不到%s文件，程序强制退出！", file);
+            printf_with_time(chartmp);
+            exit(999);
+        }
     }
 }
 
