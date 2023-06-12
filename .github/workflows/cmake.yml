@@ -30,7 +30,6 @@ jobs:
       - name: Set C and C++ compiler
         run: |
           echo "CC=${GCC_CLONE_PATH}/bin/aarch64-linux-musl-gcc" >> ${GITHUB_ENV}
-          echo "CXX=${GCC_CLONE_PATH}/bin/aarch64-linux-musl-g++" >> ${GITHUB_ENV}
       - name: Use CMake to generate Makefile
         run: cmake -B build
       - name: Build module
