@@ -5,7 +5,7 @@ LATESTARTSERVICE=true
 
 check_file()
 {
-    ui_print "--- 检查所需文件是否存在 ---"
+    ui_print " --- 检查所需文件是否存在 ---"
     temp_file=$(ls /sys/class/power_supply/*/temp 2>/dev/null)
     current_max_file=$(ls /sys/class/power_supply/*/constant_charge_current_max /sys/class/power_supply/*/fast_charge_current /sys/class/power_supply/*/thermal_input_current 2>/dev/null)
     for i in $(ls /sys/class/thermal | grep "thermal_zone"); do
@@ -66,26 +66,7 @@ check_file()
         rm -rf ${MODPATH}
         exit 1
     fi
-    ui_print "- 检查完毕，开始安装"
-}
-
-volume_keytest()
-{
-    ui_print "--- 音量键测试 ---"
-    ui_print "  请按音量+或-键"
-    (getevent -lc 1 2>&1 | grep VOLUME | grep " DOWN" > ${TMPDIR}/events) || return 1
-    return 0
-}
-
-run_volume_key_test()
-{
-    if volume_keytest; then
-        KEYTEST=volume_choose
-        ui_print "- 音量键测试完成"
-    else
-        KEYTEST=false
-        ui_print " ！错误：没有检测到音量键选择，默认循环间隔时间1秒，不关闭阶梯式充电，添加温控，不添加电量控制"
-    fi
+    ui_print " - 检查完毕，开始安装"
 }
 
 print_modname()
@@ -104,13 +85,15 @@ print_modname()
     ui_print " "
     ui_print " ********************************************************"
     ui_print " "
-    ui_print "  安装信息过多，屏幕显示不全，所以优先显示此注意事项"
-    ui_print "  音量键测试完毕后可通过划动屏幕查看未显示在屏幕上的内容"
-    ui_print "  不可在音量键测试时划动屏幕，否则会导致检测失败"
+    ui_print " - 可修改/data/adb/turbo-charge/option.txt来更改一些参数，即时生效"
+    ui_print " - log文件为同目录的log.txt，包含文件检测、配置更改等信息"
     ui_print " "
     ui_print " ********************************************************"
     ui_print " "
-    run_volume_key_test
+    ui_print " ！！！如果安装模块后卡开机，请删除模块目录下的system文件夹！！！"
+    ui_print " "
+    ui_print " ！！！卸载模块请务必在Magisk中卸载！！！"
+    ui_print " ！！！或手动执行模块目录下的uninstall.sh文件后再删除模块目录！！！"
     ui_print " "
     ui_print " ********************************************************"
     ui_print " "
@@ -122,116 +105,68 @@ print_modname()
     ui_print " - 可选是否关闭阶梯式充电，若选是，默认电量大于15%时关闭阶梯式充电，电量小于等于15%时开启阶梯式充电"
     ui_print " - 可选是否启用“伪”旁路充电，但请注意是“伪”，因为并不是真的旁路供电，而是直接将充电电流降低至500mA"
     ui_print " "
-    ui_print " - 为了避免温度过高手机卡顿甚至强制关机，故有如下限制"
-    ui_print "   · 若不充电时手机温度大于等于45℃，程序仍会强制显示28℃"
-    ui_print "   · 待手机温度降至45℃以下，显示真实温度"
-    ui_print " "
     ui_print " ！！！若手机体感温度过高，请立即拔下充电器并将手机静置在阴凉处！！！"
     ui_print " "
     ui_print " ********************************************************"
     ui_print " "
-    ui_print " - 可修改/data/adb/turbo-charge/option.txt来更改一些参数，即时生效"
-    ui_print " - 当然也可以通过重新刷模块来选择是否关闭阶梯式充电、添加温控、添加电量控制"
-    ui_print " "
-    ui_print " - log文件为同目录的log.txt，包含文件检测、配置更改、充电器拔插、撞程序内温度墙等信息"
-    ui_print " "
-    ui_print " ********************************************************"
-    ui_print " "
-    ui_print " ！！！卸载模块请务必在Magisk中卸载！！！"
-    ui_print " ！！！或手动执行模块目录下的uninstall.sh文件后再删除模块目录！！！"
-    ui_print " "
-    ui_print " ********************************************************"
-    ui_print " "
 }
 
-volume_choose()
+check_old_option()
 {
-    while true; do
-        getevent -lc 1 2>&1 | grep VOLUME | grep " DOWN" > ${TMPDIR}/events
-        if (`cat ${TMPDIR}/events 2>/dev/null | grep VOLUME > /dev/null`); then
-            break
+    for i in $(seq $#); do
+        VARIABLE=$(eval echo '${'"${i}"'}')
+        VALUE=$(eval echo '${'"${VARIABLE}"'}')
+        VALUE_DEFAULT=$(eval echo '${'"${VARIABLE}"'_DEFAULT}')
+        if [[ -z "${VALUE}" ]]; then
+            ui_print "  - ${VARIABLE}不存在，使用默认值${VALUE_DEFAULT}"
+        elif [[ -z "$(echo "${VALUE}" | grep '^[[:digit:]]*$')" ]]; then
+            ui_print "  - ${VARIABLE}的值为空或非纯数字（正整数），使用默认值${VALUE_DEFAULT}"
+        elif [[ "${VALUE}" -gt 2147483647 ]]; then
+            ui_print "  - ${VARIABLE}的值大于2147483647，这是不被允许的，使用默认值${VALUE_DEFAULT}"
+        elif [[ "${VALUE}" -eq 0 && "${VARIABLE}" == "CYCLE_TIME" ]]; then
+            ui_print "  - ${VARIABLE}的值等于0，这是不被允许的，使用默认值${VALUE_DEFAULT}"
+        else
+            ui_print "  - ${VARIABLE}的值为${VALUE}，将此值写入新配置文件"
+            sed -i "s/^${VARIABLE}=.*/${VARIABLE}=${VALUE}/g" ${TMPDIR}/option.txt
         fi
     done
-    if (`cat ${TMPDIR}/events 2>/dev/null | grep VOLUMEUP > /dev/null`); then
-        return 1
-    else
-        return 0
-    fi
-}
-
-run_temp()
-{
-    ui_print " "
-    ui_print "--- 请选择是否添加温控（默认添加） ---"
-    ui_print "  音量+键 = 添加，当温度高于52℃时限制最高充电电流为2A，低于45℃时恢复"
-    ui_print "  音量-键 = 不添加，真·极速快充，高温伤手又伤机，谨慎选择！"
-    ui_print " "
-    if ${KEYTEST}; then
-        ui_print "- 不添加温控"
-        sed -i 's/TEMP_CTRL=1/TEMP_CTRL=0/g' ${TMPDIR}/option.txt
-    else
-        ui_print "- 添加温控"
-    fi
-}
-
-run_power_ctrl()
-{
-    ui_print " "
-    ui_print "--- 请选择是否添加电量控制（默认不添加） ---"
-    ui_print "  音量+键 = 不添加"
-    ui_print "  音量-键 = 添加，默认为电量到达95%时断电，小于等于80%时恢复充电"
-    ui_print " "
-    if ${KEYTEST}; then
-        ui_print "- 添加电量控制"
-        sed -i 's/POWER_CTRL=0/POWER_CTRL=1/g' ${TMPDIR}/option.txt
-    else
-        ui_print "- 不添加电量控制"
-    fi
-}
-
-run_bypass_charge()
-{
-    ui_print " "
-    ui_print "--- 请选择是否启用“伪”旁路供电功能（默认禁用） ---"
-    ui_print "  音量+键 = 禁用"
-    ui_print "  音量-键 = 启用，注意并不是真正的旁路供电，只是将充电电流调到很低"
-    ui_print " "
-    if ${KEYTEST}; then
-        ui_print "- 启用“伪”旁路供电功能"
-        ui_print "- “伪”旁路供电的配置文件在/data/adb/turbo-charge/bypass_charge.txt"
-        sed -i 's/BYPASS_CHARGE=0/BYPASS_CHARGE=1/g' ${TMPDIR}/option.txt
-    else
-        ui_print "- 禁用“伪”旁路供电功能"
-    fi
-}
-
-run_step_charge()
-{
-    ui_print " "
-    ui_print "--- 请选择是否关闭阶梯式充电（默认不关闭） ---"
-    ui_print "  音量+键 = 不关闭"
-    ui_print "  音量-键 = 关闭"
-    ui_print " "
-    if ${KEYTEST}; then
-        ui_print "- 关闭阶梯式充电"
-        ui_print "- 电池健康状态不好的手机关闭阶梯式充电后低电量充电时会疯狂断充"
-        ui_print "- 故在配置文件添加了关闭阶梯式充电的电量阈值，经测试此阈值为15%"
-        ui_print "- 且在阶梯充电状态改变时也会造成1-2次的断充"
-        sed -i 's/STEP_CHARGING_DISABLED=0/STEP_CHARGING_DISABLED=1/g' ${TMPDIR}/option.txt
-    else
-        ui_print "- 不关闭阶梯式充电"
-    fi
 }
 
 on_install()
 {
-    run_step_charge
-    run_temp
-    run_power_ctrl
-    run_bypass_charge
+    cp ${TMPDIR}/option.txt ${TMPDIR}/option_tmp.txt
+    sed -i 's/=/_DEFAULT=/g' ${TMPDIR}/option_tmp.txt
+    source ${TMPDIR}/option_tmp.txt > /dev/null 2>&1
+    source /data/adb/turbo-charge/option.txt > /dev/null 2>&1
+    if [[ $? != 0 ]]; then
+        ui_print " 无法载入旧配置文件或旧配置文件不存在，使用默认配置"
+        ui_print "  - 添加温控，当温度高于52℃时限制最高充电电流为2A，低于45℃时恢复"
+        ui_print "  - 不添加电量控制"
+        ui_print "  - 不关闭阶梯式充电"
+        ui_print "  - 启用强制显示28℃功能"
+        ui_print "  - 禁用“伪”旁路供电功能"
+    else
+        ui_print " 成功载入旧配置文件，开始读取旧配置文件的配置"
+        check_old_option CYCLE_TIME FORCE_TEMP CURRENT_MAX STEP_CHARGING_DISABLED
+        check_old_option TEMP_CTRL POWER_CTRL STEP_CHARGING_DISABLED_THRESHOLD
+        check_old_option CHARGE_STOP CHARGE_START TEMP_MAX HIGHEST_TEMP_CURRENT
+        check_old_option RECHARGE_TEMP BYPASS_CHARGE
+    fi
     ui_print " "
+    ui_print " ********************************************************"
+    ui_print " "
+    [[ -f /data/adb/turbo-charge/bypass_charge.txt ]] && BYPASS_APP=$(grep -v -E "#|^$" /data/adb/turbo-charge/bypass_charge.txt)
+    if [[ -n "${BYPASS_APP}" ]]; then
+        echo " 以下APP包名位于旧的“伪”旁路供电列表中，将会写入到新的“伪”旁路供电列表"
+        for s in ${BYPASS_APP}; do
+            ui_print "  - ${s}"
+            echo "${s}" >> ${TMPDIR}/bypass_charge.txt
+        done
+        ui_print " "
+        ui_print " ********************************************************"
+        ui_print " "
+    fi
     cp -f ${TMPDIR}/turbo-charge ${MODPATH}
-    [[ -f /data/adb/turbo-charge/bypass_charge.txt ]] && grep -v -E "#|^$" /data/adb/turbo-charge/bypass_charge.txt >> ${TMPDIR}/bypass_charge.txt
     [[ ! -d /data/adb/turbo-charge ]] && mkdir -p /data/adb/turbo-charge
     cp -f ${TMPDIR}/option.txt ${TMPDIR}/bypass_charge.txt /data/adb/turbo-charge
     for k in /system/bin /system/etc/init /system/etc/perf /system/vendor/bin /system/vendor/etc /system/vendor/etc/init /system/vendor/etc/perf; do
@@ -254,7 +189,6 @@ on_install()
 
 set_permissions()
 {
-    set_perm_recursive  ${MODPATH}  0  0  0755  0644
-    chmod 0777 ${MODPATH}/turbo-charge
-    chmod 0777 /data/adb/turbo-charge/option.txt
+    set_perm_recursive  ${MODPATH}  0  0  0755  0777
+    set_perm_recursive  /data/adb/turbo-charge  0  0  0755  0777
 }
