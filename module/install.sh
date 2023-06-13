@@ -71,13 +71,13 @@ check_file()
 
 print_modname()
 {
-    source ${TMPDIR}/module.prop
+    name=
     ui_print " "
     ui_print " ********************************************************"
     ui_print " "
-    ui_print " - 模块: ${name}"
-    ui_print " - 模块版本: ${version}"
-    ui_print " - 作者: ${author}"
+    ui_print " - 模块: $(grep '^name=' ${TMPDIR}/module.prop | sed 's/^name=//g')"
+    ui_print " - 模块版本: $(grep '^version=' ${TMPDIR}/module.prop | sed 's/^version=//g')"
+    ui_print " - 作者: $(grep '^author=' ${TMPDIR}/module.prop | sed 's/^author=//g')"
     ui_print " "
     ui_print " ********************************************************"
     ui_print " "
@@ -115,8 +115,8 @@ check_old_option()
 {
     for i in $(seq $#); do
         VARIABLE=$(eval echo '${'"${i}"'}')
-        VALUE=$(eval echo '${'"${VARIABLE}"'}')
-        VALUE_DEFAULT=$(eval echo '${'"${VARIABLE}"'_DEFAULT}')
+        VALUE=$(grep "^${VARIABLE}=" /data/adb/turbo-charge/option.txt | sed "s/^${VARIABLE}=//g")
+        VALUE_DEFAULT=$(grep "^${VARIABLE}=" ${TMPDIR}/option.txt | sed "s/^${VARIABLE}=//g")
         if [[ -z "${VALUE}" ]]; then
             ui_print "  - ${VARIABLE}不存在，使用默认值${VALUE_DEFAULT}"
         elif [[ -z "$(echo "${VALUE}" | grep '^[[:digit:]]*$')" ]]; then
@@ -134,23 +134,19 @@ check_old_option()
 
 on_install()
 {
-    cp ${TMPDIR}/option.txt ${TMPDIR}/option_tmp.txt
-    sed -i 's/=/_DEFAULT=/g' ${TMPDIR}/option_tmp.txt
-    source ${TMPDIR}/option_tmp.txt > /dev/null 2>&1
-    source /data/adb/turbo-charge/option.txt > /dev/null 2>&1
-    if [[ $? != 0 ]]; then
-        ui_print " 无法载入旧配置文件或旧配置文件不存在，使用默认配置"
+    if [[ -f /data/adb/turbo-charge/option.txt ]]; then
+        ui_print " 旧配置文件存在，开始读取旧配置文件的配置"
+        check_old_option CYCLE_TIME FORCE_TEMP CURRENT_MAX STEP_CHARGING_DISABLED
+        check_old_option TEMP_CTRL POWER_CTRL STEP_CHARGING_DISABLED_THRESHOLD
+        check_old_option CHARGE_STOP CHARGE_START TEMP_MAX HIGHEST_TEMP_CURRENT
+        check_old_option RECHARGE_TEMP BYPASS_CHARGE
+    else
+        ui_print " 旧配置文件不存在，使用默认配置"
         ui_print "  - 添加温控，当温度高于52℃时限制最高充电电流为2A，低于45℃时恢复"
         ui_print "  - 不添加电量控制"
         ui_print "  - 不关闭阶梯式充电"
         ui_print "  - 启用强制显示28℃功能"
         ui_print "  - 禁用“伪”旁路供电功能"
-    else
-        ui_print " 成功载入旧配置文件，开始读取旧配置文件的配置"
-        check_old_option CYCLE_TIME FORCE_TEMP CURRENT_MAX STEP_CHARGING_DISABLED
-        check_old_option TEMP_CTRL POWER_CTRL STEP_CHARGING_DISABLED_THRESHOLD
-        check_old_option CHARGE_STOP CHARGE_START TEMP_MAX HIGHEST_TEMP_CURRENT
-        check_old_option RECHARGE_TEMP BYPASS_CHARGE
     fi
     ui_print " "
     ui_print " ********************************************************"
