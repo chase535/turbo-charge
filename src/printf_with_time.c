@@ -1,15 +1,23 @@
 #include "stdio.h"
 #include "time.h"
+#include "string.h"
 
 #include "printf_with_time.h"
 
+//全局tm结构体变量，用来存储时间
+struct tm time_utc8_now;
+
 //获取本地时间并将时间转换为北京时间(UTC+8)
-struct tm *get_utc8_time(void)
+void get_utc8_time(struct tm *ptm)
 {
     time_t cur_time;
-    struct tm *ptm;
     time(&cur_time);
-    ptm=gmtime(&cur_time);
+    /*
+    新手特别容易犯的一个错误，形参的指针变量不能通过改变指向的地址来间接改变所存数据
+    在下一行代码中的体现就是不能通过 ptm=gmtime(&cur_time) 来直接将形参的指针变量重新指向另一块地址
+    只能通过memcpy等函数将其余地址所存数据复制到原形参指向的地址中，也就是只能直接改变原地址的数据
+    */
+    memcpy(ptm, gmtime(&cur_time), sizeof(struct tm));
     ptm->tm_year+=1900;
     ptm->tm_mon+=1;
     ptm->tm_hour+=8;
@@ -58,14 +66,4 @@ struct tm *get_utc8_time(void)
             ptm->tm_year+=1;
         }
     }
-    return ptm;
-}
-
-//打印时间及相应字符串
-void printf_with_time(char *dat)
-{
-    struct tm *time_get=get_utc8_time();
-    printf("[ %04d.%02d.%02d %02d:%02d:%02d UTC+8 ] %s\n", time_get->tm_year, time_get->tm_mon, time_get->tm_mday, time_get->tm_hour, time_get->tm_min, time_get->tm_sec, dat);
-    //如果是写入文件，则必须加上这句话，不然只能等缓冲区满了后才会一次性写入
-    fflush(stdout);
 }

@@ -14,7 +14,6 @@ option_struct options[OPTION_QUANTITY]={{"CYCLE_TIME", 1},
                                         {"RECHARGE_TEMP", 45},
                                         {"BYPASS_CHARGE", 0}};
 
-char chartmp[PRINTF_WITH_TIME_MAX_SIZE];
 char option_file[]="/data/adb/turbo-charge/option.txt";
 char bypass_charge_file[]="/data/adb/turbo-charge/bypass_charge.txt";
 char temp_sensors[TEMP_SENSOR_QUANTITY][15]={"conn_therm", "modem_therm", "wifi_therm", "mtktsbtsnrpa", "lcd_therm", "quiet_therm",

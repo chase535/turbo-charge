@@ -32,7 +32,10 @@ void *get_foreground_appname(void *android_version)
         }
         //判断是否为锁屏状态，如果是则无法获取应用包名，直接将全局变量ForegroundAppName赋值为screen_is_off
         fp=popen("dumpsys deviceidle | grep 'mScreenOn'", "r");
-        if(fp == NULL) printf_with_time("无法创建管道通信，跳过本次循环！");
+        if(fp == NULL)
+        {
+            printf_with_time("无法创建管道通信，跳过本次循环！");
+        }
         fgets(screen, sizeof(screen), fp);
         line_feed(screen);
         status=pclose(fp);
@@ -66,7 +69,10 @@ void *get_foreground_appname(void *android_version)
         然后再使用grep提取出包含关键字的行，此行即为前台应用的详情
         */
         fp=(*((int *)android_version) < 10)?popen("dumpsys activity o | grep ' (top-activity)'", "r"):popen("dumpsys activity lru | grep ' TOP'", "r");
-        if(fp == NULL) printf_with_time("无法创建管道通信，跳过本次循环！");
+        if(fp == NULL)
+        {
+            printf_with_time("无法创建管道通信，跳过本次循环！");
+        }
         fgets(result, sizeof(result), fp);
         line_feed(result);
         status=pclose(fp);
@@ -148,8 +154,7 @@ int check_android_version()
     android_version=atoi(android_version_char);
     if(android_version < 7)
     {
-        snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "安卓7及以下无法通过Shell命令获取前台应用，当前版本为安卓%d，“伪”旁路供电功能失效！", android_version);
-        printf_with_time(chartmp);
+        printf_with_time("安卓7及以下无法通过Shell命令获取前台应用，当前版本为安卓%d，“伪”旁路供电功能失效！", android_version);
         return 0;
     }
     return android_version;

@@ -50,30 +50,26 @@ void powel_ctl(int *last_charge_stop, int *charge_is_stop)
         {
             if(power_int < charge_stop)
             {
-                snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "手机当前电量为%d%%，小于新的电量阈值，恢复充电", power_int);
-                printf_with_time(chartmp);
+                printf_with_time("手机当前电量为%d%%，小于新的电量阈值，恢复充电", power_int);
                 *charge_is_stop=0;
                 charge_ctl("1");
             }
             else
             {
-                snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "手机当前电量为%d%%，大于等于新的电量阈值，保持停止充电状态", power_int);
-                printf_with_time(chartmp);
+                printf_with_time("手机当前电量为%d%%，大于等于新的电量阈值，保持停止充电状态", power_int);
                 charge_ctl("0");
             }
             *last_charge_stop=charge_stop;
         }
         if(power_int >= charge_stop && !(*charge_is_stop))
         {
-            snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "当前电量为%d%%，大于等于停止充电的电量阈值，停止充电", power_int);
-            printf_with_time(chartmp);
+            printf_with_time("当前电量为%d%%，大于等于停止充电的电量阈值，停止充电", power_int);
             *charge_is_stop=1;
             charge_ctl("0");
         }
         if(power_int <= read_one_option("CHARGE_START") && *charge_is_stop)
         {
-            snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "当前电量为%d%%，小于等于恢复充电的电量阈值，恢复充电", power_int);
-            printf_with_time(chartmp);
+            printf_with_time("当前电量为%d%%，小于等于恢复充电的电量阈值，恢复充电", power_int);
             *charge_is_stop=0;
             charge_ctl("1");
         }
@@ -125,7 +121,10 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
         {
             if(*screen_is_off)
             {
-                if(*is_bypass) printf_with_time("手机屏幕开启，恢复“伪”旁路供电模式");
+                if(*is_bypass)
+                {
+                    printf_with_time("手机屏幕开启，恢复“伪”旁路供电模式");
+                }
                 *screen_is_off=0;
             }
             //读取“伪”旁路供电的配置文件
@@ -147,8 +146,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
                 //如果之前不在“伪”旁路供电模式而切换应用后在了，就打印相关信息
                 if(!(*is_bypass))
                 {
-                    snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "当前前台应用为%s，位于“伪”旁路供电配置列表中，进入“伪”旁路供电模式", ForegroundAppName);
-                    printf_with_time(chartmp);
+                    printf_with_time("当前前台应用为%s，位于“伪”旁路供电配置列表中，进入“伪”旁路供电模式", ForegroundAppName);
                     *is_bypass=1;
                 }
                 //如果之前在“伪”旁路供电模式而切换应用后还在，就打印相关信息
@@ -156,8 +154,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
                 {
                     if(strcmp(last_appname, (char *)ForegroundAppName))
                     {
-                        snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "前台应用切换为%s，位于“伪”旁路供电配置列表中，保持“伪”旁路供电模式", ForegroundAppName);
-                        printf_with_time(chartmp);
+                        printf_with_time("前台应用切换为%s，位于“伪”旁路供电配置列表中，保持“伪”旁路供电模式", ForegroundAppName);
                     }
                 }
                 //限制电流，“伪”旁路供电
@@ -169,9 +166,14 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
                 if(*is_bypass)
                 {
                     //分为两种情况，一种为未切换前台应用但应用包名从“伪”旁路供电配置列表中移除，一种为切换到了“伪”旁路供电配置列表中没有的应用
-                    if(!strcmp(last_appname, (char *)ForegroundAppName)) snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "%s已从“伪”旁路供电配置列表中移除，恢复正常充电模式", ForegroundAppName);
-                    else snprintf(chartmp, PRINTF_WITH_TIME_MAX_SIZE, "前台应用切换为%s，不在“伪”旁路供电配置列表中，恢复正常充电模式", ForegroundAppName);
-                    printf_with_time(chartmp);
+                    if(!strcmp(last_appname, (char *)ForegroundAppName))
+                    {
+                        printf_with_time("%s已从“伪”旁路供电配置列表中移除，恢复正常充电模式", ForegroundAppName);
+                    }
+                    else
+                    {
+                        printf_with_time("前台应用切换为%s，不在“伪”旁路供电配置列表中，恢复正常充电模式", ForegroundAppName);
+                    }
                     *is_bypass=0;
                 }
             }
@@ -182,7 +184,10 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
             //如果手机进入锁屏状态且在锁屏前处于“伪”旁路供电模式，则暂时恢复正常充电模式
             if(!(*screen_is_off))
             {
-                if(*is_bypass) printf_with_time("手机屏幕关闭，暂时进入正常充电模式");
+                if(*is_bypass)
+                {
+                    printf_with_time("手机屏幕关闭，暂时进入正常充电模式");
+                }
                 *screen_is_off=1;
             }
         }
