@@ -71,7 +71,6 @@ check_file()
 
 print_modname()
 {
-    name=
     ui_print " "
     ui_print " ********************************************************"
     ui_print " "
