@@ -8,6 +8,7 @@ on:
       - '**.md'
       - '**.zip'
       - '**.json'
+      - '.github/ISSUE_TEMPLATE/**'
   pull_request:
     branches:
       - 'main'
