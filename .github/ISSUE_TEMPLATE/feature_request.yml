@@ -1,0 +1,23 @@
+name: 请求添加新功能或对程序进行改进
+description: 提出建议
+labels: [enhancement]
+title: "[Feature Request] "
+body:
+  - type: textarea
+    attributes:
+      label: 你的请求是否与某个问题相关？
+      placeholder: 若相关请清晰准确地描述该问题，若无关请填“无”。
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 描述你想要的解决方案
+      placeholder: 请清晰准确地描述新功能的预期行为或程序需要进行改进的地方
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 其他信息
+      placeholder: 其他关于此请求的信息或截图，非必填
+    validations:
+      required: false
