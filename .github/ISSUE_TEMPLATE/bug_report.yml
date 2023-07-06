@@ -1,0 +1,46 @@
+name: BUG反馈
+description: 反馈错误或异常行为。
+labels: [bug]
+title: "[BUG] "
+body:
+  - type: checkboxes
+    id: latest
+    attributes:
+      label: 版本要求
+      options:
+        - label: 我正在使用[Releases](https://github.com/chase535/turbo-charge/releases)中的最新版本
+          required: true
+  - type: textarea
+    attributes:
+      label: 复现步骤
+      placeholder: 此BUG会在什么情况下复现
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 预期行为
+      placeholder: 正常情况下应该发生什么
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 实际行为
+      placeholder: 实际上发生了什么
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: 安卓版本
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: 手机系统及版本
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 附件
+      placeholder: 如有附件请点击文本框后上传。
+    validations:
+      required: false
