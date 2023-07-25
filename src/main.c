@@ -146,9 +146,18 @@ int main()
     if(!battery_status || !battery_capacity)
     {
         power_control=0;
-        if(battery_status && !battery_capacity) printf_with_time("由于找不到/sys/class/power_supply/battery/capacity文件，电量控制功能失效！");
-        else if(!battery_status && battery_capacity) printf_with_time("由于找不到/sys/class/power_supply/battery/status文件，电量控制功能失效，且“伪”旁路供电功能无法根据手机的充电状态而自动启停！");
-        else printf_with_time("由于找不到/sys/class/power_supply/battery/status和/sys/class/power_supply/battery/capacity文件，电量控制功能失效，且“伪”旁路供电功能无法根据手机的充电状态而自动启停！");
+        if(battery_status && !battery_capacity)
+        {
+            printf_with_time("由于找不到/sys/class/power_supply/battery/capacity文件，电量控制功能失效！");
+        }
+        else if(!battery_status && battery_capacity)
+        {
+            printf_with_time("由于找不到/sys/class/power_supply/battery/status文件，电量控制功能失效，且“伪”旁路供电功能无法根据手机的充电状态而自动启停！");
+        }
+        else
+        {
+            printf_with_time("由于找不到/sys/class/power_supply/battery/status和/sys/class/power_supply/battery/capacity文件，电量控制功能失效，且“伪”旁路供电功能无法根据手机的充电状态而自动启停！");
+        }
     }
     else
     {
@@ -227,9 +236,18 @@ int main()
     if(!battery_status || !temp_file_num)
     {
         force_temp=0;
-        if(battery_status && !temp_file_num) printf_with_time("无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！");
-        else if(!battery_status && temp_file_num) printf_with_time("由于找不到/sys/class/power_supply/battery/status文件，充电时强制显示28℃功能失效！");
-        else printf_with_time("由于找不到/sys/class/power_supply/battery/status文件以及无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！");
+        if(battery_status && !temp_file_num)
+        {
+            printf_with_time("无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！");
+        }
+        else if(!battery_status && temp_file_num)
+        {
+            printf_with_time("由于找不到/sys/class/power_supply/battery/status文件，充电时强制显示28℃功能失效！");
+        }
+        else
+        {
+            printf_with_time("由于找不到/sys/class/power_supply/battery/status文件以及无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！");
+        }
     }
     //预先分配一个占位用的内存，此内存后续将装入温度传感器所获取到的温度的文件的路径
     temp_sensor=(char *)calloc(1, sizeof(char));
@@ -345,11 +363,17 @@ int main()
     }
     if(current_change)
     {
-        for(i=0;i < current_max_file_num;i++) printf_with_time("找到电流文件：%s", current_max_file[i]);
+        for(i=0;i < current_max_file_num;i++)
+        {
+            printf_with_time("找到电流文件：%s", current_max_file[i]);
+        }
     }
     if(force_temp)
     {
-        for(i=0;i < temp_file_num;i++) printf_with_time("找到温度文件：%s", temp_file[i]);
+        for(i=0;i < temp_file_num;i++)
+        {
+            printf_with_time("找到温度文件：%s", temp_file[i]);
+        }
     }
     //如果有电流文件，则获取安卓版本，为以后“伪”旁路供电做准备
     if(current_change) can_get_foreground=check_android_version();
@@ -472,7 +496,10 @@ int main()
                                 printf_with_time("新的降低充电电流的温度阈值高于旧的温度阈值，且手机温度小于新的温度阈值，恢复充电电流为%sμA", current_max_char);
                                 break;
                             }
-                            else printf_with_time("新的降低充电电流的温度阈值高于旧的温度阈值，但手机温度大于等于新的温度阈值，限制充电电流为%sμA", highest_temp_current_char);
+                            else
+                            {
+                                printf_with_time("新的降低充电电流的温度阈值高于旧的温度阈值，但手机温度大于等于新的温度阈值，限制充电电流为%sμA", highest_temp_current_char);
+                            }
                             last_temp_max=read_one_option("TEMP_MAX");
                         }
                         //判断手机充电状态

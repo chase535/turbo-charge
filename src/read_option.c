@@ -64,7 +64,7 @@ void *read_options()
                 if(value_stat[opt] != 10) continue;
                 new_value=atoi(value);
                 if(new_value < 0) value_stat[opt]=3;
-                else if(!strcmp(options[opt].name, "CYCLE_TIME") && !new_value) value_stat[opt]=4;
+                else if(!strcmp((char *)(options[opt].name), "CYCLE_TIME") && !new_value) value_stat[opt]=4;
                 if(value_stat[opt] == 10 && options[opt].value != new_value)
                 {
                     options[opt].value=new_value;
@@ -85,7 +85,10 @@ void *read_options()
                 else if(value_stat[opt] == 3) snprintf(chartmp, 200, "新%s的值小于0，这是不被允许的，故程序沿用上一次的值%d", options[opt].name, options[opt].value);
                 else if(value_stat[opt] == 4) snprintf(chartmp, 200, "新%s的值为0，这是不被允许的，故程序沿用上一次的值%d", options[opt].name, options[opt].value);
                 else if(value_stat[opt] == 100) snprintf(chartmp, 200, "%s的值更改为%d", options[opt].name, options[opt].value);
-                if(value_stat[opt] != 10) printf_with_time("%s", chartmp);
+                if(value_stat[opt] != 10)
+                {
+                    printf_with_time("%s", chartmp);
+                }
             }
             else
             {
@@ -94,7 +97,10 @@ void *read_options()
                 else if(value_stat[opt] == 2) snprintf(chartmp, 200, "配置文件中%s的值不是由纯数字组成，故程序使用默认值%d", options[opt].name, options[opt].value);
                 else if(value_stat[opt] == 3) snprintf(chartmp, 200, "配置文件中%s的值小于0，这是不被允许的，故程序使用默认值%d", options[opt].name, options[opt].value);
                 else if(value_stat[opt] == 4) snprintf(chartmp, 200, "配置文件中%s的值为0，这是不被允许的，故程序使用默认值%d", options[opt].name, options[opt].value);
-                if(!(value_stat[opt] == 10 || value_stat[opt] == 100)) printf_with_time("%s", chartmp);
+                if(!(value_stat[opt] == 10 || value_stat[opt] == 100))
+                {
+                    printf_with_time("%s", chartmp);
+                }
             }
         }
         option_last_modify_time=statbuf.st_mtime;
@@ -111,7 +117,7 @@ int read_one_option(char *name)
     pthread_mutex_lock(&mutex_options);
     for(i=0;i < OPTION_QUANTITY;i++)
     {
-        if(!strcmp(options[i].name, name))
+        if(!strcmp((char *)(options[i].name), name))
         {
             value=options[i].value;
             break;
