@@ -166,13 +166,13 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
                 if(*is_bypass)
                 {
                     //分为两种情况，一种为未切换前台应用但应用包名从“伪”旁路供电配置列表中移除，一种为切换到了“伪”旁路供电配置列表中没有的应用
-                    if(!strcmp(last_appname, (char *)ForegroundAppName))
+                    if(strcmp(last_appname, (char *)ForegroundAppName))
                     {
-                        printf_with_time("%s已从“伪”旁路供电配置列表中移除，恢复正常充电模式", ForegroundAppName);
+                        printf_with_time("前台应用切换为%s，不在“伪”旁路供电配置列表中，恢复正常充电模式", ForegroundAppName)
                     }
                     else
                     {
-                        printf_with_time("前台应用切换为%s，不在“伪”旁路供电配置列表中，恢复正常充电模式", ForegroundAppName);
+                        printf_with_time("%s已从“伪”旁路供电配置列表中移除，恢复正常充电模式", ForegroundAppName);
                     }
                     *is_bypass=0;
                 }

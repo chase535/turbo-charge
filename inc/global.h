@@ -8,8 +8,8 @@ typedef struct
     int value;
 } option_struct;
 
-extern option_struct options[OPTION_QUANTITY];
 extern char option_file[];
 extern char bypass_charge_file[];
 extern char temp_sensors[TEMP_SENSOR_QUANTITY][15];
+extern volatile option_struct options[OPTION_QUANTITY];
 extern volatile char ForegroundAppName[100];

@@ -35,20 +35,26 @@ void *get_foreground_appname(void *android_version)
         if(fp == NULL)
         {
             printf_with_time("无法创建管道通信，跳过本次循环！");
-        }
-        fgets(screen, sizeof(screen), fp);
-        line_feed(screen);
-        status=pclose(fp);
-        if(status == -1) goto close_pipe_err;
-        else if(!WIFEXITED(status))
-        {
-            printf_with_time("获取屏幕是否开启的Shell命令执行出错，跳过本次循环！");
-            fp=NULL;
+            continue_no_print:
             sleep(5);
             //添加进程取消点，否则无法通过调用pthread_exit()函数取消进程
             //下面所有pthread_testcancel()函数的作用都同上
             pthread_testcancel();
             continue;
+        }
+        fgets(screen, sizeof(screen), fp);
+        line_feed(screen);
+        status=pclose(fp);
+        if(status == -1)
+        {
+            close_pipe_err:
+            printf_with_time("关闭管道通信时出错，跳过本次循环！");
+            goto continue_no_print;
+        }
+        else if(!WIFEXITED(status))
+        {
+            printf_with_time("获取屏幕是否开启的Shell命令执行出错，跳过本次循环！");
+            goto continue_no_print;
         }
         fp=NULL;
         //此Shell命令的返回值格式为  mScreenOn=true
@@ -58,9 +64,7 @@ void *get_foreground_appname(void *android_version)
             pthread_mutex_lock(&mutex_foreground_app);
             strcpy((char *)ForegroundAppName, "screen_is_off");
             pthread_mutex_unlock(&mutex_foreground_app);
-            sleep(5);
-            pthread_testcancel();
-            continue;
+            goto continue_no_print;
         }
         /*
         如果非锁屏状态，则获取前台应用包名
@@ -72,36 +76,24 @@ void *get_foreground_appname(void *android_version)
         if(fp == NULL)
         {
             printf_with_time("无法创建管道通信，跳过本次循环！");
+            goto continue_no_print;
         }
         fgets(result, sizeof(result), fp);
         line_feed(result);
         status=pclose(fp);
-        if(status == -1)
-        {
-            close_pipe_err:
-            printf_with_time("关闭管道通信时出错，跳过本次循环！");
-            fp=NULL;
-            sleep(5);
-            pthread_testcancel();
-            continue;
-        }
+        if(status == -1) goto close_pipe_err;
         else if(!WIFEXITED(status))
         {
             printf_with_time("获取前台应用包名的Shell命令执行出错，跳过本次循环！");
-            fp=NULL;
-            sleep(5);
-            pthread_testcancel();
-            continue;
+            goto continue_no_print;
         }
         fp=NULL;
         tmpchar1=(*((int *)android_version) < 10)?strstr(result, "/TOP"):strstr(result, " TOP");
         if(tmpchar1 == NULL)
         {
-            can_not_get:
+            can_not_get_package:
             printf_with_time("无法获取前台应用包名，跳过本次循环！");
-            sleep(5);
-            pthread_testcancel();
-            continue;
+            goto continue_no_print;
         }
         /*
         从上一步获取到的前台应用的详情中截取应用包名
@@ -109,9 +101,9 @@ void *get_foreground_appname(void *android_version)
         dumpsys activity o获取到的详情格式为  Proc # 0: fg     T/A/TOP  LCMN  t: 0 4493:com.termux/u0a351 (top-activity)
         */
         tmpchar2=(*((int *)android_version) < 10)?strstr(strstr(tmpchar1, ":")+1, ":"):strstr(tmpchar1, ":");
-        if(tmpchar2 == NULL) goto can_not_get;
+        if(tmpchar2 == NULL) goto can_not_get_package;
         tmpchar1=strstr(tmpchar2, "/");
-        if(tmpchar1 == NULL) goto can_not_get;
+        if(tmpchar1 == NULL) goto can_not_get_package;
         *tmpchar1='\0';
         pthread_testcancel();
         //将前台应用包名赋值给ForegroundAppName

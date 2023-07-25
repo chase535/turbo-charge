@@ -64,7 +64,7 @@ void *read_options()
                 if(value_stat[opt] != 10) continue;
                 new_value=atoi(value);
                 if(new_value < 0) value_stat[opt]=3;
-                else if(!strcmp(options[opt].name, "CYCLE_TIME") && !new_value) value_stat[opt]=4;
+                else if(!strcmp((char *)(options[opt].name), "CYCLE_TIME") && !new_value) value_stat[opt]=4;
                 if(value_stat[opt] == 10 && options[opt].value != new_value)
                 {
                     options[opt].value=new_value;
@@ -117,7 +117,7 @@ int read_one_option(char *name)
     pthread_mutex_lock(&mutex_options);
     for(i=0;i < OPTION_QUANTITY;i++)
     {
-        if(!strcmp(options[i].name, name))
+        if(!strcmp((char *)(options[i].name), name))
         {
             value=options[i].value;
             break;

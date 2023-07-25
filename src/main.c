@@ -411,8 +411,7 @@ int main()
                 if(read_one_option("STEP_CHARGING_DISABLED") == 1) (atoi(power) < read_one_option("STEP_CHARGING_DISABLED_THRESHOLD"))?step_charge_ctl("1"):step_charge_ctl("0");
                 else step_charge_ctl("1");
             }
-            else if(step_charge == 2)
-                (read_one_option("STEP_CHARGING_DISABLED") == 1)?step_charge_ctl("0"):step_charge_ctl("1");
+            else if(step_charge == 2) (read_one_option("STEP_CHARGING_DISABLED") == 1)?step_charge_ctl("0"):step_charge_ctl("1");
             //“伪”旁路供电
             if(current_change && can_get_foreground)
             {
