@@ -42,7 +42,7 @@ void *read_options()
             if(!strlen(option) || (strstr(option, "#") != NULL && !strstr(option, "#"))) continue;
             for(opt=0;opt < OPTION_QUANTITY;opt++)
             {
-                //将配置名与等号就行拼接，用来进行匹配
+                //将配置名与等号进行拼接，用来进行匹配
                 snprintf(option_tmp, 42, "%s=", options[opt].name);
                 if(strstr(option, option_tmp) == NULL) continue;
                 //value_stat数组存储配置文件中每个变量值的状态，详情直接看后面判断value_stat数组的值的相关代码
