@@ -36,8 +36,8 @@ jobs:
         run: cmake -B build
       - name: Build module
         run: make -C build -j$(nproc --all)
-      - name: Copy ELF file into module directory
-        run: cp -f ${{ github.workspace }}/build/turbo-charge ${{ github.workspace }}/module/common/turbo-charge
+      - name: Copy files into module directory
+        run: cp -f ${{ github.workspace }}/build/turbo-charge ${{ github.workspace }}/README.md ${{ github.workspace }}/LICENSE ${{ github.workspace }}/module/common/turbo-charge
       - name : Zip and upload module
         uses: actions/upload-artifact@main
         with:
