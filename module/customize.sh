@@ -1,7 +1,4 @@
-SKIPMOUNT=false
-PROPFILE=false
-POSTFSDATA=false
-LATESTARTSERVICE=true
+SKIPUNZIP=1
 
 check_file()
 {
@@ -187,3 +184,9 @@ set_permissions()
     set_perm_recursive  ${MODPATH}  0  0  0755  0777
     set_perm_recursive  /data/adb/turbo-charge  0  0  0755  0777
 }
+
+unzip -oj "${ZIPFILE}" module.prop uninstall.sh 'common/*' -d ${TMPDIR} >&2
+print_modname
+on_install
+cp -af ${TMPDIR}/module.prop ${TMPDIR}/uninstall.sh ${TMPDIR}/service.sh ${MODPATH}
+set_permissions
