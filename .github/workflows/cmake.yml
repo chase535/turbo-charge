@@ -37,7 +37,9 @@ jobs:
       - name: Build module
         run: make -C build -j$(nproc --all)
       - name: Copy files into module directory
-        run: cp -f ${{ github.workspace }}/build/turbo-charge ${{ github.workspace }}/README.md ${{ github.workspace }}/LICENSE ${{ github.workspace }}/module/common/turbo-charge
+        run: |
+          cp -f ${{ github.workspace }}/README.md ${{ github.workspace }}/LICENSE ${{ github.workspace }}/module
+          cp -f ${{ github.workspace }}/build/turbo-charge ${{ github.workspace }}/module/common
       - name : Zip and upload module
         uses: actions/upload-artifact@main
         with:
