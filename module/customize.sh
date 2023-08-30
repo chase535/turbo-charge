@@ -161,9 +161,9 @@ on_install()
         ui_print " ********************************************************"
         ui_print " "
     fi
-    cp -f ${TMPDIR}/turbo-charge ${MODPATH}
+    cp -af ${TMPDIR}/turbo-charge ${TMPDIR}/module.prop ${TMPDIR}/service.sh ${TMPDIR}/uninstall.sh ${MODPATH}
     [[ ! -d /data/adb/turbo-charge ]] && mkdir -p /data/adb/turbo-charge
-    cp -f ${TMPDIR}/option.txt ${TMPDIR}/bypass_charge.txt /data/adb/turbo-charge
+    cp -af ${TMPDIR}/option.txt ${TMPDIR}/bypass_charge.txt /data/adb/turbo-charge
     for k in /system/bin /system/etc/init /system/etc/perf /system/vendor/bin /system/vendor/etc /system/vendor/etc/init /system/vendor/etc/perf; do
         all_thermal="${all_thermal} $(find ${k} -maxdepth 1 -type f -name '*thermal*' 2>/dev/null)"
     done
@@ -193,5 +193,4 @@ print_modname
 check_file
 print_info
 on_install
-cp -af ${TMPDIR}/module.prop ${TMPDIR}/uninstall.sh ${TMPDIR}/service.sh ${MODPATH}
 set_permissions
