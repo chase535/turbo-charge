@@ -77,7 +77,10 @@ print_modname()
     ui_print " "
     ui_print " ********************************************************"
     ui_print " "
-    check_file
+}
+
+print_info()
+{
     ui_print " "
     ui_print " ********************************************************"
     ui_print " "
@@ -187,6 +190,8 @@ set_permissions()
 
 unzip -oj "${ZIPFILE}" module.prop uninstall.sh 'common/*' -d ${TMPDIR} >&2
 print_modname
+check_file
+print_info
 on_install
 cp -af ${TMPDIR}/module.prop ${TMPDIR}/uninstall.sh ${TMPDIR}/service.sh ${MODPATH}
 set_permissions
