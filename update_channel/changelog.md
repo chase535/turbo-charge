@@ -1,3 +1,13 @@
+# v58
+
+### Changelog
+
+1.日常维护，优化代码
+
+2.重命名并更新安装脚本，以兼容使用KernelSU安装
+
+3.规范shell命令，将service.sh文件中的2>&1放在重定向标准输出之后
+
 # v55
 
 ### Changelog
