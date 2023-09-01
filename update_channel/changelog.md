@@ -1,3 +1,11 @@
+# v56
+
+### Changelog
+
+1.日常维护，优化代码
+
+2.重命名并更新安装脚本，以兼容使用KernelSU安装
+
 # v55
 
 ### Changelog
