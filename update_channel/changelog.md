@@ -1,3 +1,9 @@
+# v57
+
+### Changelog
+
+规范shell命令，将service.sh文件中的2>&1放在重定向标准输出之后
+
 # v56
 
 ### Changelog
