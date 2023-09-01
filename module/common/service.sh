@@ -6,7 +6,7 @@ until [[ "$(getprop service.bootanim.exit)" == "1" ]]; do
 done
 echo "手机启动完毕" >> /data/adb/turbo-charge/log.txt
 echo "" >> /data/adb/turbo-charge/log.txt
-nohup ${MODDIR}/turbo-charge 2>&1 > /dev/null &
+nohup ${MODDIR}/turbo-charge > /dev/null 2>&1 &
 sleep 1
 first_process=$(ps -eo comm,pid | grep "turbo-charge" | awk '{print $2}')
 nohup ${MODDIR}/turbo-charge >> /data/adb/turbo-charge/log.txt 2>&1 &
