@@ -137,7 +137,7 @@ int main()
     pthread_t thread1,thread2;
     struct stat statbuf;
     //初始化链表
-    node_init();
+    options_nodelist_init();
     printf("作者：酷安@诺鸡鸭\n");
     printf("GitHub开源地址：https://github.com/chase535/turbo-charge\n\n");
     //如果是写入文件，则必须加上这句话，不然只能等缓冲区满了后才会一次性写入
