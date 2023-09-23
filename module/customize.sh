@@ -174,9 +174,9 @@ on_install()
         mkdir -p ${MODPATH}${thermal%/*}
         touch ${MODPATH}${thermal}
     done
-    chattr -i /data/vendor/thermal
-    chattr -i /data/vendor/thermal/config
-    rm -rf /data/vendor/thermal/*
+    [[ -e /data/vendor/thermal ]] && chattr -i /data/vendor/thermal
+    [[ -e /data/vendor/thermal/config ]] && chattr -i /data/vendor/thermal/config
+    rm -rf /data/vendor/thermal
     mkdir -p /data/vendor/thermal/config
     chattr +i /data/vendor/thermal/config
     chattr +i /data/vendor/thermal
