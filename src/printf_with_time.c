@@ -16,6 +16,7 @@ void get_utc8_time(struct tm *ptm)
     只能通过memcpy等函数将其余地址所存数据复制到原形参指向的地址中，也就是只能直接改变原地址的数据
     */
     memcpy(ptm, gmtime(&cur_time), sizeof(struct tm));
+    //手动将协调世界时转换为北京时间
     ptm->tm_year+=1900;
     ptm->tm_mon+=1;
     ptm->tm_hour+=8;
