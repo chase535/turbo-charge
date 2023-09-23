@@ -19,11 +19,7 @@ void insert_option(char *name, int value)
     strncpy(next->name,name,40);
     next->value=value;
     next->next=NULL;
-    while(1)
-    {
-        if(tmp->next == NULL) break;
-        tmp=tmp->next;
-    }
+    while(tmp->next) tmp=tmp->next;
     tmp->next=next;
 }
 

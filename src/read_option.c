@@ -41,7 +41,7 @@ void *read_options()
             line_feed(option);
             //跳过以英文井号开头的行及空行
             if(!strlen(option) || (strstr(option, "#") != NULL && !strstr(option, "#"))) continue;
-            for(node=options;node != NULL;node=node->next)
+            for(node=options;node;node=node->next)
             {
                 //将配置名与等号进行拼接，用来进行匹配
                 snprintf(option_tmp, 42, "%s=", node->name);
@@ -113,7 +113,7 @@ int read_one_option(char *name)
     int value=-1;
     ListNode *node;
     pthread_mutex_lock(&mutex_options);
-    for(node=options;node != NULL;node=node->next)
+    for(node=options;node;node=node->next)
     {
         if(!(strcmp(node->name,name)))
         {
