@@ -67,7 +67,7 @@ void get_utc8_time(struct tm *ptm)
 }
 
 //以printf的标准对函数的参数进行检查、格式化，并在字符串前面加上时间
-void printf_with_time(const char *format,...) _ATTRIBUTE((__format__(__printf__, 1, 2)));
+void printf_with_time(const char *format,...) __attribute__((__format__(__printf__, 1, 2)));
 void printf_with_time(const char *format,...)
 {
     char buffer[1024];
