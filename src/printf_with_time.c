@@ -1,11 +1,9 @@
 #include "stdio.h"
 #include "time.h"
 #include "string.h"
+#include "stdarg.h"
 
 #include "printf_with_time.h"
-
-//全局tm结构体变量，用来存储时间
-struct tm time_utc8_now;
 
 //获取本地时间并将时间转换为北京时间(UTC+8)
 void get_utc8_time(struct tm *ptm)
@@ -18,6 +16,7 @@ void get_utc8_time(struct tm *ptm)
     只能通过memcpy等函数将其余地址所存数据复制到原形参指向的地址中，也就是只能直接改变原地址的数据
     */
     memcpy(ptm, gmtime(&cur_time), sizeof(struct tm));
+    //手动将协调世界时转换为北京时间
     ptm->tm_year+=1900;
     ptm->tm_mon+=1;
     ptm->tm_hour+=8;
@@ -66,4 +65,21 @@ void get_utc8_time(struct tm *ptm)
             ptm->tm_year+=1;
         }
     }
+}
+
+//以printf的标准对函数的参数进行检查、格式化，并在字符串前面加上时间
+void printf_with_time(const char *format,...) __attribute__((__format__(__printf__, 1, 2)));
+void printf_with_time(const char *format,...)
+{
+    char buffer[1024];
+    struct tm time_utc8_now;
+    va_list ap;
+    //使用vsnprintf函数拼接格式化字符串和可变参数
+    va_start(ap, format);
+    vsnprintf(buffer, 1024, format, ap);
+    va_end(ap);
+    get_utc8_time(&time_utc8_now);
+    //在拼接后的字符串前面加上时间
+    printf("[ %04d.%02d.%02dT%02d:%02d:%02d UTC+8 ] %s\n",time_utc8_now.tm_year, time_utc8_now.tm_mon, time_utc8_now.tm_mday, time_utc8_now.tm_hour, time_utc8_now.tm_min, time_utc8_now.tm_sec, buffer);
+    fflush(stdout);
 }

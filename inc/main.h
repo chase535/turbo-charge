@@ -2,6 +2,7 @@
 #define _MAIN_H
 
 #include "global.h"
+#include "options_nodelist.h"
 
 typedef unsigned char uchar;
 typedef unsigned int uint;

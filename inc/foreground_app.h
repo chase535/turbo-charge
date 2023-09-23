@@ -1,5 +1,5 @@
-#ifndef FOREGROUND_APP_H
-#define FOREGROUND_APP_H
+#ifndef _FOREGROUND_APP_H
+#define _FOREGROUND_APP_H
 
 #include "main.h"
 
