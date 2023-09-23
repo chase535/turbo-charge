@@ -25,6 +25,7 @@ void *read_options()
         int new_value=0;
         uchar opt,value_stat[OPTION_QUANTITY]={0},i=0;
         struct stat statbuf;
+        ListNode *node;
         check_read_file(option_file);
         //先获取文件修改时间，若本次的文件修改时间与上次相等，证明配置文件未修改，跳过读取
         stat(option_file, &statbuf);
@@ -40,10 +41,10 @@ void *read_options()
             line_feed(option);
             //跳过以英文井号开头的行及空行
             if(!strlen(option) || (strstr(option, "#") != NULL && !strstr(option, "#"))) continue;
-            for(opt=0;opt < OPTION_QUANTITY;opt++)
+            for(node=options;node != NULL;node=node->next)
             {
                 //将配置名与等号进行拼接，用来进行匹配
-                snprintf(option_tmp, 42, "%s=", options[opt].name);
+                snprintf(option_tmp, 42, "%s=", node->name);
                 if(strstr(option, option_tmp) == NULL) continue;
                 //value_stat数组存储配置文件中每个变量值的状态，详情直接看后面判断value_stat数组的值的相关代码
                 value_stat[opt]=10;
@@ -64,45 +65,41 @@ void *read_options()
                 if(value_stat[opt] != 10) continue;
                 new_value=atoi(value);
                 if(new_value < 0) value_stat[opt]=3;
-                else if(!strcmp((char *)(options[opt].name), "CYCLE_TIME") && !new_value) value_stat[opt]=4;
-                if(value_stat[opt] == 10 && options[opt].value != new_value)
+                else if(!strcmp((char *)(node->name), "CYCLE_TIME") && !new_value) value_stat[opt]=4;
+                if(value_stat[opt] == 10 && node->value != new_value)
                 {
-                    options[opt].value=new_value;
+                    node->value=new_value;
                     value_stat[opt]=100;
+                }
+                if(option_last_modify_time)
+                {
+                    if(value_stat[opt] == 0) snprintf(chartmp, 200, "配置文件中%s不存在，故程序沿用上一次的值%d", node->name, node->value);
+                    else if(value_stat[opt] == 1) snprintf(chartmp, 200, "新%s的值为空，故程序沿用上一次的值%d", node->name, node->value);
+                    else if(value_stat[opt] == 2) snprintf(chartmp, 200, "新%s的值不是由纯数字组成，故程序沿用上一次的值%d", node->name, node->value);
+                    else if(value_stat[opt] == 3) snprintf(chartmp, 200, "新%s的值小于0，这是不被允许的，故程序沿用上一次的值%d", node->name, node->value);
+                    else if(value_stat[opt] == 4) snprintf(chartmp, 200, "新%s的值为0，这是不被允许的，故程序沿用上一次的值%d", node->name, node->value);
+                    else if(value_stat[opt] == 100) snprintf(chartmp, 200, "%s的值更改为%d", node->name, node->value);
+                    if(value_stat[opt] != 10)
+                    {
+                        printf_with_time("%s", chartmp);
+                    }
+                }
+                else
+                {
+                    if(value_stat[opt] == 0) snprintf(chartmp, 200, "配置文件中%s不存在，故程序使用默认值%d", node->name, node->value);
+                    else if(value_stat[opt] == 1) snprintf(chartmp, 200, "配置文件中%s的值为空，故程序使用默认值%d", node->name, node->value);
+                    else if(value_stat[opt] == 2) snprintf(chartmp, 200, "配置文件中%s的值不是由纯数字组成，故程序使用默认值%d", node->name, node->value);
+                    else if(value_stat[opt] == 3) snprintf(chartmp, 200, "配置文件中%s的值小于0，这是不被允许的，故程序使用默认值%d", node->name, node->value);
+                    else if(value_stat[opt] == 4) snprintf(chartmp, 200, "配置文件中%s的值为0，这是不被允许的，故程序使用默认值%d", node->name, node->value);
+                    if(!(value_stat[opt] == 10 || value_stat[opt] == 100))
+                    {
+                        printf_with_time("%s", chartmp);
+                    }
                 }
             }
         }
         fclose(fc);
         fc=NULL;
-        for(opt=0;opt < OPTION_QUANTITY;opt++)
-        {
-            //通过判断是否第一次运行来进行不同的字符串输出
-            if(option_last_modify_time)
-            {
-                if(value_stat[opt] == 0) snprintf(chartmp, 200, "配置文件中%s不存在，故程序沿用上一次的值%d", options[opt].name, options[opt].value);
-                else if(value_stat[opt] == 1) snprintf(chartmp, 200, "新%s的值为空，故程序沿用上一次的值%d", options[opt].name, options[opt].value);
-                else if(value_stat[opt] == 2) snprintf(chartmp, 200, "新%s的值不是由纯数字组成，故程序沿用上一次的值%d", options[opt].name, options[opt].value);
-                else if(value_stat[opt] == 3) snprintf(chartmp, 200, "新%s的值小于0，这是不被允许的，故程序沿用上一次的值%d", options[opt].name, options[opt].value);
-                else if(value_stat[opt] == 4) snprintf(chartmp, 200, "新%s的值为0，这是不被允许的，故程序沿用上一次的值%d", options[opt].name, options[opt].value);
-                else if(value_stat[opt] == 100) snprintf(chartmp, 200, "%s的值更改为%d", options[opt].name, options[opt].value);
-                if(value_stat[opt] != 10)
-                {
-                    printf_with_time("%s", chartmp);
-                }
-            }
-            else
-            {
-                if(value_stat[opt] == 0) snprintf(chartmp, 200, "配置文件中%s不存在，故程序使用默认值%d", options[opt].name, options[opt].value);
-                else if(value_stat[opt] == 1) snprintf(chartmp, 200, "配置文件中%s的值为空，故程序使用默认值%d", options[opt].name, options[opt].value);
-                else if(value_stat[opt] == 2) snprintf(chartmp, 200, "配置文件中%s的值不是由纯数字组成，故程序使用默认值%d", options[opt].name, options[opt].value);
-                else if(value_stat[opt] == 3) snprintf(chartmp, 200, "配置文件中%s的值小于0，这是不被允许的，故程序使用默认值%d", options[opt].name, options[opt].value);
-                else if(value_stat[opt] == 4) snprintf(chartmp, 200, "配置文件中%s的值为0，这是不被允许的，故程序使用默认值%d", options[opt].name, options[opt].value);
-                if(!(value_stat[opt] == 10 || value_stat[opt] == 100))
-                {
-                    printf_with_time("%s", chartmp);
-                }
-            }
-        }
         option_last_modify_time=statbuf.st_mtime;
         pthread_mutex_unlock(&mutex_options);
         sleep(5);
@@ -113,13 +110,14 @@ void *read_options()
 //读取单个配置的值
 int read_one_option(char *name)
 {
-    int i=0,value=-1;
+    int value=-1;
+    ListNode *node;
     pthread_mutex_lock(&mutex_options);
-    for(i=0;i < OPTION_QUANTITY;i++)
+    for(node=options;node != NULL;node=node->next)
     {
-        if(!strcmp((char *)(options[i].name), name))
+        if(!(strcmp(node->name,name)))
         {
-            value=options[i].value;
+            value=node->value;
             break;
         }
     }
