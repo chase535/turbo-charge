@@ -41,7 +41,7 @@ void *read_options()
             line_feed(option);
             //跳过以英文井号开头的行及空行
             if(!strlen(option) || (strstr(option, "#") != NULL && !strstr(option, "#"))) continue;
-            for(opt=0,node=options;opt < OPTION_QUANTITY && node;opt++,node=node->next)
+            for(opt=0,node=options_head->next;opt < OPTION_QUANTITY && node;opt++,node=node->next)
             {
                 //将配置名与等号进行拼接，用来进行匹配
                 snprintf(option_tmp, 42, "%s=", node->name);
@@ -75,7 +75,7 @@ void *read_options()
         }
         fclose(fc);
         fc=NULL;
-        for(opt=0,node=options;opt < OPTION_QUANTITY && node;opt++,node=node->next)
+        for(opt=0,node=options_head->next;opt < OPTION_QUANTITY && node;opt++,node=node->next)
         {
             //通过判断是否第一次运行来进行不同的字符串输出
             if(option_last_modify_time)
@@ -109,7 +109,7 @@ int read_one_option(char *name)
     int value=-1;
     ListNode *node;
     pthread_mutex_lock(&mutex_options);
-    for(node=options;node;node=node->next)
+    for(node=options_head->next;node;node=node->next)
     {
         if(!(strcmp(node->name, name)))
         {

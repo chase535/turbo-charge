@@ -10,11 +10,11 @@ char temp_sensors[TEMP_SENSOR_QUANTITY][15]={"conn_therm", "modem_therm", "wifi_
 
 volatile char ForegroundAppName[100];
 
-ListNode *options;
+ListNode *options_head;
 
 void insert_option(char *name, int value)
 {
-    ListNode *next,*tmp=options;
+    ListNode *next,*tmp=options_head;
     next=(ListNode *)calloc(1, sizeof(ListNode));
     strncpy(next->name, name, 40);
     next->value=value;
@@ -25,8 +25,8 @@ void insert_option(char *name, int value)
 
 void node_init()
 {
-    options=(ListNode *)calloc(1, sizeof(ListNode));
-    options->next=NULL;
+    options_head=(ListNode *)calloc(1, sizeof(ListNode));
+    options_head->next=NULL;
     insert_option("CYCLE_TIME", 1);
     insert_option("FORCE_TEMP", 1);
     insert_option("CURRENT_MAX", 50000000);
