@@ -21,9 +21,9 @@ void *read_options()
     {
         //在循环体内定义变量，这样变量仅存在于单次循环，每次循环结束后变量自动释放，循环开始时变量重新定义
         FILE *fc;
-        char option_tmp[42], option[100], *value, chartmp[200];
+        char option_tmp[42],option[100],*value;
         int new_value=0;
-        uchar opt,value_stat[OPTION_QUANTITY]={0},i=0;
+        uchar opt=0,value_stat[OPTION_QUANTITY]={0},i=0;
         struct stat statbuf;
         ListNode *node;
         check_read_file(option_file);
@@ -41,7 +41,7 @@ void *read_options()
             line_feed(option);
             //跳过以英文井号开头的行及空行
             if(!strlen(option) || (strstr(option, "#") != NULL && !strstr(option, "#"))) continue;
-            for(node=options;node;node=node->next)
+            for(opt=0,node=options;opt < OPTION_QUANTITY && node;opt++,node=node->next)
             {
                 //将配置名与等号进行拼接，用来进行匹配
                 snprintf(option_tmp, 42, "%s=", node->name);
@@ -71,35 +71,31 @@ void *read_options()
                     node->value=new_value;
                     value_stat[opt]=100;
                 }
-                if(option_last_modify_time)
-                {
-                    if(value_stat[opt] == 0) snprintf(chartmp, 200, "配置文件中%s不存在，故程序沿用上一次的值%d", node->name, node->value);
-                    else if(value_stat[opt] == 1) snprintf(chartmp, 200, "新%s的值为空，故程序沿用上一次的值%d", node->name, node->value);
-                    else if(value_stat[opt] == 2) snprintf(chartmp, 200, "新%s的值不是由纯数字组成，故程序沿用上一次的值%d", node->name, node->value);
-                    else if(value_stat[opt] == 3) snprintf(chartmp, 200, "新%s的值小于0，这是不被允许的，故程序沿用上一次的值%d", node->name, node->value);
-                    else if(value_stat[opt] == 4) snprintf(chartmp, 200, "新%s的值为0，这是不被允许的，故程序沿用上一次的值%d", node->name, node->value);
-                    else if(value_stat[opt] == 100) snprintf(chartmp, 200, "%s的值更改为%d", node->name, node->value);
-                    if(value_stat[opt] != 10)
-                    {
-                        printf_with_time("%s", chartmp);
-                    }
-                }
-                else
-                {
-                    if(value_stat[opt] == 0) snprintf(chartmp, 200, "配置文件中%s不存在，故程序使用默认值%d", node->name, node->value);
-                    else if(value_stat[opt] == 1) snprintf(chartmp, 200, "配置文件中%s的值为空，故程序使用默认值%d", node->name, node->value);
-                    else if(value_stat[opt] == 2) snprintf(chartmp, 200, "配置文件中%s的值不是由纯数字组成，故程序使用默认值%d", node->name, node->value);
-                    else if(value_stat[opt] == 3) snprintf(chartmp, 200, "配置文件中%s的值小于0，这是不被允许的，故程序使用默认值%d", node->name, node->value);
-                    else if(value_stat[opt] == 4) snprintf(chartmp, 200, "配置文件中%s的值为0，这是不被允许的，故程序使用默认值%d", node->name, node->value);
-                    if(!(value_stat[opt] == 10 || value_stat[opt] == 100))
-                    {
-                        printf_with_time("%s", chartmp);
-                    }
-                }
             }
         }
         fclose(fc);
         fc=NULL;
+        for(opt=0,node=options;opt < OPTION_QUANTITY && node;opt++,node=node->next)
+        {
+            //通过判断是否第一次运行来进行不同的字符串输出
+            if(option_last_modify_time)
+            {
+                if(value_stat[opt] == 0) printf_with_time("配置文件中%s不存在，故程序沿用上一次的值%d", node->name, node->value);
+                else if(value_stat[opt] == 1) printf_with_time("新%s的值为空，故程序沿用上一次的值%d", node->name, node->value);
+                else if(value_stat[opt] == 2) printf_with_time("新%s的值不是由纯数字组成，故程序沿用上一次的值%d", node->name, node->value);
+                else if(value_stat[opt] == 3) printf_with_time("新%s的值小于0，这是不被允许的，故程序沿用上一次的值%d", node->name, node->value);
+                else if(value_stat[opt] == 4) printf_with_time("新%s的值为0，这是不被允许的，故程序沿用上一次的值%d", node->name, node->value);
+                else if(value_stat[opt] == 100) printf_with_time("%s的值更改为%d", node->name, node->value);
+            }
+            else
+            {
+                if(value_stat[opt] == 0) printf_with_time("配置文件中%s不存在，故程序使用默认值%d", node->name, node->value);
+                else if(value_stat[opt] == 1) printf_with_time("配置文件中%s的值为空，故程序使用默认值%d", node->name, node->value);
+                else if(value_stat[opt] == 2) printf_with_time("配置文件中%s的值不是由纯数字组成，故程序使用默认值%d", node->name, node->value);
+                else if(value_stat[opt] == 3) printf_with_time("配置文件中%s的值小于0，这是不被允许的，故程序使用默认值%d", node->name, node->value);
+                else if(value_stat[opt] == 4) printf_with_time("配置文件中%s的值为0，这是不被允许的，故程序使用默认值%d", node->name, node->value);
+            }
+        }
         option_last_modify_time=statbuf.st_mtime;
         pthread_mutex_unlock(&mutex_options);
         sleep(5);
@@ -115,7 +111,7 @@ int read_one_option(char *name)
     pthread_mutex_lock(&mutex_options);
     for(node=options;node;node=node->next)
     {
-        if(!(strcmp(node->name,name)))
+        if(!(strcmp(node->name, name)))
         {
             value=node->value;
             break;

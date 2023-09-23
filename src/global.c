@@ -15,8 +15,8 @@ ListNode *options;
 void insert_option(char *name, int value)
 {
     ListNode *next,*tmp=options;
-    next=(ListNode *)calloc(1,sizeof(ListNode));
-    strncpy(next->name,name,40);
+    next=(ListNode *)calloc(1, sizeof(ListNode));
+    strncpy(next->name, name, 40);
     next->value=value;
     next->next=NULL;
     while(tmp->next) tmp=tmp->next;
@@ -25,7 +25,7 @@ void insert_option(char *name, int value)
 
 void node_init()
 {
-    options=(ListNode *)calloc(1,sizeof(ListNode));
+    options=(ListNode *)calloc(1, sizeof(ListNode));
     options->next=NULL;
     insert_option("CYCLE_TIME", 1);
     insert_option("FORCE_TEMP", 1);
