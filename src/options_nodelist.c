@@ -3,11 +3,16 @@
 
 #include "options_nodelist.h"
 
-ListNode *options_head;
+//存储配置的个数
+char option_quantity=0;
 
+//链表的头结点，只存储开始节点的地址
+ListNode options_head;
+
+//添加节点
 void insert_option(char *name, int value)
 {
-    ListNode *next,*tmp=options_head;
+    ListNode *next,*tmp=&options_head;
     next=(ListNode *)calloc(1, sizeof(ListNode));
     strncpy(next->name, name, 40);
     next->value=value;
@@ -16,10 +21,9 @@ void insert_option(char *name, int value)
     tmp->next=next;
 }
 
-void options_nodelist_init()
+//添加配置并将所有配置预先设为初始值
+void insert_all_option()
 {
-    options_head=(ListNode *)calloc(1, sizeof(ListNode));
-    options_head->next=NULL;
     insert_option("CYCLE_TIME", 1);
     insert_option("FORCE_TEMP", 1);
     insert_option("CURRENT_MAX", 50000000);
@@ -33,4 +37,24 @@ void options_nodelist_init()
     insert_option("HIGHEST_TEMP_CURRENT", 2000000);
     insert_option("RECHARGE_TEMP", 45);
     insert_option("BYPASS_CHARGE", 0);
+}
+
+//检查节点的个数（配置的个数）
+char check_option_quantity()
+{
+    char num=0;
+    ListNode *tmp=&options_head;
+    while(tmp->next)
+    {
+        tmp=tmp->next;
+        num++;
+    }
+    return num;
+}
+
+//初始化存储配置的链表
+void options_nodelist_init()
+{
+    insert_all_option();
+    option_quantity=check_option_quantity();
 }

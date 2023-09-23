@@ -4,7 +4,6 @@
 #include "dirent.h"
 #include "unistd.h"
 #include "regex.h"
-#include "malloc.h"
 #include "pthread.h"
 #include "time.h"
 #include "sys/stat.h"
@@ -30,8 +29,8 @@ int list_dir(char *path, char ***ppp)
     pDir=opendir(path);
     if(pDir != NULL)
     {
-        //预先分配一个足够大的内存，用来记录文件夹的个数
-        *ppp=(char **)calloc(1, sizeof(char *)*500);
+        //重新分配一个足够大的内存，用来记录文件夹的个数
+        *ppp=(char **)realloc(*ppp, sizeof(char *)*500);
         while((ent=readdir(pDir)) != NULL)
         {
             if(!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, "..")) continue;
@@ -106,11 +105,12 @@ void read_file(char *file_path, char *char_var, int max_char_num)
     line_feed(char_var);
 }
 
-//完全释放由melloc、celloc申请的二级指针的内存
+//完全释放动态申请的二级指针的内存
 void free_celloc_memory(char ***addr, int num)
 {
     if(addr != NULL && *addr != NULL)
     {
+        if(!num) num=1;
         for(int i=0;i < num;i++)
         {
             if((*addr)[i] != NULL)
@@ -181,6 +181,7 @@ int main()
     regcomp(&current_max_re, ".*/constant_charge_current_max$|.*/fast_charge_current$|.*/thermal_input_current$", REG_EXTENDED|REG_NOSUB);
     regcomp(&current_limit_re, ".*/thermal_input_current_limit$", REG_EXTENDED|REG_NOSUB);
     regcomp(&temp_re, ".*/temp$", REG_EXTENDED|REG_NOSUB);
+    power_supply_dir=(char **)calloc(1, sizeof(char *));
     power_supply_file_num=list_dir("/sys/class/power_supply", &power_supply_dir);
     //预先分配一个足够大的内存，用来记录文件的个数
     current_limit_file=(char **)calloc(1, sizeof(char *)*100);
@@ -189,6 +190,7 @@ int main()
     //遍历/sys/class/power_supply
     for(i=0;i < power_supply_file_num;i++)
     {
+        power_supply_dir_list=(char **)calloc(1, sizeof(char *));
         power_supply_dir_list_num=list_dir(power_supply_dir[i], &power_supply_dir_list);
         //遍历/sys/class/power_supply路径下的所有文件夹
         for(j=0;j < power_supply_dir_list_num;j++)
@@ -242,6 +244,7 @@ int main()
         buffer=(char *)calloc(1, sizeof(char));
         temp_tmp=(char *)calloc(1, sizeof(char)*15);
         msg=(char *)calloc(1, sizeof(char));
+        thermal_dir=(char **)calloc(1, sizeof(char *));
         thermal_file_num=list_dir("/sys/class/thermal", &thermal_dir);
         //遍历/sys/class/thermal
         for(i=0;i < thermal_file_num;i++)
@@ -286,7 +289,7 @@ int main()
                 //判断temp文件的值是否正常，若不正常则代表不能使用此温度传感器，跳过此温度传感器的后续操作
                 if(atoi(temp_tmp) == 1 || atoi(temp_tmp) == 0 || atoi(temp_tmp) == -1) continue;
                 //根据温度传感器的优先级顺序进行筛选，最终选择优先级最高的可用的温度传感器
-                for(j=0;j < TEMP_SENSOR_QUANTITY;j++)
+                for(j=0;j < temp_sensor_quantity;j++)
                 {
                     if(!strcmp(msg, temp_sensors[j]) && temp_sensor_num > j)
                     {

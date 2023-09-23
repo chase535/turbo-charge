@@ -23,9 +23,10 @@ void *read_options()
         FILE *fc;
         char option_tmp[42],option[100],*value;
         int new_value=0;
-        uchar opt=0,value_stat[OPTION_QUANTITY]={0},i=0;
+        uchar opt=0,value_stat[option_quantity],i=0;
         struct stat statbuf;
         ListNode *node;
+        memset(value_stat, 0, sizeof(value_stat));
         check_read_file(option_file);
         //先获取文件修改时间，若本次的文件修改时间与上次相等，证明配置文件未修改，跳过读取
         stat(option_file, &statbuf);
@@ -41,7 +42,7 @@ void *read_options()
             line_feed(option);
             //跳过以英文井号开头的行及空行
             if(!strlen(option) || (strstr(option, "#") != NULL && !strstr(option, "#"))) continue;
-            for(opt=0,node=options_head->next;opt < OPTION_QUANTITY && node;opt++,node=node->next)
+            for(opt=0,node=options_head.next;node;opt++,node=node->next)
             {
                 //将配置名与等号进行拼接，用来进行匹配
                 snprintf(option_tmp, 42, "%s=", node->name);
@@ -75,7 +76,7 @@ void *read_options()
         }
         fclose(fc);
         fc=NULL;
-        for(opt=0,node=options_head->next;opt < OPTION_QUANTITY && node;opt++,node=node->next)
+        for(opt=0,node=options_head.next;node;opt++,node=node->next)
         {
             //通过判断是否第一次运行来进行不同的字符串输出
             if(option_last_modify_time)
@@ -109,7 +110,7 @@ int read_one_option(char *name)
     int value=-1;
     ListNode *node;
     pthread_mutex_lock(&mutex_options);
-    for(node=options_head->next;node;node=node->next)
+    for(node=options_head.next;node;node=node->next)
     {
         if(!(strcmp(node->name, name)))
         {

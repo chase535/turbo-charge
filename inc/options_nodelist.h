@@ -10,7 +10,8 @@ struct ListNode
 
 typedef struct ListNode ListNode;
 
-extern ListNode *options_head;
+extern char option_quantity;
+extern ListNode options_head;
 
 void options_nodelist_init();
 

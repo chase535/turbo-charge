@@ -11,6 +11,9 @@
 #include "read_option.h"
 #include "foreground_app.h"
 
+//全局变量，用于存储当前前台应用的包名
+volatile char ForegroundAppName[100];
+
 /*
 获取前台应用的包名以配合“伪”旁路供电功能使用
 我是干嵌入式系统开发的，对AndroidNDK不熟悉，无法使用纯C语言实现，所以只能使用popen管道执行Shell命令来获取
