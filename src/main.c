@@ -136,7 +136,7 @@ int main()
     pthread_t thread1,thread2;
     struct stat statbuf;
     //初始化链表
-    options_nodelist_init();
+    options_linkedlist_init();
     printf("作者：酷安@诺鸡鸭\n");
     printf("GitHub开源地址：https://github.com/chase535/turbo-charge\n\n");
     //如果是写入文件，则必须加上这句话，不然只能等缓冲区满了后才会一次性写入
@@ -430,7 +430,7 @@ int main()
             if(force_temp && read_one_option("FORCE_TEMP") == 1) set_array_value(temp_file, temp_file_num, "280");
             else if(has_force_temp) set_temp(temp_sensor, temp_file, temp_file_num, 0);
             //电量控制功能
-            if(power_control) powel_ctl(&last_charge_stop,&charge_is_stop);
+            if(power_control) powel_ctl(&last_charge_stop, &charge_is_stop);
             //如果电流文件存在且安卓版本大于等于7，则执行“伪”旁路供电函数
             if(current_change && can_get_foreground)
             {
@@ -509,7 +509,7 @@ int main()
                         if(force_temp && read_one_option("FORCE_TEMP") == 1) set_array_value(temp_file, temp_file_num, "280");
                         else if(has_force_temp) set_temp(temp_sensor, temp_file, temp_file_num, 0);
                         //电量控制功能
-                        if(power_control) powel_ctl(&last_charge_stop,&charge_is_stop);
+                        if(power_control) powel_ctl(&last_charge_stop, &charge_is_stop);
                         sleep(read_one_option("CYCLE_TIME"));
                     }
                 }
@@ -555,7 +555,7 @@ int main()
             //如果在停止充电前手机处于“伪”旁路供电模式，则停止充电后将此标识符置0
             if(is_bypass) is_bypass=0;
             //因为断电也有可能是由电量控制引起的，所以此处执行电量控制函数
-            if(power_control) powel_ctl(&last_charge_stop,&charge_is_stop);
+            if(power_control) powel_ctl(&last_charge_stop, &charge_is_stop);
             //此标识符代表手机是否通过此程序修改了电池温度
             //如果修改了，则电池温度无法再自动刷新，需要通过此程序进行刷新
             if(has_force_temp)

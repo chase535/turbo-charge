@@ -13,6 +13,6 @@ typedef struct ListNode ListNode;
 extern char option_quantity;
 extern ListNode options_head;
 
-void options_nodelist_init();
+void options_linkedlist_init();
 
 #endif
