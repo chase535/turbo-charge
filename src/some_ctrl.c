@@ -7,7 +7,6 @@
 #include "some_ctrl.h"
 #include "read_option.h"
 #include "value_set.h"
-#include "my_thread.h"
 #include "foreground_app.h"
 #include "printf_with_time.h"
 
