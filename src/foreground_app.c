@@ -7,7 +7,6 @@
 #include "sys/types.h"
 
 #include "printf_with_time.h"
-#include "my_thread.h"
 #include "read_option.h"
 #include "foreground_app.h"
 

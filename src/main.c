@@ -11,7 +11,6 @@
 #include "main.h"
 #include "read_option.h"
 #include "some_ctrl.h"
-#include "my_thread.h"
 #include "printf_with_time.h"
 #include "value_set.h"
 #include "foreground_app.h"

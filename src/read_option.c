@@ -7,7 +7,6 @@
 #include "pthread.h"
 
 #include "read_option.h"
-#include "my_thread.h"
 #include "printf_with_time.h"
 
 /*

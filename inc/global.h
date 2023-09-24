@@ -1,8 +1,6 @@
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
 
-#include "main.h"
-
 #define BYPASS_CHARGE_CURRENT "500000"
 
 extern char option_file[];

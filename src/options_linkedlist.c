@@ -1,7 +1,7 @@
 #include "stdlib.h"
 #include "string.h"
 
-#include "options_nodelist.h"
+#include "options_linkedlist.h"
 
 //存储配置的个数
 char option_quantity=0;
