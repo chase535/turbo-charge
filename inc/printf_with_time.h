@@ -3,6 +3,6 @@
 
 #include "main.h"
 
-void printf_with_time(const char *format,...);
+void printf_with_time(const char *format, ...);
 
 #endif

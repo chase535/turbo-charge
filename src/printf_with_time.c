@@ -68,8 +68,8 @@ void get_utc8_time(struct tm *ptm)
 }
 
 //以printf的标准对函数的参数进行检查、格式化，并在字符串前面加上时间
-void printf_with_time(const char *format,...) __attribute__((__format__(__printf__, 1, 2)));
-void printf_with_time(const char *format,...)
+void printf_with_time(const char *format, ...) __attribute__((__format__(__printf__, 1, 2)));
+void printf_with_time(const char *format, ...)
 {
     char buffer[1024];
     struct tm time_utc8_now;
@@ -80,6 +80,6 @@ void printf_with_time(const char *format,...)
     va_end(ap);
     get_utc8_time(&time_utc8_now);
     //在拼接后的字符串前面加上时间
-    printf("[ %04d.%02d.%02dT%02d:%02d:%02d UTC+8 ] %s\n",time_utc8_now.tm_year, time_utc8_now.tm_mon, time_utc8_now.tm_mday, time_utc8_now.tm_hour, time_utc8_now.tm_min, time_utc8_now.tm_sec, buffer);
+    printf("[ %04d.%02d.%02dT%02d:%02d:%02d UTC+8 ] %s\n", time_utc8_now.tm_year, time_utc8_now.tm_mon, time_utc8_now.tm_mday, time_utc8_now.tm_hour, time_utc8_now.tm_min, time_utc8_now.tm_sec, buffer);
     fflush(stdout);
 }

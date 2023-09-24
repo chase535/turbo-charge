@@ -53,7 +53,7 @@ char check_option_quantity()
 }
 
 //初始化存储配置的链表
-void options_nodelist_init()
+void options_linkedlist_init()
 {
     insert_all_option();
     option_quantity=check_option_quantity();
