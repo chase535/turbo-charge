@@ -6,12 +6,10 @@ until [[ "$(getprop service.bootanim.exit)" == "1" ]]; do
 done
 echo "手机启动完毕" >> /data/adb/turbo-charge/log.txt
 echo "" >> /data/adb/turbo-charge/log.txt
-[[ -e /data/vendor/thermal ]] && chattr -i /data/vendor/thermal
-[[ -e /data/vendor/thermal/config ]] && chattr -i /data/vendor/thermal/config
+[[ -e /data/vendor/thermal ]] && chattr -i $(find /data/vendor/thermal)
 rm -rf /data/vendor/thermal
 mkdir -p /data/vendor/thermal/config
-chattr +i /data/vendor/thermal/config
-chattr +i /data/vendor/thermal
+chattr +i /data/vendor/thermal/config /data/vendor/thermal
 nohup ${MODDIR}/turbo-charge > /dev/null 2>&1 &
 sleep 1
 first_process=$(ps -eo comm,pid | grep "turbo-charge" | awk '{print $2}')
