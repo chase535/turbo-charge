@@ -1,7 +1,8 @@
 name: Sync To Gitee
 
-on: 
-  push: 
+on:
+  workflow_dispatch:
+  push:
     branches:
       - 'main'
 
