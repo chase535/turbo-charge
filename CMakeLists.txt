@@ -15,9 +15,16 @@ set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_C_FLAGS "-g0 -O2 -W -Wall -Wno-format-truncation -Wno-unused-result -Werror -fvisibility=hidden -flto -fno-omit-frame-pointer -fdata-sections -ffunction-sections")
 set(CMAKE_EXE_LINKER_FLAGS "-g0 -O2 -static -fvisibility=hidden -flto -ffixed-x18 -Wl,-O2,--strip-all,--hash-style=both,--gc-sections,--exclude-libs,ALL")
 
+# 查找mimalloc包
+find_package(mimalloc REQUIRED NO_SYSTEM_ENVIRONMENT_PATH)
+message(STATUS "Found mimalloc installed at: ${MIMALLOC_LIBRARY_DIR} (${MIMALLOC_VERSION_DIR})")
+
 # 添加头文件目录
 include_directories(./inc)
 
 # 指定生成目标
 aux_source_directory(./src SRC_LIST)
 add_executable(turbo-charge ${SRC_LIST})
+
+# 链接静态mimalloc库
+target_link_libraries(turbo-charge PUBLIC mimalloc-static)
