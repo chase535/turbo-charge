@@ -1,5 +1,6 @@
 #!/system/bin/sh
 MODDIR=${0%/*}
+[[ -f /data/adb/turbo-charge/log.txt ]] && mv -f /data/adb/turbo-charge/log.txt /data/adb/turbo-charge/log.txt.old
 echo "等待手机启动完毕，以确保时间准确。若只看到这一行内容，请立即联系模块作者！" > /data/adb/turbo-charge/log.txt
 until [[ "$(getprop service.bootanim.exit)" == "1" ]]; do
     sleep 1
