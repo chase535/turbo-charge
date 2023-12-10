@@ -8,6 +8,8 @@
 #include "time.h"
 #include "sys/stat.h"
 
+#include "mimalloc.h"
+
 #include "main.h"
 #include "read_option.h"
 #include "some_ctrl.h"
@@ -29,19 +31,19 @@ int list_dir(char *path, char ***ppp)
     if(pDir != NULL)
     {
         //重新分配一个足够大的内存，用来记录文件夹的个数
-        *ppp=(char **)realloc(*ppp, sizeof(char *)*500);
+        *ppp=(char **)mi_realloc(*ppp, sizeof(char *)*500);
         while((ent=readdir(pDir)) != NULL)
         {
             if(!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, "..")) continue;
             //分配一个与路径字符串大小相等的内存，用来装路径
-            (*ppp)[file_num]=(char *)calloc(1, sizeof(char)*((strlen(path)+strlen(ent->d_name))+2));
+            (*ppp)[file_num]=(char *)mi_calloc(1, sizeof(char)*((strlen(path)+strlen(ent->d_name))+2));
             //拼接路径及文件夹名
             sprintf((*ppp)[file_num], "%s/%s", path, ent->d_name);
             file_num++;
         }
         closedir(pDir);
         //收缩内存
-        *ppp=(char **)realloc(*ppp, sizeof(char *)*file_num);
+        *ppp=(char **)mi_realloc(*ppp, sizeof(char *)*file_num);
     }
     return file_num;
 }
@@ -105,7 +107,7 @@ void read_file(char *file_path, char *char_var, int max_char_num)
 }
 
 //完全释放动态申请的二级指针的内存
-void free_celloc_memory(char ***addr, int num)
+void free_mimalloc_memory(char ***addr, int num)
 {
     if(addr != NULL && *addr != NULL)
     {
@@ -114,11 +116,11 @@ void free_celloc_memory(char ***addr, int num)
         {
             if((*addr)[i] != NULL)
             {
-                free((*addr)[i]);
+                mi_free((*addr)[i]);
                 (*addr)[i]=NULL;
             }
         }
-        free(*addr);
+        mi_free(*addr);
         *addr=NULL;
     }
 }
@@ -180,16 +182,16 @@ int main()
     regcomp(&current_max_re, ".*/constant_charge_current_max$|.*/fast_charge_current$|.*/thermal_input_current$", REG_EXTENDED|REG_NOSUB);
     regcomp(&current_limit_re, ".*/thermal_input_current_limit$", REG_EXTENDED|REG_NOSUB);
     regcomp(&temp_re, ".*/temp$", REG_EXTENDED|REG_NOSUB);
-    power_supply_dir=(char **)calloc(1, sizeof(char *));
+    power_supply_dir=(char **)mi_calloc(1, sizeof(char *));
     power_supply_file_num=list_dir("/sys/class/power_supply", &power_supply_dir);
     //预先分配一个足够大的内存，用来记录文件的个数
-    current_limit_file=(char **)calloc(1, sizeof(char *)*100);
-    current_max_file=(char **)calloc(1, sizeof(char *)*100);
-    temp_file=(char **)calloc(1, sizeof(char *)*100);
+    current_limit_file=(char **)mi_calloc(1, sizeof(char *)*100);
+    current_max_file=(char **)mi_calloc(1, sizeof(char *)*100);
+    temp_file=(char **)mi_calloc(1, sizeof(char *)*100);
     //遍历/sys/class/power_supply
     for(i=0;i < power_supply_file_num;i++)
     {
-        power_supply_dir_list=(char **)calloc(1, sizeof(char *));
+        power_supply_dir_list=(char **)mi_calloc(1, sizeof(char *));
         power_supply_dir_list_num=list_dir(power_supply_dir[i], &power_supply_dir_list);
         //遍历/sys/class/power_supply路径下的所有文件夹
         for(j=0;j < power_supply_dir_list_num;j++)
@@ -197,30 +199,30 @@ int main()
             //，如果匹配到了文件，则分配一个与路径字符串大小相等的内存，装入路径，并且记录相应文件数量的变量值+1
             if(!regexec(&current_limit_re, power_supply_dir_list[j], 1, &current_limit_pmatch, 0))
             {
-                current_limit_file[current_limit_file_num]=(char *)calloc(1, sizeof(char)*(strlen(power_supply_dir_list[j])+1));
+                current_limit_file[current_limit_file_num]=(char *)mi_calloc(1, sizeof(char)*(strlen(power_supply_dir_list[j])+1));
                 strcpy(current_limit_file[current_limit_file_num], power_supply_dir_list[j]);
                 current_limit_file_num++;
             }
             if(!regexec(&current_max_re, power_supply_dir_list[j], 1, &current_max_pmatch, 0))
             {
-                current_max_file[current_max_file_num]=(char *)calloc(1, sizeof(char)*(strlen(power_supply_dir_list[j])+1));
+                current_max_file[current_max_file_num]=(char *)mi_calloc(1, sizeof(char)*(strlen(power_supply_dir_list[j])+1));
                 strcpy(current_max_file[current_max_file_num], power_supply_dir_list[j]);
                 current_max_file_num++;
             }
             if(!regexec(&temp_re, power_supply_dir_list[j], 1, &temp_pmatch, 0))
             {
-                temp_file[temp_file_num]=(char *)calloc(1, sizeof(char)*(strlen(power_supply_dir_list[j])+1));
+                temp_file[temp_file_num]=(char *)mi_calloc(1, sizeof(char)*(strlen(power_supply_dir_list[j])+1));
                 strcpy(temp_file[temp_file_num], power_supply_dir_list[j]);
                 temp_file_num++;
             }
         }
-        free_celloc_memory(&power_supply_dir_list, power_supply_dir_list_num);
+        free_mimalloc_memory(&power_supply_dir_list, power_supply_dir_list_num);
     }
-    free_celloc_memory(&power_supply_dir, power_supply_file_num);
+    free_mimalloc_memory(&power_supply_dir, power_supply_file_num);
     //收缩内存
-    current_limit_file=(char **)realloc(current_limit_file, sizeof(char *)*current_limit_file_num);
-    current_max_file=(char **)realloc(current_max_file, sizeof(char *)*current_max_file_num);
-    temp_file=(char **)realloc(temp_file, sizeof(char *)*temp_file_num);
+    current_limit_file=(char **)mi_realloc(current_limit_file, sizeof(char *)*current_limit_file_num);
+    current_max_file=(char **)mi_realloc(current_max_file, sizeof(char *)*current_max_file_num);
+    temp_file=(char **)mi_realloc(temp_file, sizeof(char *)*temp_file_num);
     //判断文件数量是否为0
     if(!current_max_file_num)
     {
@@ -235,15 +237,15 @@ int main()
         else printf_with_time("由于找不到/sys/class/power_supply/battery/status文件以及无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！");
     }
     //预先分配一个占位用的内存，此内存后续将装入温度传感器所获取到的温度的文件的路径
-    temp_sensor=(char *)calloc(1, sizeof(char));
+    temp_sensor=(char *)mi_calloc(1, sizeof(char));
     if(force_temp || current_change)
     {
         //预先分配一个占位用的内存
-        temp_sensor_dir=(char *)calloc(1, sizeof(char));
-        buffer=(char *)calloc(1, sizeof(char));
-        temp_tmp=(char *)calloc(1, sizeof(char)*15);
-        msg=(char *)calloc(1, sizeof(char));
-        thermal_dir=(char **)calloc(1, sizeof(char *));
+        temp_sensor_dir=(char *)mi_calloc(1, sizeof(char));
+        buffer=(char *)mi_calloc(1, sizeof(char));
+        temp_tmp=(char *)mi_calloc(1, sizeof(char)*15);
+        msg=(char *)mi_calloc(1, sizeof(char));
+        thermal_dir=(char **)mi_calloc(1, sizeof(char *));
         thermal_file_num=list_dir("/sys/class/thermal", &thermal_dir);
         //遍历/sys/class/thermal
         for(i=0;i < thermal_file_num;i++)
@@ -253,7 +255,7 @@ int main()
             if(strstr(thermal_dir[i], "thermal_zone") != NULL)
             {
                 //判断该文件夹内是否有一个名为type的文件，此文件的内容为该温度传感器的名称
-                buffer=(char *)realloc(buffer, sizeof(char)*(strlen(thermal_dir[i])+6));
+                buffer=(char *)mi_realloc(buffer, sizeof(char)*(strlen(thermal_dir[i])+6));
                 sprintf(buffer, "%s/type", thermal_dir[i]);
                 //如果没有type文件或type文件不可读，则跳过此温度传感器的后续操作
                 if(access(buffer, R_OK)) continue;
@@ -263,7 +265,7 @@ int main()
                 if(fq != NULL)
                 {
                     //重新分配内存，使其刚好能够装入该温度传感器的名称，并获取该温度传感器的名称
-                    msg=(char *)realloc(msg, sizeof(char)*(statbuf.st_size+1));
+                    msg=(char *)mi_realloc(msg, sizeof(char)*(statbuf.st_size+1));
                     fgets(msg, statbuf.st_size+1, fq);
                     fclose(fq);
                     fq=NULL;
@@ -294,24 +296,24 @@ int main()
                     {
                         temp_sensor_num=j;
                         //重新分配内存保证了最小内存使用量，temp_sensor_dir只是温度传感器的所在路径，后续会进行拼接
-                        temp_sensor_dir=(char *)realloc(temp_sensor_dir, sizeof(char)*(strlen(thermal_dir[i])+1));
+                        temp_sensor_dir=(char *)mi_realloc(temp_sensor_dir, sizeof(char)*(strlen(thermal_dir[i])+1));
                         strcpy(temp_sensor_dir, thermal_dir[i]);
                     }
                 }
             }
         }
-        free(buffer);
+        mi_free(buffer);
         buffer=NULL;
-        free(temp_tmp);
+        mi_free(temp_tmp);
         temp_tmp=NULL;
-        free(msg);
+        mi_free(msg);
         msg=NULL;
-        free_celloc_memory(&thermal_dir, thermal_file_num);
+        free_mimalloc_memory(&thermal_dir, thermal_file_num);
         //判断是否获取到了可用的温度传感器
         if(temp_sensor_num != 100)
         {
             //重新分配内存，使其刚好能够装下路径+“/temp”，因为temp文件内存储的是温度传感器所获取的温度值
-            temp_sensor=(char *)realloc(temp_sensor, sizeof(char)*(strlen(temp_sensor_dir)+6));
+            temp_sensor=(char *)mi_realloc(temp_sensor, sizeof(char)*(strlen(temp_sensor_dir)+6));
             sprintf(temp_sensor, "%s/temp", temp_sensor_dir);
             printf_with_time("将使用%s温度传感器作为手机温度的获取源。由于每个传感器所处位置不同以及每个手机发热区不同，很可能导致获取到的温度与实际体感温度不同", temp_sensors[temp_sensor_num]);
             check_read_file(temp_sensor);
@@ -319,7 +321,7 @@ int main()
         //如果没有获取到可用的温度传感器，则打印相关信息
         else
         {
-            free(temp_sensor);
+            mi_free(temp_sensor);
             temp_sensor=NULL;
             if(force_temp)
             {
@@ -333,7 +335,7 @@ int main()
                 exit(800);
             }
         }
-        free(temp_sensor_dir);
+        mi_free(temp_sensor_dir);
         temp_sensor_dir=NULL;
     }
     else
