@@ -1,3 +1,17 @@
+# v61
+
+### Changelog
+
+**开始上班，随缘更新**
+
+1.使用[mimalloc](https://github.com/microsoft/mimalloc)代替原版malloc家族，以略微增加程序大小为代价，解决musl函数库malloc家族执行效率低的短板，提高程序运行效率
+
+2.编译链接优化等级调整为2
+
+3.安装及开机时`chattr -i`云控目录下的所有文件，提高兼容性
+
+4.开机时将上次的运行日志文件重命名为log.txt.old
+
 # v60
 
 ### Changelog
