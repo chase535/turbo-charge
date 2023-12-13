@@ -186,7 +186,7 @@ set_permissions()
     set_perm_recursive  /data/adb/turbo-charge  0  0  0755  0777
 }
 
-unzip -oj "${ZIPFILE}" module.prop uninstall.sh 'common/*' -d ${TMPDIR} >&2
+unzip -oj "${ZIPFILE}" module.prop 'common/*' -d ${TMPDIR} >&2
 print_modname
 check_file
 print_info
