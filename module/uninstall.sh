@@ -1,4 +1,4 @@
 #!/system/bin/sh
-chattr -i /data/vendor/thermal
-chattr -i /data/vendor/thermal/config
-rm -rf /data/adb/turbo-charge
+[[ -e /data/vendor/thermal ]] && chattr -i $(find /data/vendor/thermal)
+rm -rf /data/vendor/thermal /data/adb/turbo-charge
+mkdir -p /data/vendor/thermal/config
