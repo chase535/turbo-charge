@@ -36,10 +36,9 @@ jobs:
       - name: Clone and build mimalloc
         run: |
           git clone https://github.com/microsoft/mimalloc.git ${HOME}/mimalloc -b master --depth=1
-          mkdir -p ${HOME}/mimalloc/out/release
-          cd ${HOME}/mimalloc/out/release
-          cmake ../..
-          make
+          cd ${HOME}/mimalloc
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DMI_BUILD_STATIC=ON -DMI_BUILD_SHARED=OFF -DMI_BUILD_OBJECT=OFF -DMI_BUILD_TESTS=OFF -DMI_SECURE=OFF
+          make -C build -j$(nproc --all)
           sudo make install
       - name: Build module
         run: |
