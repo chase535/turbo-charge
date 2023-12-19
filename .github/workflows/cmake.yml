@@ -16,6 +16,9 @@ on:
 
 env:
   HOME: "${{ github.workspace }}"
+  CFLAGS: "-g0 -O2"
+  CXXFLAGS: "-g0 -O2"
+  LDFLAGS: "-g0 -O2 -Wl,-O2,--hash-style=both"
 
 jobs:
   build:
