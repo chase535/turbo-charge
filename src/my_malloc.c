@@ -8,3 +8,4 @@ void (*my_free)(void *)=&mi_free;
 void *(*my_calloc)(size_t, size_t)=&calloc;
 void *(*my_realloc)(void *, size_t)=&realloc;
 void (*my_free)(void *)=&free;
+#endif
