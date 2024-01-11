@@ -1,8 +1,7 @@
 #include "stdlib.h"
 #include "string.h"
 
-#include "mimalloc.h"
-
+#include "my_malloc.h"
 #include "options_linkedlist.h"
 
 //存储配置的个数
@@ -15,7 +14,7 @@ ListNode options_head;
 void insert_option(char *name, int value)
 {
     ListNode *next,*tmp=&options_head;
-    next=(ListNode *)mi_calloc(1, sizeof(ListNode));
+    next=(ListNode *)my_calloc(1, sizeof(ListNode));
     strncpy(next->name, name, 40);
     next->value=value;
     next->next=NULL;
