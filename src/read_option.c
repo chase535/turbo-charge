@@ -25,7 +25,6 @@ void *read_options()
         uchar opt=0,value_stat[option_quantity],i=0;
         struct stat statbuf;
         ListNode *node;
-        memset(value_stat, 0, sizeof(value_stat));
         check_read_file(option_file);
         //先获取文件修改时间，若本次的文件修改时间与上次相等，证明配置文件未修改，跳过读取
         stat(option_file, &statbuf);
@@ -34,6 +33,7 @@ void *read_options()
             sleep(5);
             continue;
         }
+        memset(value_stat, 0, sizeof(value_stat));
         pthread_mutex_lock(&mutex_options);
         fc=fopen(option_file, "rt");
         while(fgets(option, sizeof(option), fc) != NULL)
