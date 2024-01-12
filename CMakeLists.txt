@@ -21,7 +21,7 @@ if(MIMALLOC_FOUND)
 message(STATUS "Find mimalloc installed at: ${MIMALLOC_LIBRARY_DIR} (${MIMALLOC_VERSION_DIR}), use mimalloc")
 add_compile_definitions(MI_MALLOC)
 else(MIMALLOC_FOUND)
-message(STATUS "Can not find mimalloc, use malloc")
+message(STATUS "Could not find mimalloc, use malloc")
 endif(MIMALLOC_FOUND)
 
 # 添加头文件目录
