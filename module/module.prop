@@ -1,7 +1,7 @@
 id=turbo-charge
 name=充电加速
-version=v61
-versionCode=61
+version=v62
+versionCode=62
 author=酷安@诺鸡鸭
 description=删除温控，关闭阶梯式充电，持续修改电池温度及充电电流，尽可能的让手机满血快充。配置文件在/data/adb/turbo-charge/option.txt，可以更改一些参数，日志文件为同目录的log.txt
 updateJson=https://gitee.com/chase535/turbo-charge/raw/main/update_channel/turbo-charge.json
