@@ -3,13 +3,15 @@ name: Update Magisk Channel Data
 on:
   release:
     types:
-      - 'published'
+      - 'created'
 
 env:
-  GITHUB_USER: "${{secrets.USERNAME}}"
-  GITHUB_EMAIL: "${{secrets.EMAIL}}"
-  GITHUB_TOKEN: "${{secrets.API_TOKEN_GITHUB}}"
+  GITHUB_USER: "${{ secrets.USERNAME }}"
+  GITHUB_EMAIL: "${{ secrets.EMAIL }}"
+  GITHUB_TOKEN: "${{ secrets.API_TOKEN_GITHUB }}"
+  HOME: "${{ github.workspace }}"
   GIT_CLONE: "${{ github.workspace }}/git_clone"
+  REF: "${{ github.ref }}"
 
 jobs:
   build:
@@ -20,35 +22,52 @@ jobs:
       - name: Install tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget jq dos2unix ssh git
+          sudo apt-get install -y wget jq dos2unix ssh git zip
+      - name: Get tag
+        run: |
+          tag=$(echo ${REF} | sed "s|refs/tags/||g")
+          echo "TAG=${tag}" >> ${GITHUB_ENV}
       - name: Wget zip file
         run: |
-          tag=$(echo ${{ github.ref }} | sed "s|refs/tags/||g")
-          wget -P ${{ github.workspace }} https://github.com/chase535/turbo-charge/releases/download/${tag}/turbo-charge.zip
+          wget -P ${HOME} https://github.com/chase535/turbo-charge/releases/download/${TAG}/turbo-charge.zip
       - name: Wget and parse releases json
         run: |
-          tag=$(echo ${{ github.ref }} | sed "s|refs/tags/||g")
-          versioncode=$(echo ${tag} | sed "s|v||g")
-          wget -P ${{ github.workspace }} https://api.github.com/repos/chase535/turbo-charge/releases/tags/${tag} -O releases.json
-          jq -rM '.body' ${{ github.workspace }}/releases.json > ${{ github.workspace }}/changelog.md
-          sed -i "1i # ${tag}" ${{ github.workspace }}/changelog.md
-          sed -i G ${{ github.workspace }}/changelog.md
-          echo "{\"version\": \"${tag}\",\"versionCode\": \"${versioncode}\"}" > ${{ github.workspace }}/version.json
-      - name: Push zip file and modified files
+          versioncode=$(echo ${TAG} | sed "s|v||g")
+          wget -P ${HOME} https://api.github.com/repos/chase535/turbo-charge/releases/tags/${TAG} -O releases.json
+          cd ${HOME}
+          jq -rM '.body' ./releases.json > ./changelog.md
+          cp ./changelog.md ./Changelog_All.md
+          sed -i "1i # ${TAG}" ./Changelog_All.md
+          sed -i G ./Changelog_All.md
+          echo "{\"version\": \"${TAG}\",\"versionCode\": \"${versioncode}\"}" > ./version.json
+      - name: Modified files
         run: |
-          tag=$(echo ${{ github.ref }} | sed "s|refs/tags/||g")
           git config --global user.name "${GITHUB_USER}"
           git config --global user.email "${GITHUB_EMAIL}"
-          mkdir -vp ${GIT_CLONE}
           git clone https://"${GITHUB_USER}":"${GITHUB_TOKEN}"@github.com/chase535/turbo-charge.git ${GIT_CLONE} -b main --depth=1
+          cd ${HOME}
+          cat ${GIT_CLONE}/Changelog_All.md >> ./Changelog_All.md
+          dos2unix ./changelog.md ./Changelog_All.md
+          cp -avf ./changelog.md ${GIT_CLONE}/update_channel
+          cp -avf ./Changelog_All.md ${GIT_CLONE}
+          jq -sM add ${GIT_CLONE}/update_channel/turbo-charge.json ./version.json > ./turbo-charge.json
+          dos2unix ./turbo-charge.json
+          cp -avf ./turbo-charge.json ./turbo-charge.zip ${GIT_CLONE}/update_channel
+      - name: Add changelog.md into zip file
+        run: |
           cd ${GIT_CLONE}
-          cp -avf ${{ github.workspace }}/turbo-charge.zip ./update_channel
-          cat ./update_channel/changelog.md >> ${{ github.workspace }}/changelog.md
-          dos2unix ${{ github.workspace }}/changelog.md
-          cp -avf ${{ github.workspace }}/changelog.md ./update_channel
-          jq -sM add ./update_channel/turbo-charge.json ${{ github.workspace }}/version.json > ${{ github.workspace }}/turbo-charge.json
-          dos2unix ${{ github.workspace }}/turbo-charge.json
-          cp -avf ${{ github.workspace }}/turbo-charge.json ./update_channel
+          zip -u ./update_channel/turbo-charge.zip Changelog_All.md
+      - name: Push
+        run: |
+          cd ${GIT_CLONE}
           git add . -f
-          git commit -a -m "更新${tag}版本"
+          git commit -a -m "更新${TAG}版本"
           git push origin main -f
+      - name: Update release
+        uses: softprops/action-gh-release@v1
+        with:
+          token: ${{ secrets.API_TOKEN_GITHUB }}
+          tag_name: ${{ env.TAG }}
+          files: ${{ env.GIT_CLONE }}/update_channel/turbo-charge.zip
+          body_path: ${{ env.GIT_CLONE }}/update_channel/changelog.md
+          generate_release_notes: false
