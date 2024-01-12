@@ -372,6 +372,7 @@ int main()
     set_value("/sys/class/power_supply/battery/input_current_limited", "0");
     set_value("/sys/class/power_supply/battery/input_current_settled", "1");
     set_value("/sys/class/qcom-battery/restrict_chg", "0");
+    set_array_value(current_limit_file, current_limit_file_num, "-1");
     charge_ctl("1");
     //前期工作全部完成，程序正式开始运行
     while(1)
@@ -379,7 +380,6 @@ int main()
         //读配置文件并赋值给程序内部变量
         snprintf(current_max_char, 20, "%d", read_one_option("CURRENT_MAX"));
         snprintf(highest_temp_current_char, 20, "%d", read_one_option("HIGHEST_TEMP_CURRENT"));
-        set_array_value(current_limit_file, current_limit_file_num, "-1");
         //如果无法判断手机的充电状态，则很多功能无法实现，剩余代码很简单
         if(!battery_status)
         {
