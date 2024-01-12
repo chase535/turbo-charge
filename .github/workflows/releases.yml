@@ -36,9 +36,8 @@ jobs:
           wget -P ${HOME} https://api.github.com/repos/chase535/turbo-charge/releases/tags/${TAG} -O releases.json
           cd ${HOME}
           jq -rM '.body' ./releases.json > ./changelog.md
-          cp ./changelog.md ./Changelog_All.md
-          sed -i "1i # ${TAG}" ./Changelog_All.md
-          sed -i G ./Changelog_All.md ./changelog.md
+          sed -i "1i # ${TAG}" ./changelog.md
+          sed -i G ./changelog.md
           echo "{\"version\": \"${TAG}\",\"versionCode\": \"${versioncode}\"}" > ./version.json
       - name: Modified files
         run: |
@@ -46,6 +45,7 @@ jobs:
           git config --global user.email "${GITHUB_EMAIL}"
           git clone https://"${GITHUB_USER}":"${GITHUB_TOKEN}"@github.com/chase535/turbo-charge.git ${GIT_CLONE} -b main --depth=1
           cd ${HOME}
+          cp ./changelog.md ./Changelog_All.md
           cat ${GIT_CLONE}/Changelog_All.md >> ./Changelog_All.md
           dos2unix ./changelog.md ./Changelog_All.md
           cp -avf ./changelog.md ${GIT_CLONE}/update_channel
