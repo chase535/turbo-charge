@@ -3,7 +3,7 @@ name: Update Magisk Channel Data
 on:
   release:
     types:
-      - 'created'
+      - 'published'
 
 env:
   GITHUB_USER: "${{ secrets.USERNAME }}"
