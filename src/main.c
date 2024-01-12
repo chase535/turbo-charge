@@ -106,7 +106,7 @@ void read_file(char *file_path, char *char_var, int max_char_num)
 }
 
 //完全释放动态申请的二级指针的内存
-void free_mimalloc_memory(char ***addr, int num)
+void free_malloc_memory(char ***addr, int num)
 {
     if(addr != NULL && *addr != NULL)
     {
@@ -215,9 +215,9 @@ int main()
                 temp_file_num++;
             }
         }
-        free_mimalloc_memory(&power_supply_dir_list, power_supply_dir_list_num);
+        free_malloc_memory(&power_supply_dir_list, power_supply_dir_list_num);
     }
-    free_mimalloc_memory(&power_supply_dir, power_supply_file_num);
+    free_malloc_memory(&power_supply_dir, power_supply_file_num);
     //收缩内存
     current_limit_file=(char **)my_realloc(current_limit_file, sizeof(char *)*current_limit_file_num);
     current_max_file=(char **)my_realloc(current_max_file, sizeof(char *)*current_max_file_num);
@@ -307,7 +307,7 @@ int main()
         temp_tmp=NULL;
         my_free(msg);
         msg=NULL;
-        free_mimalloc_memory(&thermal_dir, thermal_file_num);
+        free_malloc_memory(&thermal_dir, thermal_file_num);
         //判断是否获取到了可用的温度传感器
         if(temp_sensor_num != 100)
         {
