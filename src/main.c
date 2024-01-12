@@ -129,7 +129,7 @@ int main()
     FILE *fq;
     char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10];
     char *temp_tmp,*temp_sensor,*temp_sensor_dir,*buffer,*msg,current_max_char[20],highest_temp_current_char[20],thermal[15],last_appname[100];
-    uchar step_charge=1,step_charge_file=0,power_control=1,force_temp=1,has_force_temp=0,current_change=1,battery_status=1,battery_capacity=1;
+    uchar step_charge=1,power_control=1,force_temp=1,has_force_temp=0,current_change=1,battery_status=1,battery_capacity=1;
     int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,last_charge_stop=-1,charge_is_stop=0,is_first_time=1;
     int power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0,is_bypass=0,can_get_foreground=0,screen_is_off=0,last_temp_max=-1,last_charge_status=0;
     regex_t temp_re,current_max_re,current_limit_re;
@@ -152,30 +152,22 @@ int main()
         else if(!battery_status && battery_capacity) printf_with_time("由于找不到/sys/class/power_supply/battery/status文件，电量控制功能失效，且“伪”旁路供电功能无法根据手机的充电状态而自动启停！");
         else printf_with_time("由于找不到/sys/class/power_supply/battery/status和/sys/class/power_supply/battery/capacity文件，电量控制功能失效，且“伪”旁路供电功能无法根据手机的充电状态而自动启停！");
     }
-    else
+    else if(access("/sys/class/power_supply/battery/charging_enabled", F_OK) && access("/sys/class/power_supply/battery/battery_charging_enabled", F_OK) && access("/sys/class/power_supply/battery/input_suspend", F_OK) && access("/sys/class/qcom-battery/restricted_charging", F_OK))
     {
-        if(access("/sys/class/power_supply/battery/charging_enabled", F_OK) && access("/sys/class/power_supply/battery/battery_charging_enabled", F_OK) && access("/sys/class/power_supply/battery/input_suspend", F_OK) && access("/sys/class/qcom-battery/restricted_charging", F_OK))
-        {
-            power_control=0;
-            printf_with_time("由于找不到控制手机暂停充电的文件，电量控制功能失效！");
-            printf_with_time("目前已知的有关文件有：/sys/class/power_supply/battery/charging_enabled、/sys/class/power_supply/battery/battery_charging_enabled、/sys/class/power_supply/battery/input_suspend、/sys/class/qcom-battery/restricted_charging");
-            printf_with_time("如果您知道其他的有关文件，请联系模块制作者！");
-        }
+        power_control=0;
+        printf_with_time("由于找不到控制手机暂停充电的文件，电量控制功能失效！");
+        printf_with_time("目前已知的有关文件有：/sys/class/power_supply/battery/charging_enabled、/sys/class/power_supply/battery/battery_charging_enabled、/sys/class/power_supply/battery/input_suspend、/sys/class/qcom-battery/restricted_charging");
+        printf_with_time("如果您知道其他的有关文件，请联系模块制作者！");
     }
-    if(!access("/sys/class/power_supply/battery/step_charging_enabled", F_OK)) step_charge_file++;
-    if(!step_charge_file || !battery_capacity)
+    if(access("/sys/class/power_supply/battery/step_charging_enabled", F_OK))
     {
-        //判断阶梯充电可用程度
-        if(step_charge_file && !battery_capacity)
-        {
-            step_charge=2;
-            printf_with_time("由于找不到/sys/class/power_supply/battery/capacity文件，阶梯式充电无法根据电量进行开关，此时若在配置中关闭阶梯式充电，则无论电量多少，阶梯式充电都会关闭！");
-        }
-        else
-        {
-            step_charge=0;
-            printf_with_time("由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯式充电控制的所有功能失效！");
-        }
+        step_charge=0;
+        printf_with_time("由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯式充电控制的所有功能失效！");
+    }
+    else if(!battery_capacity)
+    {
+        step_charge=2;
+        printf_with_time("由于找不到/sys/class/power_supply/battery/capacity文件，阶梯式充电无法根据电量进行开关，此时若在配置中关闭阶梯式充电，则无论电量多少，阶梯式充电都会关闭！");
     }
     //使用正则表达式，用来模糊查找相应文件
     regcomp(&current_max_re, ".*/constant_charge_current_max$|.*/fast_charge_current$|.*/thermal_input_current$", REG_EXTENDED|REG_NOSUB);
@@ -195,7 +187,7 @@ int main()
         //遍历/sys/class/power_supply路径下的所有文件夹
         for(j=0;j < power_supply_dir_list_num;j++)
         {
-            //，如果匹配到了文件，则分配一个与路径字符串大小相等的内存，装入路径，并且记录相应文件数量的变量值+1
+            //如果匹配到了文件，则分配一个与路径字符串大小相等的内存，装入路径，并且记录相应文件数量的变量值+1
             if(!regexec(&current_limit_re, power_supply_dir_list[j], 1, &current_limit_pmatch, 0))
             {
                 current_limit_file[current_limit_file_num]=(char *)my_calloc(1, sizeof(char)*(strlen(power_supply_dir_list[j])+1));
@@ -337,22 +329,13 @@ int main()
         my_free(temp_sensor_dir);
         temp_sensor_dir=NULL;
     }
-    else
+    else if(!step_charge && !power_control && !force_temp && !current_change)
     {
-        if(!step_charge && !power_control && !force_temp && !current_change)
-        {
-            printf_with_time("所有的所需文件均不存在，完全不适配此手机，程序强制退出！");
-            exit(1000);
-        }
+        printf_with_time("所有的所需文件均不存在，完全不适配此手机，程序强制退出！");
+        exit(1000);
     }
-    if(current_change)
-    {
-        for(i=0;i < current_max_file_num;i++) printf_with_time("找到电流文件：%s", current_max_file[i]);
-    }
-    if(force_temp)
-    {
-        for(i=0;i < temp_file_num;i++) printf_with_time("找到温度文件：%s", temp_file[i]);
-    }
+    if(current_change) for(i=0;i < current_max_file_num;i++) printf_with_time("找到电流文件：%s", current_max_file[i]);
+    if(force_temp) for(i=0;i < temp_file_num;i++) printf_with_time("找到温度文件：%s", temp_file[i]);
     //如果有电流文件，则获取安卓版本，为以后“伪”旁路供电做准备
     if(current_change) can_get_foreground=check_android_version();
     //创建一个子线程用来读取配置文件
