@@ -38,7 +38,7 @@ jobs:
           jq -rM '.body' ./releases.json > ./changelog.md
           cp ./changelog.md ./Changelog_All.md
           sed -i "1i # ${TAG}" ./Changelog_All.md
-          sed -i G ./Changelog_All.md
+          sed -i G ./Changelog_All.md ./changelog.md
           echo "{\"version\": \"${TAG}\",\"versionCode\": \"${versioncode}\"}" > ./version.json
       - name: Modified files
         run: |
