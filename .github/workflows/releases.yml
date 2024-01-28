@@ -36,6 +36,7 @@ jobs:
           wget -P ${HOME} https://api.github.com/repos/chase535/turbo-charge/releases/tags/${TAG} -O releases.json
           cd ${HOME}
           jq -rM '.body' ./releases.json > ./changelog.md
+          cp -avf ./changelog.md ./changelog_body.md
           sed -i "1i # ${TAG}" ./changelog.md
           sed -i G ./changelog.md
           echo "{\"version\": \"${TAG}\",\"versionCode\": \"${versioncode}\"}" > ./version.json
@@ -45,9 +46,9 @@ jobs:
           git config --global user.email "${GITHUB_EMAIL}"
           git clone https://"${GITHUB_USER}":"${GITHUB_TOKEN}"@github.com/chase535/turbo-charge.git ${GIT_CLONE} -b main --depth=1
           cd ${HOME}
-          cp ./changelog.md ./Changelog_All.md
+          cp -avf ./changelog.md ./Changelog_All.md
           cat ${GIT_CLONE}/Changelog_All.md >> ./Changelog_All.md
-          dos2unix ./changelog.md ./Changelog_All.md
+          dos2unix ./changelog.md ./changelog_body.md ./Changelog_All.md
           cp -avf ./changelog.md ${GIT_CLONE}/update_channel
           cp -avf ./Changelog_All.md ${GIT_CLONE}
           jq -sM add ${GIT_CLONE}/update_channel/turbo-charge.json ./version.json > ./turbo-charge.json
@@ -69,5 +70,5 @@ jobs:
           token: ${{ secrets.API_TOKEN_GITHUB }}
           tag_name: ${{ env.TAG }}
           files: ${{ env.GIT_CLONE }}/update_channel/turbo-charge.zip
-          body_path: ${{ env.GIT_CLONE }}/update_channel/changelog.md
+          body_path: ${{ env.HOME }}/changelog_body.md
           generate_release_notes: false
