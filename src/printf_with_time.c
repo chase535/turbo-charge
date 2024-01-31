@@ -19,7 +19,7 @@ void printf_with_time(const char *format, ...)
     va_end(ap);
     time(&cur_time);
     time_now=localtime(&cur_time);
-    strftime(time_char, 30, "%Y.%m.%e %H:%M:%S UTC%z", time_now);
+    strftime(time_char, 30, "%Y.%m.%d %H:%M:%S UTC%z", time_now);
     //在拼接后的字符串前面加上时间
     printf("[ %s ] %s\n", time_char, buffer);
     fflush(stdout);
