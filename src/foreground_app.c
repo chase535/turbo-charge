@@ -20,12 +20,10 @@ volatile char ForegroundAppName[100];
 */
 void *get_foreground_appname(void *android_version)
 {
+    char result[APP_PACKAGE_NAME_MAX_SIZE+100],screen[50],*tmpchar1,*tmpchar2;
+    FILE *fp;
     while(1)
     {
-        //在循环体内定义变量，这样变量仅存在于单次循环，每次循环结束后变量自动释放，循环开始时变量重新定义
-        char result[APP_PACKAGE_NAME_MAX_SIZE+100],screen[50],*tmpchar1=NULL,*tmpchar2=NULL;
-        pid_t status=0;
-        FILE *fp=NULL;
         //由于牵扯到多进程的相互同步，需要使用互斥锁，所以在循环体内进行判断是否启用，而不是将此作为循环条件
         if(read_one_option("BYPASS_CHARGE") != 1)
         {
@@ -45,20 +43,9 @@ void *get_foreground_appname(void *android_version)
             continue;
         }
         fgets(screen, sizeof(screen), fp);
-        line_feed(screen);
-        status=pclose(fp);
-        if(status == -1)
-        {
-            close_pipe_err:
-            printf_with_time("关闭管道通信时出错，跳过本次循环！");
-            goto continue_no_print;
-        }
-        else if(!WIFEXITED(status))
-        {
-            printf_with_time("获取屏幕是否开启的Shell命令执行出错，跳过本次循环！");
-            goto continue_no_print;
-        }
+        pclose(fp);
         fp=NULL;
+        line_feed(screen);
         //此Shell命令的返回值格式为  mScreenOn=true
         //若为true则没有锁屏，若为false则处于锁屏状态
         if(strcmp(strstr(screen, "=")+1, "true"))
@@ -66,6 +53,7 @@ void *get_foreground_appname(void *android_version)
             pthread_mutex_lock(&mutex_foreground_app);
             strlcpy((char *)ForegroundAppName, "screen_is_off", APP_PACKAGE_NAME_MAX_SIZE);
             pthread_mutex_unlock(&mutex_foreground_app);
+            memset((void *)screen, 0, sizeof(screen));
             goto continue_no_print;
         }
         /*
@@ -81,20 +69,17 @@ void *get_foreground_appname(void *android_version)
             goto continue_no_print;
         }
         fgets(result, sizeof(result), fp);
-        line_feed(result);
-        status=pclose(fp);
-        if(status == -1) goto close_pipe_err;
-        else if(!WIFEXITED(status))
-        {
-            printf_with_time("获取前台应用包名的Shell命令执行出错，跳过本次循环！");
-            goto continue_no_print;
-        }
+        pclose(fp);
         fp=NULL;
+        line_feed(result);
         tmpchar1=(*((int *)android_version) < 10)?strstr(result, "/TOP"):strstr(result, " TOP");
         if(tmpchar1 == NULL)
         {
             can_not_get_package:
             printf_with_time("无法获取前台应用包名，跳过本次循环！");
+            tmpchar1=NULL;
+            tmpchar2=NULL;
+            memset((void *)result, 0, sizeof(result));
             goto continue_no_print;
         }
         /*
@@ -112,6 +97,9 @@ void *get_foreground_appname(void *android_version)
         pthread_mutex_lock(&mutex_foreground_app);
         strlcpy((char *)ForegroundAppName, tmpchar2+1, APP_PACKAGE_NAME_MAX_SIZE);
         pthread_mutex_unlock(&mutex_foreground_app);
+        tmpchar1=NULL;
+        tmpchar2=NULL;
+        memset((void *)result, 0, sizeof(result));
         sleep(5);
         pthread_testcancel();
     }
