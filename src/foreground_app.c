@@ -24,6 +24,11 @@ void *get_foreground_appname(void *android_version)
     FILE *fp;
     while(1)
     {
+        fp=NULL;
+        tmpchar1=NULL;
+        tmpchar2=NULL;
+        memset((void *)result, 0, sizeof(result));
+        memset((void *)screen, 0, sizeof(screen));
         //由于牵扯到多进程的相互同步，需要使用互斥锁，所以在循环体内进行判断是否启用，而不是将此作为循环条件
         if(read_one_option("BYPASS_CHARGE") != 1)
         {
@@ -48,12 +53,17 @@ void *get_foreground_appname(void *android_version)
         line_feed(screen);
         //此Shell命令的返回值格式为  mScreenOn=true
         //若为true则没有锁屏，若为false则处于锁屏状态
-        if(strcmp(strstr(screen, "=")+1, "true"))
+        tmpchar1=strstr(screen, "=");
+        if(tmpchar1 == NULL)
+        {
+            printf_with_time("无法获取锁屏状态，跳过本次循环！");
+            goto continue_no_print;
+        }
+        if(strcmp(tmpchar1+1, "true"))
         {
             pthread_mutex_lock(&mutex_foreground_app);
             strlcpy((char *)ForegroundAppName, "screen_is_off", APP_PACKAGE_NAME_MAX_SIZE);
             pthread_mutex_unlock(&mutex_foreground_app);
-            memset((void *)screen, 0, sizeof(screen));
             goto continue_no_print;
         }
         /*
@@ -77,9 +87,6 @@ void *get_foreground_appname(void *android_version)
         {
             can_not_get_package:
             printf_with_time("无法获取前台应用包名，跳过本次循环！");
-            tmpchar1=NULL;
-            tmpchar2=NULL;
-            memset((void *)result, 0, sizeof(result));
             goto continue_no_print;
         }
         /*
@@ -97,9 +104,6 @@ void *get_foreground_appname(void *android_version)
         pthread_mutex_lock(&mutex_foreground_app);
         strlcpy((char *)ForegroundAppName, tmpchar2+1, APP_PACKAGE_NAME_MAX_SIZE);
         pthread_mutex_unlock(&mutex_foreground_app);
-        tmpchar1=NULL;
-        tmpchar2=NULL;
-        memset((void *)result, 0, sizeof(result));
         sleep(5);
         pthread_testcancel();
     }
