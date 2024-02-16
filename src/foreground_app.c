@@ -22,15 +22,9 @@ void *get_foreground_appname(void *android_version)
 {
     char result[APP_PACKAGE_NAME_MAX_SIZE+100],*tmpchar1,*tmpchar2;
     FILE *fp;
-    while(1)
+    while(read_one_option("BYPASS_CHARGE") == 1)
     {
         memset((void *)result, 0, sizeof(result));
-        //由于牵扯到多进程的相互同步，需要使用互斥锁，所以在循环体内进行判断是否启用，而不是将此作为循环条件
-        if(read_one_option("BYPASS_CHARGE") != 1)
-        {
-            pthread_mutex_unlock(&mutex_options);
-            break;
-        }
         //判断是否为锁屏状态，如果是则无法获取应用包名，直接将全局变量ForegroundAppName赋值为screen_is_off
         fp=popen("dumpsys deviceidle | grep 'mScreenOn'", "r");
         if(fp == NULL)
