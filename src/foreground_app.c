@@ -20,15 +20,11 @@ volatile char ForegroundAppName[100];
 */
 void *get_foreground_appname(void *android_version)
 {
-    char result[APP_PACKAGE_NAME_MAX_SIZE+100],screen[50],*tmpchar1,*tmpchar2;
+    char result[APP_PACKAGE_NAME_MAX_SIZE+100],*tmpchar1,*tmpchar2;
     FILE *fp;
     while(1)
     {
-        fp=NULL;
-        tmpchar1=NULL;
-        tmpchar2=NULL;
         memset((void *)result, 0, sizeof(result));
-        memset((void *)screen, 0, sizeof(screen));
         //由于牵扯到多进程的相互同步，需要使用互斥锁，所以在循环体内进行判断是否启用，而不是将此作为循环条件
         if(read_one_option("BYPASS_CHARGE") != 1)
         {
@@ -47,13 +43,13 @@ void *get_foreground_appname(void *android_version)
             pthread_testcancel();
             continue;
         }
-        fgets(screen, sizeof(screen), fp);
+        fgets(result, sizeof(result), fp);
         pclose(fp);
         fp=NULL;
-        line_feed(screen);
+        line_feed(result);
         //此Shell命令的返回值格式为  mScreenOn=true
         //若为true则没有锁屏，若为false则处于锁屏状态
-        tmpchar1=strstr(screen, "=");
+        tmpchar1=strstr(result, "=");
         if(tmpchar1 == NULL)
         {
             printf_with_time("无法获取锁屏状态，跳过本次循环！");
