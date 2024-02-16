@@ -23,7 +23,7 @@ void *get_foreground_appname(void *android_version)
     while(1)
     {
         //在循环体内定义变量，这样变量仅存在于单次循环，每次循环结束后变量自动释放，循环开始时变量重新定义
-        char result[200],screen[50],*tmpchar1=NULL,*tmpchar2=NULL;
+        char result[APP_PACKAGE_NAME_MAX_SIZE+100],screen[50],*tmpchar1=NULL,*tmpchar2=NULL;
         pid_t status=0;
         FILE *fp=NULL;
         //由于牵扯到多进程的相互同步，需要使用互斥锁，所以在循环体内进行判断是否启用，而不是将此作为循环条件
@@ -64,7 +64,7 @@ void *get_foreground_appname(void *android_version)
         if(strcmp(strstr(screen, "=")+1, "true"))
         {
             pthread_mutex_lock(&mutex_foreground_app);
-            strcpy((char *)ForegroundAppName, "screen_is_off");
+            strlcpy((char *)ForegroundAppName, "screen_is_off", APP_PACKAGE_NAME_MAX_SIZE);
             pthread_mutex_unlock(&mutex_foreground_app);
             goto continue_no_print;
         }
@@ -110,7 +110,7 @@ void *get_foreground_appname(void *android_version)
         pthread_testcancel();
         //将前台应用包名赋值给ForegroundAppName
         pthread_mutex_lock(&mutex_foreground_app);
-        strncpy((char *)ForegroundAppName, tmpchar2+1, sizeof(ForegroundAppName)/sizeof(char)-1);
+        strlcpy((char *)ForegroundAppName, tmpchar2+1, APP_PACKAGE_NAME_MAX_SIZE);
         pthread_mutex_unlock(&mutex_foreground_app);
         sleep(5);
         pthread_testcancel();

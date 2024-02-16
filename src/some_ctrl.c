@@ -95,9 +95,9 @@ screen_is_off为手机是否处于锁屏状态，与主函数进行通信
 current_max_file为存储电流文件的二级指针变量，与current_max_file_num配套使用
 current_max_file_num为电流文件的个数
 */
-void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appname[100], int *is_bypass, int *screen_is_off, char **current_max_file, int current_max_file_num)
+void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appname, int *is_bypass, int *screen_is_off, char **current_max_file, int current_max_file_num)
 {
-    char name[100];
+    char name[APP_PACKAGE_NAME_MAX_SIZE];
     uchar in_list=0;
     FILE *fp;
     /*
@@ -108,7 +108,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
     pthread_mutex_lock(&mutex_foreground_app);
     if(read_one_option("BYPASS_CHARGE") == 1 && !strlen((char *)ForegroundAppName))
     {
-        strcpy((char *)ForegroundAppName, "chase535");
+        strlcpy((char *)ForegroundAppName, "chase535", APP_PACKAGE_NAME_MAX_SIZE);
         pthread_create(thread1, NULL, get_foreground_appname, (void *)android_version);
         pthread_detach(*thread1);
     }
@@ -161,7 +161,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
                     *is_bypass=0;
                 }
             }
-            strcpy(last_appname, (char *)ForegroundAppName);
+            strlcpy(last_appname, (char *)ForegroundAppName, APP_PACKAGE_NAME_MAX_SIZE);
         }
         else
         {
@@ -176,7 +176,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char last_appna
     //子线程结束运行或者获取不到前台应用包名，则清空上一次获取到的前台应用包名并恢复正常充电模式
     else
     {
-        if(strlen(last_appname)) memset(last_appname, 0, 100*sizeof(char));
+        if(strlen(last_appname)) memset(last_appname, 0, APP_PACKAGE_NAME_MAX_SIZE*sizeof(char));
         if(*is_bypass) *is_bypass=0;
     }
     pthread_mutex_unlock(&mutex_foreground_app);
