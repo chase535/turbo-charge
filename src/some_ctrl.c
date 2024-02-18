@@ -103,6 +103,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appn
     FILE *fp;
     static char **bypass_app_package_name=NULL;
     static uint bypass_file_last_modify_time=0,bypass_app_num=0;
+    struct stat statbuf;
     /*
     为了不使获取前台应用包名拖累主程序的执行效率，所以使用了子线程方案
     如果配置文件的BYPASS_CHARGE值为1且ForegroundAppName值为空(没有子线程正在执行)，则创建子线程
@@ -150,7 +151,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appn
             }
 
             //判断前台应用包名是否在配置文件中
-            for(int i=0;i < bypass_app_num; i++)
+            for(uint i=0;i < bypass_app_num; i++)
             {
                 if(!strcmp((char *)ForegroundAppName, bypass_app_package_name[i]))
                 {
