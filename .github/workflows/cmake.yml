@@ -35,9 +35,13 @@ jobs:
           echo "CXX=${HOME}/aarch64-linux-musl-gcc/bin/aarch64-linux-musl-g++" >> ${GITHUB_ENV}
       - name: Clone and build mimalloc
         run: |
-          git clone https://github.com/microsoft/mimalloc.git ${HOME}/mimalloc -b master --depth=1
-          mkdir -p ${HOME}/mimalloc/out/release && cd ${HOME}/mimalloc/out/release
-          cmake ../.. -DCMAKE_BUILD_TYPE=Release -DMI_BUILD_STATIC=ON -DMI_BUILD_SHARED=OFF -DMI_BUILD_OBJECT=OFF -DMI_BUILD_TESTS=OFF -DMI_SECURE=OFF
+          git clone https://github.com/microsoft/mimalloc.git ${HOME}/mimalloc -b master
+          cd ${HOME}/mimalloc
+          mimalloc_version="$(git describe --abbrev=0 --tags)"
+          echo "MIMALLOC_VERSION=${mimalloc_version}" >> ${GITHUB_ENV}
+          mkdir -p ${HOME}/mimalloc/out
+          cd ${HOME}/mimalloc/out
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DMI_BUILD_STATIC=ON -DMI_BUILD_SHARED=OFF -DMI_BUILD_OBJECT=OFF -DMI_BUILD_TESTS=OFF -DMI_SECURE=OFF
           make -j$(nproc --all)
           sudo make install -j$(nproc --all)
       - name: Build module
