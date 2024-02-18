@@ -17,8 +17,8 @@ set(CMAKE_EXE_LINKER_FLAGS "-g0 -O2 -static -fvisibility=hidden -flto -ffixed-x1
 
 # 查找mimalloc包
 if(DEFINED ENV{MIMALLOC_VERSION})
-  message(STATUS "'MIMALLOC_VERSION' is defined in the environment variable, find mimalloc version ENV{MIMALLOC_VERSION}")
-  find_package(MIMALLOC NO_SYSTEM_ENVIRONMENT_PATH ENV{MIMALLOC_VERSION})
+  message(STATUS "'MIMALLOC_VERSION' is defined in the environment variable, find mimalloc version $ENV{MIMALLOC_VERSION}")
+  find_package(MIMALLOC NO_SYSTEM_ENVIRONMENT_PATH $ENV{MIMALLOC_VERSION})
 else()
   message(STATUS "'MIMALLOC_VERSION' is not defined in the environment variable, find any usable mimalloc version")
   find_package(MIMALLOC NO_SYSTEM_ENVIRONMENT_PATH)
