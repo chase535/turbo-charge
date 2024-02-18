@@ -37,7 +37,7 @@ jobs:
         run: |
           git clone https://github.com/microsoft/mimalloc.git ${HOME}/mimalloc -b master
           cd ${HOME}/mimalloc
-          mimalloc_version="$(git describe --abbrev=0 --tags)"
+          mimalloc_version="$(git describe --abbrev=0 --tags | sed "s|^v||g")"
           echo "MIMALLOC_VERSION=${mimalloc_version}" >> ${GITHUB_ENV}
           mkdir -p ${HOME}/mimalloc/out
           cd ${HOME}/mimalloc/out
