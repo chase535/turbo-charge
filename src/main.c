@@ -1,12 +1,11 @@
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
-#include "dirent.h"
-#include "unistd.h"
-#include "regex.h"
-#include "pthread.h"
-#include "time.h"
-#include "sys/stat.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <regex.h>
+#include <time.h>
+#include <sys/stat.h>
 
 #include "main.h"
 #include "read_option.h"
@@ -103,25 +102,6 @@ void read_file(char *file_path, char *char_var, int max_char_num)
     fclose(fp);
     fp=NULL;
     line_feed(char_var);
-}
-
-//完全释放动态申请的二级指针的内存
-void free_malloc_memory(char ***addr, int num)
-{
-    if(addr != NULL && *addr != NULL)
-    {
-        if(!num) num=1;
-        for(int i=0;i < num;i++)
-        {
-            if((*addr)[i] != NULL)
-            {
-                my_free((*addr)[i]);
-                (*addr)[i]=NULL;
-            }
-        }
-        my_free(*addr);
-        *addr=NULL;
-    }
 }
 
 int main()
@@ -518,10 +498,10 @@ int main()
             }
             //通过判断全局变量ForegroundAppName是否为空来判断获取前台应用包名的子线程是否在执行
             //若在执行，则取消此子线程，并清空ForegroundAppName
-            pthread_mutex_lock(&mutex_foreground_app);
+            pthread_mutex_lock((pthread_mutex_t *)&mutex_foreground_app);
             if(strlen((char *)ForegroundAppName))
             {
-                pthread_mutex_unlock(&mutex_foreground_app);
+                pthread_mutex_unlock((pthread_mutex_t *)&mutex_foreground_app);
                 printf_with_time("手机未在充电状态，“伪”旁路供电功能暂时停用");
                 pthread_cancel(thread1);
                 /*
@@ -531,10 +511,10 @@ int main()
                 这样在完成等待后就能直接在取消点取消子线程，从而使ForegroundAppName不会被子线程重新赋值
                 */
                 sleep(1);
-                pthread_mutex_lock(&mutex_foreground_app);
+                pthread_mutex_lock((pthread_mutex_t *)&mutex_foreground_app);
                 memset((void *)ForegroundAppName, 0, sizeof(ForegroundAppName));
             }
-            pthread_mutex_unlock(&mutex_foreground_app);
+            pthread_mutex_unlock((pthread_mutex_t *)&mutex_foreground_app);
             //此标识符代表手机是否处于“伪”旁路供电模式
             //如果在停止充电前手机处于“伪”旁路供电模式，则停止充电后将此标识符置0
             if(is_bypass) is_bypass=0;

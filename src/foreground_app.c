@@ -1,10 +1,10 @@
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
-#include "unistd.h"
-#include "pthread.h"
-#include "sys/wait.h"
-#include "sys/types.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <sys/wait.h>
+#include <sys/types.h>
 
 #include "printf_with_time.h"
 #include "read_option.h"
@@ -20,11 +20,11 @@ volatile char ForegroundAppName[100];
 */
 void *get_foreground_appname(void *android_version)
 {
-    char result[APP_PACKAGE_NAME_MAX_SIZE+100],*tmpchar1,*tmpchar2;
-    FILE *fp;
     while(read_one_option("BYPASS_CHARGE") == 1)
     {
-        memset((void *)result, 0, sizeof(result));
+        //在循环体内定义变量，这样变量仅存在于单次循环，每次循环结束后变量自动释放，循环开始时变量重新定义
+        char result[APP_PACKAGE_NAME_MAX_SIZE+100],*tmpchar1,*tmpchar2;
+        FILE *fp;
         //判断是否为锁屏状态，如果是则无法获取应用包名，直接将全局变量ForegroundAppName赋值为screen_is_off
         fp=popen("dumpsys deviceidle | grep 'mScreenOn'", "r");
         if(fp == NULL)
@@ -51,9 +51,9 @@ void *get_foreground_appname(void *android_version)
         }
         if(strcmp(tmpchar1+1, "true"))
         {
-            pthread_mutex_lock(&mutex_foreground_app);
+            pthread_mutex_lock((pthread_mutex_t *)&mutex_foreground_app);
             strlcpy((char *)ForegroundAppName, "screen_is_off", APP_PACKAGE_NAME_MAX_SIZE);
-            pthread_mutex_unlock(&mutex_foreground_app);
+            pthread_mutex_unlock((pthread_mutex_t *)&mutex_foreground_app);
             goto continue_no_print;
         }
         /*
@@ -91,16 +91,16 @@ void *get_foreground_appname(void *android_version)
         *tmpchar1='\0';
         pthread_testcancel();
         //将前台应用包名赋值给ForegroundAppName
-        pthread_mutex_lock(&mutex_foreground_app);
+        pthread_mutex_lock((pthread_mutex_t *)&mutex_foreground_app);
         strlcpy((char *)ForegroundAppName, tmpchar2+1, APP_PACKAGE_NAME_MAX_SIZE);
-        pthread_mutex_unlock(&mutex_foreground_app);
+        pthread_mutex_unlock((pthread_mutex_t *)&mutex_foreground_app);
         sleep(5);
         pthread_testcancel();
     }
     //如果配置文件的BYPASS_CHARGE值不为1，则退出循环并将ForegroundAppName清空
-    pthread_mutex_lock(&mutex_foreground_app);
+    pthread_mutex_lock((pthread_mutex_t *)&mutex_foreground_app);
     memset((void *)ForegroundAppName, 0, sizeof(ForegroundAppName));
-    pthread_mutex_unlock(&mutex_foreground_app);
+    pthread_mutex_unlock((pthread_mutex_t *)&mutex_foreground_app);
     return NULL;
 }
 

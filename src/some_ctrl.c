@@ -1,12 +1,12 @@
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
-#include "sys/stat.h"
-#include "pthread.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
 
 #include "some_ctrl.h"
 #include "read_option.h"
 #include "value_set.h"
+#include "my_malloc.h"
 #include "foreground_app.h"
 #include "printf_with_time.h"
 
@@ -100,12 +100,15 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appn
     char name[APP_PACKAGE_NAME_MAX_SIZE];
     uchar in_list=0;
     FILE *fp;
+    static char **bypass_app_package_name=NULL;
+    static uint bypass_file_last_modify_time=0,bypass_app_num=0;
+    struct stat statbuf;
     /*
     为了不使获取前台应用包名拖累主程序的执行效率，所以使用了子线程方案
     如果配置文件的BYPASS_CHARGE值为1且ForegroundAppName值为空(没有子线程正在执行)，则创建子线程
     此子线程用来获取前台应用包名
     */
-    pthread_mutex_lock(&mutex_foreground_app);
+    pthread_mutex_lock((pthread_mutex_t *)&mutex_foreground_app);
     if(read_one_option("BYPASS_CHARGE") == 1 && !strlen((char *)ForegroundAppName))
     {
         strlcpy((char *)ForegroundAppName, "chase535", APP_PACKAGE_NAME_MAX_SIZE);
@@ -125,17 +128,35 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appn
             }
             //读取“伪”旁路供电的配置文件
             check_read_file(bypass_charge_file);
-            fp=fopen(bypass_charge_file, "rt");
-            while(fgets(name, sizeof(name), fp) != NULL)
+            stat(option_file, &statbuf);
+            if(statbuf.st_mtime != bypass_file_last_modify_time)
             {
-                line_feed(name);
-                //跳过以英文井号开头的行及空行
-                if(!strlen(name) || (strstr(name, "#") != NULL && !strstr(name, "#"))) continue;
-                //判断前台应用包名是否在配置文件中
-                if(!strcmp((char *)ForegroundAppName, name)) in_list=1;
+                bypass_app_num=0;
+                if(bypass_app_package_name != NULL) free_malloc_memory(&bypass_app_package_name, bypass_app_num);
+                bypass_app_package_name=(char **)my_calloc(1, sizeof(char *));
+                fp=fopen(bypass_charge_file, "rt");
+                while(fgets(name, sizeof(name), fp) != NULL)
+                {
+                    line_feed(name);
+                    //跳过以英文井号开头的行及空行
+                    if(!strlen(name) || (strstr(name, "#") != NULL && !strstr(name, "#"))) continue;
+                    bypass_app_num++;
+                    bypass_app_package_name=(char **)my_realloc(bypass_app_package_name, sizeof(char *)*bypass_app_num);
+                    bypass_app_package_name[bypass_app_num-1]=(char *)my_calloc(1, sizeof(char)*APP_PACKAGE_NAME_MAX_SIZE);
+                    strlcpy(bypass_app_package_name[bypass_app_num-1], name, APP_PACKAGE_NAME_MAX_SIZE);
+                }
+                fclose(fp);
+                fp=NULL;
             }
-            fclose(fp);
-            fp=NULL;
+            //判断前台应用包名是否在配置文件中
+            for(uint i=0;i < bypass_app_num; i++)
+            {
+                if(!strcmp((char *)ForegroundAppName, bypass_app_package_name[i]))
+                {
+                    in_list=1;
+                    break;
+                }
+            }
             //如果前台应用包名在配置文件中
             if(in_list)
             {
@@ -179,5 +200,5 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appn
         if(strlen(last_appname)) memset(last_appname, 0, APP_PACKAGE_NAME_MAX_SIZE*sizeof(char));
         if(*is_bypass) *is_bypass=0;
     }
-    pthread_mutex_unlock(&mutex_foreground_app);
+    pthread_mutex_unlock((pthread_mutex_t *)&mutex_foreground_app);
 }
