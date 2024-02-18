@@ -1,10 +1,9 @@
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
-#include "sys/stat.h"
-#include "unistd.h"
-#include "dirent.h"
-#include "pthread.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <dirent.h>
 
 #include "read_option.h"
 #include "printf_with_time.h"
@@ -34,7 +33,7 @@ void *read_options()
             continue;
         }
         memset(value_stat, 0, sizeof(value_stat));
-        pthread_mutex_lock(&mutex_options);
+        pthread_mutex_lock((pthread_mutex_t *)&mutex_options);
         fc=fopen(option_file, "rt");
         while(fgets(option, sizeof(option), fc) != NULL)
         {
@@ -97,7 +96,7 @@ void *read_options()
             }
         }
         option_last_modify_time=statbuf.st_mtime;
-        pthread_mutex_unlock(&mutex_options);
+        pthread_mutex_unlock((pthread_mutex_t *)&mutex_options);
         sleep(5);
     }
     return NULL;
@@ -108,7 +107,7 @@ int read_one_option(char *name)
 {
     int value=-1;
     ListNode *node;
-    pthread_mutex_lock(&mutex_options);
+    pthread_mutex_lock((pthread_mutex_t *)&mutex_options);
     for(node=options_head.next;node;node=node->next)
     {
         if(!(strcmp(node->name, name)))
@@ -117,7 +116,7 @@ int read_one_option(char *name)
             break;
         }
     }
-    pthread_mutex_unlock(&mutex_options);
+    pthread_mutex_unlock((pthread_mutex_t *)&mutex_options);
     if(value < 0)
     {
         printf_with_time("无法获取变量，程序发生了内部错误，请立即前往Github进行反馈！");

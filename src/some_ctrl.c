@@ -1,8 +1,7 @@
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
-#include "sys/stat.h"
-#include "pthread.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
 
 #include "some_ctrl.h"
 #include "read_option.h"
@@ -109,7 +108,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appn
     如果配置文件的BYPASS_CHARGE值为1且ForegroundAppName值为空(没有子线程正在执行)，则创建子线程
     此子线程用来获取前台应用包名
     */
-    pthread_mutex_lock(&mutex_foreground_app);
+    pthread_mutex_lock((pthread_mutex_t *)&mutex_foreground_app);
     if(read_one_option("BYPASS_CHARGE") == 1 && !strlen((char *)ForegroundAppName))
     {
         strlcpy((char *)ForegroundAppName, "chase535", APP_PACKAGE_NAME_MAX_SIZE);
@@ -202,5 +201,5 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appn
         if(strlen(last_appname)) memset(last_appname, 0, APP_PACKAGE_NAME_MAX_SIZE*sizeof(char));
         if(*is_bypass) *is_bypass=0;
     }
-    pthread_mutex_unlock(&mutex_foreground_app);
+    pthread_mutex_unlock((pthread_mutex_t *)&mutex_foreground_app);
 }
