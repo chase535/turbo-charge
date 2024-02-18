@@ -9,4 +9,6 @@ extern char bypass_charge_file[];
 extern char temp_sensors[][15];
 extern char temp_sensor_quantity;
 
+void free_malloc_memory(char ***addr, int num);
+
 #endif

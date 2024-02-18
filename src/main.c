@@ -105,25 +105,6 @@ void read_file(char *file_path, char *char_var, int max_char_num)
     line_feed(char_var);
 }
 
-//完全释放动态申请的二级指针的内存
-void free_malloc_memory(char ***addr, int num)
-{
-    if(addr != NULL && *addr != NULL)
-    {
-        if(!num) num=1;
-        for(int i=0;i < num;i++)
-        {
-            if((*addr)[i] != NULL)
-            {
-                my_free((*addr)[i]);
-                (*addr)[i]=NULL;
-            }
-        }
-        my_free(*addr);
-        *addr=NULL;
-    }
-}
-
 int main()
 {
     FILE *fq;
