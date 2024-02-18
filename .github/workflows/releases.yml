@@ -26,6 +26,7 @@ jobs:
       - name: Get tag
         run: |
           tag=$(echo ${REF} | sed "s|refs/tags/||g")
+          echo ${tag}
           echo "TAG=${tag}" >> ${GITHUB_ENV}
       - name: Wget zip file
         run: |
