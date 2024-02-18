@@ -344,7 +344,7 @@ int main()
         snprintf(current_max_char, 20, "%d", read_one_option("CURRENT_MAX"));
         snprintf(highest_temp_current_char, 20, "%d", read_one_option("HIGHEST_TEMP_CURRENT"));
         //如果无法判断手机的充电状态，则很多功能无法实现，剩余代码很简单
-        if(!battery_status)
+        if(battery_status)
         {
             //阶梯充电
             if(step_charge == 1)
@@ -354,14 +354,11 @@ int main()
             }
             else if(step_charge == 2) (read_one_option("STEP_CHARGING_DISABLED") == 1)?step_charge_ctl("0"):step_charge_ctl("1");
             //“伪”旁路供电
-            if(current_change && can_get_foreground)
+            bypass_charge_ctl(&thread1, &can_get_foreground, last_appname, &is_bypass, &screen_is_off, current_max_file, current_max_file_num);
+            if(!screen_is_off)
             {
-                bypass_charge_ctl(&thread1, &can_get_foreground, last_appname, &is_bypass, &screen_is_off, current_max_file, current_max_file_num);
-                if(is_bypass && !screen_is_off)
-                {
-                    sleep(read_one_option("CYCLE_TIME"));
-                    continue;
-                }
+                sleep(read_one_option("CYCLE_TIME"));
+                continue;
             }
             //向电流文件写入配置文件中所设置的最大电流
             if(current_change) set_array_value(current_max_file, current_max_file_num, current_max_char);
