@@ -132,8 +132,8 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appn
             if(statbuf.st_mtime != bypass_file_last_modify_time)
             {
                 bypass_app_num=0;
-                free_malloc_memory(&bypass_app_package_name, bypass_app_num);
-                bypass_app_package_name=(char **)my_calloc(1, sizeof(char));
+                if(bypass_app_package_name != NULL) free_malloc_memory(&bypass_app_package_name, bypass_app_num);
+                bypass_app_package_name=(char **)my_calloc(1, sizeof(char *));
                 fp=fopen(bypass_charge_file, "rt");
                 while(fgets(name, sizeof(name), fp) != NULL)
                 {
@@ -148,7 +148,6 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appn
                 fclose(fp);
                 fp=NULL;
             }
-
             //判断前台应用包名是否在配置文件中
             for(uint i=0;i < bypass_app_num; i++)
             {
