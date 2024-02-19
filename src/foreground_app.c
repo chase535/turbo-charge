@@ -11,7 +11,7 @@
 #include "foreground_app.h"
 
 //全局变量，用于存储当前前台应用的包名
-volatile char ForegroundAppName[100];
+volatile char ForegroundAppName[100]={0};
 
 /*
 获取前台应用的包名以配合“伪”旁路供电功能使用
@@ -52,7 +52,7 @@ void *get_foreground_appname(void *android_version)
         if(strcmp(tmpchar1+1, "true"))
         {
             pthread_mutex_lock((pthread_mutex_t *)&mutex_foreground_app);
-            strlcpy((char *)ForegroundAppName, "screen_is_off", APP_PACKAGE_NAME_MAX_SIZE);
+            strncpy((char *)ForegroundAppName, "screen_is_off", APP_PACKAGE_NAME_MAX_SIZE-1);
             pthread_mutex_unlock((pthread_mutex_t *)&mutex_foreground_app);
             goto continue_no_print;
         }
@@ -92,7 +92,7 @@ void *get_foreground_appname(void *android_version)
         pthread_testcancel();
         //将前台应用包名赋值给ForegroundAppName
         pthread_mutex_lock((pthread_mutex_t *)&mutex_foreground_app);
-        strlcpy((char *)ForegroundAppName, tmpchar2+1, APP_PACKAGE_NAME_MAX_SIZE);
+        strncpy((char *)ForegroundAppName, tmpchar2+1, APP_PACKAGE_NAME_MAX_SIZE-1);
         pthread_mutex_unlock((pthread_mutex_t *)&mutex_foreground_app);
         sleep(5);
         pthread_testcancel();

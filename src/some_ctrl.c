@@ -111,7 +111,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appn
     pthread_mutex_lock((pthread_mutex_t *)&mutex_foreground_app);
     if(read_one_option("BYPASS_CHARGE") == 1 && !strlen((char *)ForegroundAppName))
     {
-        strlcpy((char *)ForegroundAppName, "chase535", APP_PACKAGE_NAME_MAX_SIZE);
+        strncpy((char *)ForegroundAppName, "chase535", APP_PACKAGE_NAME_MAX_SIZE-1);
         pthread_create(thread1, NULL, get_foreground_appname, (void *)android_version);
         pthread_detach(*thread1);
     }
@@ -143,7 +143,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appn
                     bypass_app_num++;
                     bypass_app_package_name=(char **)my_realloc(bypass_app_package_name, sizeof(char *)*bypass_app_num);
                     bypass_app_package_name[bypass_app_num-1]=(char *)my_calloc(1, sizeof(char)*APP_PACKAGE_NAME_MAX_SIZE);
-                    strlcpy(bypass_app_package_name[bypass_app_num-1], name, APP_PACKAGE_NAME_MAX_SIZE);
+                    strncpy(bypass_app_package_name[bypass_app_num-1], name, APP_PACKAGE_NAME_MAX_SIZE-1);
                 }
                 fclose(fp);
                 fp=NULL;
@@ -182,7 +182,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appn
                     *is_bypass=0;
                 }
             }
-            strlcpy(last_appname, (char *)ForegroundAppName, APP_PACKAGE_NAME_MAX_SIZE);
+            strncpy(last_appname, (char *)ForegroundAppName, APP_PACKAGE_NAME_MAX_SIZE-1);
         }
         else
         {
