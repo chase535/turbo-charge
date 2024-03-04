@@ -35,7 +35,7 @@ void set_value(char *file, char *numb)
                 if(strcmp(content, numb)) fputs(numb, fn);
                 fclose(fn);
                 fn=NULL;
-            } 
+            }
         }
     }
 }

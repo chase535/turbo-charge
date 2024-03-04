@@ -15,18 +15,14 @@ void (*my_free)(void *)=&free;
 //完全释放动态申请的二级指针的内存
 void free_malloc_memory(char ***addr, int num)
 {
-    if(addr != NULL && *addr != NULL)
+    if(addr == NULL || *addr == NULL) return;
+    if(!num) num=1;
+    for(int i=0;i < num;i++)
     {
-        if(!num) num=1;
-        for(int i=0;i < num;i++)
-        {
-            if((*addr)[i] != NULL)
-            {
-                my_free((*addr)[i]);
-                (*addr)[i]=NULL;
-            }
-        }
-        my_free(*addr);
-        *addr=NULL;
+        if((*addr)[i] == NULL) continue;
+        my_free((*addr)[i]);
+        (*addr)[i]=NULL;
     }
+    my_free(*addr);
+    *addr=NULL;
 }
