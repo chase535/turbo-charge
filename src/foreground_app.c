@@ -109,7 +109,6 @@ int check_android_version()
 {
     char android_version_char[5];
     int android_version=0;
-    pid_t status=0;
     FILE *fp=NULL;
     fp=popen("getprop ro.build.version.release", "r");
     if(fp == NULL)
@@ -119,14 +118,13 @@ int check_android_version()
     }
     fgets(android_version_char, sizeof(android_version_char), fp);
     line_feed(android_version_char);
-    status=pclose(fp);
-    if(status == -1 || !WIFEXITED(status) || !strlen(android_version_char))
+    pclose(fp);
+    fp=NULL;
+    if(!strlen(android_version_char))
     {
         printf_with_time("无法获取安卓版本，而只有安卓7及以上能够通过Shell命令获取前台应用，所以必须要获取安卓版本进行判断，“伪”旁路供电功能失效！");
-        fp=NULL;
         return 0;
     }
-    fp=NULL;
     android_version=atoi(android_version_char);
     if(android_version < 7)
     {
