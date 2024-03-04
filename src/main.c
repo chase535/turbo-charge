@@ -168,19 +168,19 @@ int main()
         for(j=0;j < power_supply_dir_list_num;j++)
         {
             //如果匹配到了文件，则分配一个与路径字符串大小相等的内存，装入路径，并且记录相应文件数量的变量值+1
-            if(!regexec(&current_limit_re, power_supply_dir_list[j], 1, &current_limit_pmatch, 0))
-            {
-                current_limit_file[current_limit_file_num]=(char *)my_calloc(1, sizeof(char)*(strlen(power_supply_dir_list[j])+1));
-                strcpy(current_limit_file[current_limit_file_num], power_supply_dir_list[j]);
-                current_limit_file_num++;
-            }
             if(!regexec(&current_max_re, power_supply_dir_list[j], 1, &current_max_pmatch, 0))
             {
                 current_max_file[current_max_file_num]=(char *)my_calloc(1, sizeof(char)*(strlen(power_supply_dir_list[j])+1));
                 strcpy(current_max_file[current_max_file_num], power_supply_dir_list[j]);
                 current_max_file_num++;
             }
-            if(!regexec(&temp_re, power_supply_dir_list[j], 1, &temp_pmatch, 0))
+            else if(!regexec(&current_limit_re, power_supply_dir_list[j], 1, &current_limit_pmatch, 0))
+            {
+                current_limit_file[current_limit_file_num]=(char *)my_calloc(1, sizeof(char)*(strlen(power_supply_dir_list[j])+1));
+                strcpy(current_limit_file[current_limit_file_num], power_supply_dir_list[j]);
+                current_limit_file_num++;
+            }
+            else if(!regexec(&temp_re, power_supply_dir_list[j], 1, &temp_pmatch, 0))
             {
                 temp_file[temp_file_num]=(char *)my_calloc(1, sizeof(char)*(strlen(power_supply_dir_list[j])+1));
                 strcpy(temp_file[temp_file_num], power_supply_dir_list[j]);
@@ -189,6 +189,9 @@ int main()
         }
         free_malloc_memory(&power_supply_dir_list, power_supply_dir_list_num);
     }
+    regfree(&current_max_re);
+    regfree(&current_limit_re);
+    regfree(&temp_re);
     free_malloc_memory(&power_supply_dir, power_supply_file_num);
     //收缩内存
     current_limit_file=(char **)my_realloc(current_limit_file, sizeof(char *)*current_limit_file_num);
