@@ -1,10 +1,8 @@
-# v66
+# v67
 
 ### Changelog
 
-1.不再使用bsd库函数strlcpy，使用glibc库函数strncpy并限制size
+1.修复一处未将位置指针重新指向stream开头的严重bug
 
-2.释放regex_t结构体，避免内存泄漏
-
-3.优化代码
+2.优化代码
 
