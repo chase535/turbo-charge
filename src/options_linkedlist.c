@@ -5,7 +5,7 @@
 #include "options_linkedlist.h"
 
 //存储配置的个数
-char option_quantity=0;
+unsigned char option_quantity=0;
 
 //链表的头结点，只存储开始节点的地址
 ListNode options_head;
@@ -41,15 +41,11 @@ void insert_all_option()
 }
 
 //检查节点的个数（配置的个数）
-char check_option_quantity()
+unsigned char check_option_quantity()
 {
-    char num=0;
+    unsigned char num=0;
     ListNode *tmp=&options_head;
-    while(tmp->next)
-    {
-        tmp=tmp->next;
-        num++;
-    }
+    while((tmp=tmp->next) != NULL) num++;
     return num;
 }
 
