@@ -32,7 +32,11 @@ void set_value(char *file, char *numb)
                 fgets(content, statbuf.st_size+1, fn);
                 line_feed(content);
                 //先判断文件内容与所写内容是否一致，若不一致才进行写入
-                if(strcmp(content, numb)) fputs(numb, fn);
+                if(strcmp(content, numb))
+                {
+                    rewind(fn);
+                    fputs(numb, fn);
+                }
                 fclose(fn);
                 fn=NULL;
             }
