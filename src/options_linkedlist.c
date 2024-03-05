@@ -15,7 +15,7 @@ void insert_option(char *name, int value)
 {
     ListNode *next,*tmp=&options_head;
     next=(ListNode *)my_calloc(1, sizeof(ListNode));
-    strncpy(next->name, name, 40);
+    strncpy(next->name, name, OPTION_NAME_MAX_SIZE-1);
     next->value=value;
     next->next=NULL;
     while(tmp->next) tmp=tmp->next;
