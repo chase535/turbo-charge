@@ -72,11 +72,9 @@ void check_read_file(char *file)
         {
             //权限0644不得简写成644
             chmod(file, 0644);
-            if(access(file, R_OK))
-            {
-                printf_with_time("无法读取%s文件，程序强制退出！", file);
-                exit(1);
-            }
+            if(!access(file, R_OK)) return;
+            printf_with_time("无法读取%s文件，程序强制退出！", file);
+            exit(1);
         }
     }
     else
@@ -236,16 +234,13 @@ int main()
                 //获取type文件内的字符个数
                 stat(buffer, &statbuf);
                 fq=fopen(buffer, "rt");
-                if(fq != NULL)
-                {
-                    //重新分配内存，使其刚好能够装入该温度传感器的名称，并获取该温度传感器的名称
-                    msg=(char *)my_realloc(msg, sizeof(char)*(statbuf.st_size+1));
-                    fgets(msg, statbuf.st_size+1, fq);
-                    fclose(fq);
-                    fq=NULL;
-                }
+                if(fq == NULL) continue;
+                //重新分配内存，使其刚好能够装入该温度传感器的名称，并获取该温度传感器的名称
+                msg=(char *)my_realloc(msg, sizeof(char)*(statbuf.st_size+1));
+                fgets(msg, statbuf.st_size+1, fq);
+                fclose(fq);
+                fq=NULL;
                 //如果无法通过管道打开type文件，则跳过此温度传感器的后续操作
-                else continue;
                 line_feed(msg);
                 //检查此文件夹下有无temp文件，此文件的内容是该温度传感器所获取的温度值
                 sprintf(buffer, "%s/temp", thermal_dir[i]);
