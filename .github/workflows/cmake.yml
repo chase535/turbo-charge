@@ -35,10 +35,10 @@ jobs:
           echo "CXX=${HOME}/aarch64-linux-musl-gcc/bin/aarch64-linux-musl-g++" >> ${GITHUB_ENV}
       - name: Clone and build mimalloc
         run: |
-          git clone https://github.com/microsoft/mimalloc.git ${HOME}/mimalloc -b master
+          git clone https://github.com/microsoft/mimalloc.git ${HOME}/mimalloc -b dev
           cd ${HOME}/mimalloc
-          mimalloc_version="$(git describe --abbrev=0 --tags | sed "s|^v||g")"
-          echo "MIMALLOC_VERSION=${mimalloc_version}" >> ${GITHUB_ENV}
+          # mimalloc_version="$(git describe --abbrev=0 --tags | sed "s|^v||g")"
+          # echo "MIMALLOC_VERSION=${mimalloc_version}" >> ${GITHUB_ENV}
           mkdir -p ${HOME}/mimalloc/out
           cd ${HOME}/mimalloc/out
           cmake .. -DCMAKE_BUILD_TYPE=Release -DMI_BUILD_STATIC=ON -DMI_BUILD_SHARED=OFF -DMI_BUILD_OBJECT=OFF -DMI_BUILD_TESTS=OFF -DMI_SECURE=OFF
