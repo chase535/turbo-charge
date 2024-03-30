@@ -23,7 +23,7 @@ void *get_foreground_appname(void *android_version)
     while(read_one_option("BYPASS_CHARGE") == 1)
     {
         //在循环体内定义变量，这样变量仅存在于单次循环，每次循环结束后变量自动释放，循环开始时变量重新定义
-        char result[APP_PACKAGE_NAME_MAX_SIZE+100],*tmpchar1,*tmpchar2;
+        char result[APP_PACKAGE_NAME_MAX_SIZE+100]={0},*tmpchar1,*tmpchar2;
         FILE *fp;
         //判断是否为锁屏状态，如果是则无法获取应用包名，直接将全局变量ForegroundAppName赋值为screen_is_off
         fp=popen("dumpsys deviceidle | grep 'mScreenOn'", "r");

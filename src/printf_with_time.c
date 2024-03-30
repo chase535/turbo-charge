@@ -71,7 +71,7 @@ void get_utc8_time(struct tm *ptm)
 void printf_with_time(const char *format, ...) __attribute__((__format__(__printf__, 1, 2)));
 void printf_with_time(const char *format, ...)
 {
-    char buffer[1024];
+    char buffer[1024]={0};
     struct tm time_utc8_now;
     va_list ap;
     //使用vsnprintf函数拼接格式化字符串和可变参数

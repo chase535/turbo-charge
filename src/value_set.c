@@ -56,7 +56,7 @@ tempwall为是否启用超过一定温度时强制向温度文件写入28℃
 */
 void set_temp(char *temp_sensor, char **temp_file, int temp_file_num, uchar tempwall)
 {
-    char thermal[15],bat_temp[6];
+    char thermal[15]={0},bat_temp[6]={0};
     int temp_int=0;
     //读取温度文件
     read_file(temp_sensor, thermal, sizeof(thermal));

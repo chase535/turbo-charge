@@ -19,9 +19,11 @@ void *read_options()
     {
         //在循环体内定义变量，这样变量仅存在于单次循环，每次循环结束后变量自动释放，循环开始时变量重新定义
         FILE *fc;
-        char option_tmp[42],option[100],*value;
+        char option_tmp[42]={0},option[100]={0},*value;
+        uchar opt=0,i=0;
+        //不定长数组无法在定义时初始化为全0，所以后续会使用memset进行清零
+        uchar value_stat[option_quantity];
         int new_value=0;
-        uchar opt=0,value_stat[option_quantity],i=0;
         struct stat statbuf;
         ListNode *node;
         check_read_file(option_file);

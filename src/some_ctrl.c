@@ -97,7 +97,7 @@ current_max_file_num为电流文件的个数
 */
 void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appname, int *is_bypass, int *screen_is_off, char **current_max_file, int current_max_file_num)
 {
-    char name[APP_PACKAGE_NAME_MAX_SIZE];
+    char name[APP_PACKAGE_NAME_MAX_SIZE]={0};
     uchar in_list=0;
     FILE *fp;
     static char **bypass_app_package_name=NULL;

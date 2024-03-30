@@ -105,8 +105,9 @@ void read_file(char *file_path, char *char_var, int max_char_num)
 int main()
 {
     FILE *fq;
-    char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file,charge[25],power[10];
-    char *temp_tmp,*temp_sensor,*temp_sensor_dir,*buffer,*msg,current_max_char[20],highest_temp_current_char[20],thermal[15],last_appname[APP_PACKAGE_NAME_MAX_SIZE];
+    char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file;
+    char *temp_tmp,*temp_sensor,*temp_sensor_dir,*buffer,*msg;
+    char charge[25]={0},power[10]={0},current_max_char[20]={0},highest_temp_current_char[20]={0},thermal[15]={0},last_appname[APP_PACKAGE_NAME_MAX_SIZE]={0};
     uchar step_charge=1,power_control=1,force_temp=1,has_force_temp=0,current_change=1,battery_status=1,battery_capacity=1;
     int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,last_charge_stop=-1,charge_is_stop=0,is_first_time=1;
     int power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0,is_bypass=0,can_get_foreground=0,screen_is_off=0,last_temp_max=-1,last_charge_status=0;
