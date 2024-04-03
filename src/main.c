@@ -8,7 +8,8 @@
 #include <sys/stat.h>
 
 #include "main.h"
-#include "read_option.h"
+#include "read_option_file.h"
+#include "options_linkedlist.h"
 #include "some_ctrl.h"
 #include "my_malloc.h"
 #include "printf_with_time.h"
@@ -116,7 +117,7 @@ int main()
     pthread_t thread1,thread2;
     struct stat statbuf;
     //初始化链表
-    options_linkedlist_init();
+    insert_all_option();
     printf("作者：酷安@诺鸡鸭\n");
     printf("GitHub开源地址：https://github.com/chase535/turbo-charge\n\n");
     //如果是写入文件，则必须加上这句话，不然只能等缓冲区满了后才会一次性写入
@@ -318,7 +319,7 @@ int main()
     //如果有电流文件，则获取安卓版本，为以后“伪”旁路供电做准备
     if(current_change) can_get_foreground=check_android_version();
     //创建一个子线程用来读取配置文件
-    pthread_create(&thread2, NULL, read_options, NULL);
+    pthread_create(&thread2, NULL, read_option_file, NULL);
     pthread_detach(thread2);
     snprintf(current_max_char, 20, "%d", read_one_option("CURRENT_MAX"));
     snprintf(highest_temp_current_char, 20, "%d", read_one_option("HIGHEST_TEMP_CURRENT"));

@@ -3,18 +3,16 @@
 
 #define OPTION_NAME_MAX_SIZE 40
 
-struct ListNode
+typedef struct ListNode
 {
     char name[OPTION_NAME_MAX_SIZE];
     volatile int value;
     struct ListNode *next;
-};
+} ListNode;
 
-typedef struct ListNode ListNode;
-
-extern unsigned char option_quantity;
 extern ListNode options_head;
 
-void options_linkedlist_init();
+void insert_all_option();
+int read_one_option(char *name);
 
 #endif

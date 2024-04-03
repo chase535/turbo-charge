@@ -5,13 +5,13 @@
 #include <unistd.h>
 #include <dirent.h>
 
-#include "read_option.h"
+#include "read_option_file.h"
 #include "printf_with_time.h"
 
 /*
 读取配置文件并赋值给程序内部变量
 */
-void *read_options()
+void *read_option_file()
 {
     //文件修改时间需持续存储，所以在循环体外定义
     uint option_last_modify_time=0;
@@ -19,13 +19,14 @@ void *read_options()
     {
         //在循环体内定义变量，这样变量仅存在于单次循环，每次循环结束后变量自动释放，循环开始时变量重新定义
         FILE *fc;
-        char option_tmp[42]={0},option[100]={0},*value;
-        uchar opt=0,i=0;
-        //不定长数组无法在定义时初始化为全0，所以后续会使用memset进行清零
-        uchar value_stat[option_quantity];
+        char option_tmp[42]={0},option[100]={0},*value=NULL;
+        uchar opt=0,i=0,option_quantity=1;
         int new_value=0;
         struct stat statbuf;
-        ListNode *node;
+        ListNode *node=options_head.next,*tmp=options_head.next;
+        while((tmp=tmp->next) != NULL) option_quantity++;
+        //不定长数组无法在定义时初始化为全0，所以后续会使用memset进行清零
+        uchar value_stat[option_quantity];
         check_read_file(option_file);
         //先获取文件修改时间，若本次的文件修改时间与上次相等，证明配置文件未修改，跳过读取
         stat(option_file, &statbuf);
@@ -56,7 +57,7 @@ void *read_options()
                     value=option+strlen(option_tmp);
                     for(i=0;i < strlen(value);i++)
                     {
-                        if(((int)value[i] < 48 || (int)value[i] > 57) && ((!i && ((int)value[i] != 45 || strlen(value) == 1)) || i))
+                        if((value[i] < '0' || value[i] > '9') && ((!i && (value[i] != '-' || strlen(value) == 1)) || i))
                         {
                             value_stat[opt]=2;
                             break;
@@ -102,27 +103,4 @@ void *read_options()
         sleep(5);
     }
     return NULL;
-}
-
-//读取单个配置的值
-int read_one_option(char *name)
-{
-    int value=-1;
-    ListNode *node;
-    pthread_mutex_lock((pthread_mutex_t *)&mutex_options);
-    for(node=options_head.next;node;node=node->next)
-    {
-        if(!(strcmp(node->name, name)))
-        {
-            value=node->value;
-            break;
-        }
-    }
-    pthread_mutex_unlock((pthread_mutex_t *)&mutex_options);
-    if(value < 0)
-    {
-        printf_with_time("无法获取变量，程序发生了内部错误，请立即前往Github进行反馈！");
-        exit(98765);
-    }
-    return value;
 }

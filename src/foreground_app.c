@@ -7,7 +7,7 @@
 #include <sys/types.h>
 
 #include "printf_with_time.h"
-#include "read_option.h"
+#include "options_linkedlist.h"
 #include "foreground_app.h"
 
 //全局变量，用于存储当前前台应用的包名
