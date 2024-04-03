@@ -24,6 +24,11 @@ void *read_option_file()
         int new_value=0;
         struct stat statbuf;
         ListNode *node=options_head.next,*tmp=options_head.next;
+        if(node == NULL || tmp == NULL)
+        {
+            printf_with_time("存储配置信息的链表中没有节点，程序强制停止运行！");
+            exit(9988);
+        }
         while((tmp=tmp->next) != NULL) option_quantity++;
         //不定长数组无法在定义时初始化为全0，所以后续会使用memset进行清零
         uchar value_stat[option_quantity];
