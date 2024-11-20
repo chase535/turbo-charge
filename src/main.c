@@ -319,7 +319,7 @@ int main()
     //如果有电流文件，则获取安卓版本，为以后“伪”旁路供电做准备
     if(current_change) can_get_foreground=check_android_version();
     //创建一个子线程用来读取配置文件
-    pthread_create(&thread2, NULL, read_option_file, NULL);
+    pthread_create(&thread2, NULL, &read_option_file, NULL);
     pthread_detach(thread2);
     snprintf(current_max_char, 20, "%d", read_one_option("CURRENT_MAX"));
     snprintf(highest_temp_current_char, 20, "%d", read_one_option("HIGHEST_TEMP_CURRENT"));
