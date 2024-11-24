@@ -14,7 +14,7 @@
 void *read_option_file(void *arg)
 {
     //文件修改时间需持续存储，所以在循环体外定义
-    uint option_last_modify_time=0;
+    uint option_last_modify_time=0, sleep_time=*(int *)arg;
     while(1)
     {
         //在循环体内定义变量，这样变量仅存在于单次循环，每次循环结束后变量自动释放，循环开始时变量重新定义
@@ -37,7 +37,7 @@ void *read_option_file(void *arg)
         stat(option_file, &statbuf);
         if(statbuf.st_mtime == option_last_modify_time)
         {
-            sleep(5);
+            sleep(sleep_time);
             continue;
         }
         memset(value_stat, 0, sizeof(value_stat));
@@ -105,7 +105,7 @@ void *read_option_file(void *arg)
         }
         option_last_modify_time=statbuf.st_mtime;
         pthread_mutex_unlock((pthread_mutex_t *)&mutex_options);
-        sleep(5);
+        sleep(sleep_time);
     }
     return NULL;
 }
