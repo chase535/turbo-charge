@@ -11,7 +11,7 @@
 /*
 读取配置文件并赋值给程序内部变量
 */
-void *read_option_file()
+void *read_option_file(void *arg)
 {
     //文件修改时间需持续存储，所以在循环体外定义
     uint option_last_modify_time=0;
