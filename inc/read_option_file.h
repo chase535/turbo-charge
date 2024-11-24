@@ -3,6 +3,6 @@
 
 #include "main.h"
 
-void *read_option_file();
+void *read_option_file(void *arg);
 
 #endif
