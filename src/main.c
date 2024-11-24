@@ -103,19 +103,115 @@ void read_file(char *file_path, char *char_var, int max_char_num)
     line_feed(char_var);
 }
 
-int main()
+//查找可用温度传感器
+int find_temp_sensor(char *temp_sensor)
 {
     FILE *fq;
-    char **current_limit_file,**power_supply_dir_list,**power_supply_dir,**thermal_dir,**current_max_file,**temp_file;
-    char *temp_tmp,*temp_sensor,*temp_sensor_dir,*buffer,*msg;
+    struct stat statbuf;
+    char *temp_sensor_dir = NULL, *buffer = NULL, *temp_tmp = NULL, *msg = NULL;
+    char **thermal_dir = NULL;
+    int thermal_file_num = 0, i = 0, j = 0, temp_sensor_num = 100;
+
+    //预先分配一个占位用的内存
+    temp_sensor=(char *)my_calloc(1, sizeof(char));
+    temp_sensor_dir=(char *)my_calloc(1, sizeof(char));
+    buffer=(char *)my_calloc(1, sizeof(char));
+    temp_tmp=(char *)my_calloc(1, sizeof(char)*15);
+    msg=(char *)my_calloc(1, sizeof(char));
+    thermal_dir=(char **)my_calloc(1, sizeof(char *));
+    thermal_file_num=list_dir("/sys/class/thermal", &thermal_dir);
+    //遍历/sys/class/thermal
+    for(i=0;i < thermal_file_num;i++)
+    {
+        //判断/sys/class/thermal下各个文件夹的名是否包含thermal_zone
+        //因为温度传感器的相关文件就在此类文件夹中
+        if(strstr(thermal_dir[i], "thermal_zone") != NULL)
+        {
+            //判断该文件夹内是否有一个名为type的文件，此文件的内容为该温度传感器的名称
+            buffer=(char *)my_realloc(buffer, sizeof(char)*(strlen(thermal_dir[i])+6));
+            sprintf(buffer, "%s/type", thermal_dir[i]);
+            //如果没有type文件或type文件不可读，则跳过此温度传感器的后续操作
+            if(access(buffer, R_OK)) continue;
+            //获取type文件内的字符个数
+            stat(buffer, &statbuf);
+            fq=fopen(buffer, "rt");
+            if(fq == NULL) continue;
+            //重新分配内存，使其刚好能够装入该温度传感器的名称，并获取该温度传感器的名称
+            msg=(char *)my_realloc(msg, sizeof(char)*(statbuf.st_size+1));
+            fgets(msg, statbuf.st_size+1, fq);
+            fclose(fq);
+            fq=NULL;
+            //如果无法通过管道打开type文件，则跳过此温度传感器的后续操作
+            line_feed(msg);
+            //检查此文件夹下有无temp文件，此文件的内容是该温度传感器所获取的温度值
+            sprintf(buffer, "%s/temp", thermal_dir[i]);
+            //如果没有temp文件或temp文件不可读，则跳过此温度传感器的后续操作
+            if(access(buffer, R_OK)) continue;
+            fq=fopen(buffer, "rt");
+            if(fq != NULL)
+            {
+                fgets(temp_tmp, 10, fq);
+                fclose(fq);
+                fq=NULL;
+            }
+            //如果无法通过管道打开temp文件，则跳过此温度传感器的后续操作
+            else continue;
+            line_feed(temp_tmp);
+            //判断temp文件的值是否正常，若不正常则代表不能使用此温度传感器，跳过此温度传感器的后续操作
+            if(atoi(temp_tmp) == 1 || atoi(temp_tmp) == 0 || atoi(temp_tmp) == -1) continue;
+            //根据温度传感器的优先级顺序进行筛选，最终选择优先级最高的可用的温度传感器
+            for(j=0;j < temp_sensor_quantity;j++)
+            {
+                if(!strcmp(msg, temp_sensors[j]) && temp_sensor_num > j)
+                {
+                    temp_sensor_num=j;
+                    //重新分配内存保证了最小内存使用量，temp_sensor_dir只是温度传感器的所在路径，后续会进行拼接
+                    temp_sensor_dir=(char *)my_realloc(temp_sensor_dir, sizeof(char)*(strlen(thermal_dir[i])+1));
+                    strcpy(temp_sensor_dir, thermal_dir[i]);
+                }
+            }
+        }
+    }
+    my_free(buffer);
+    buffer=NULL;
+    my_free(temp_tmp);
+    temp_tmp=NULL;
+    my_free(msg);
+    msg=NULL;
+    free_malloc_memory(&thermal_dir, thermal_file_num);
+    //判断是否获取到了可用的温度传感器
+    if(temp_sensor_num != 100)
+    {
+        //重新分配内存，使其刚好能够装下路径+“/temp”，因为temp文件内存储的是温度传感器所获取的温度值
+        temp_sensor=(char *)my_realloc(temp_sensor, sizeof(char)*(strlen(temp_sensor_dir)+6));
+        sprintf(temp_sensor, "%s/temp", temp_sensor_dir);
+        printf_with_time("将使用%s温度传感器作为手机温度的获取源。由于每个传感器所处位置不同以及每个手机发热区不同，很可能导致获取到的温度与实际体感温度不同", temp_sensors[temp_sensor_num]);
+        check_read_file(temp_sensor);
+        my_free(temp_sensor_dir);
+        temp_sensor_dir=NULL;
+        return 1;
+    }
+    //如果没有获取到可用的温度传感器，则返回0
+    else
+    {
+        my_free(temp_sensor_dir);
+        temp_sensor_dir=NULL;
+        my_free(temp_sensor);
+        temp_sensor=NULL;
+        return 0;
+    }
+}
+
+int main()
+{
+    char *temp_sensor = NULL,**current_limit_file = NULL,**power_supply_dir_list = NULL,**power_supply_dir = NULL,**current_max_file = NULL,**temp_file = NULL;
     char charge[25]={0},power[10]={0},current_max_char[20]={0},highest_temp_current_char[20]={0},thermal[15]={0},last_appname[APP_PACKAGE_NAME_MAX_SIZE]={0};
     uchar step_charge=1,power_control=1,force_temp=1,has_force_temp=0,current_change=1,battery_status=1,battery_capacity=1;
-    int i=0,j=0,temp_sensor_num=100,temp_int=0,power_supply_file_num=0,thermal_file_num=0,current_limit_file_num=0,last_charge_stop=-1,charge_is_stop=0,is_first_time=1;
+    int i=0,j=0,temp_int=0,power_supply_file_num=0,current_limit_file_num=0,last_charge_stop=-1,charge_is_stop=0,is_first_time=1,temp_sensor_num=0;
     int power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0,is_bypass=0,can_get_foreground=0,screen_is_off=0,last_temp_max=-1,last_charge_status=0,read_option_time=5;
-    regex_t temp_re,current_max_re,current_limit_re;
-    regmatch_t temp_pmatch,current_max_pmatch,current_limit_pmatch;
-    pthread_t thread1,thread2;
-    struct stat statbuf;
+    regex_t temp_re = {0},current_max_re = {0},current_limit_re = {0};
+    regmatch_t temp_pmatch = {0},current_max_pmatch = {0},current_limit_pmatch = {0};
+    pthread_t thread1 = {0},thread2 = {0};
     //初始化链表
     insert_all_option();
     printf("作者：酷安@诺鸡鸭\n");
@@ -210,90 +306,11 @@ int main()
         else if(!battery_status && temp_file_num) printf_with_time("由于找不到/sys/class/power_supply/battery/status文件，充电时强制显示28℃功能失效！");
         else printf_with_time("由于找不到/sys/class/power_supply/battery/status文件以及无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！");
     }
-    //预先分配一个占位用的内存，此内存后续将装入温度传感器所获取到的温度的文件的路径
-    temp_sensor=(char *)my_calloc(1, sizeof(char));
     if(force_temp || current_change)
     {
-        //预先分配一个占位用的内存
-        temp_sensor_dir=(char *)my_calloc(1, sizeof(char));
-        buffer=(char *)my_calloc(1, sizeof(char));
-        temp_tmp=(char *)my_calloc(1, sizeof(char)*15);
-        msg=(char *)my_calloc(1, sizeof(char));
-        thermal_dir=(char **)my_calloc(1, sizeof(char *));
-        thermal_file_num=list_dir("/sys/class/thermal", &thermal_dir);
-        //遍历/sys/class/thermal
-        for(i=0;i < thermal_file_num;i++)
+        temp_sensor_num = find_temp_sensor(temp_sensor);
+        if(temp_sensor_num == 0)
         {
-            //判断/sys/class/thermal下各个文件夹的名是否包含thermal_zone
-            //因为温度传感器的相关文件就在此类文件夹中
-            if(strstr(thermal_dir[i], "thermal_zone") != NULL)
-            {
-                //判断该文件夹内是否有一个名为type的文件，此文件的内容为该温度传感器的名称
-                buffer=(char *)my_realloc(buffer, sizeof(char)*(strlen(thermal_dir[i])+6));
-                sprintf(buffer, "%s/type", thermal_dir[i]);
-                //如果没有type文件或type文件不可读，则跳过此温度传感器的后续操作
-                if(access(buffer, R_OK)) continue;
-                //获取type文件内的字符个数
-                stat(buffer, &statbuf);
-                fq=fopen(buffer, "rt");
-                if(fq == NULL) continue;
-                //重新分配内存，使其刚好能够装入该温度传感器的名称，并获取该温度传感器的名称
-                msg=(char *)my_realloc(msg, sizeof(char)*(statbuf.st_size+1));
-                fgets(msg, statbuf.st_size+1, fq);
-                fclose(fq);
-                fq=NULL;
-                //如果无法通过管道打开type文件，则跳过此温度传感器的后续操作
-                line_feed(msg);
-                //检查此文件夹下有无temp文件，此文件的内容是该温度传感器所获取的温度值
-                sprintf(buffer, "%s/temp", thermal_dir[i]);
-                //如果没有temp文件或temp文件不可读，则跳过此温度传感器的后续操作
-                if(access(buffer, R_OK)) continue;
-                fq=fopen(buffer, "rt");
-                if(fq != NULL)
-                {
-                    fgets(temp_tmp, 10, fq);
-                    fclose(fq);
-                    fq=NULL;
-                }
-                //如果无法通过管道打开temp文件，则跳过此温度传感器的后续操作
-                else continue;
-                line_feed(temp_tmp);
-                //判断temp文件的值是否正常，若不正常则代表不能使用此温度传感器，跳过此温度传感器的后续操作
-                if(atoi(temp_tmp) == 1 || atoi(temp_tmp) == 0 || atoi(temp_tmp) == -1) continue;
-                //根据温度传感器的优先级顺序进行筛选，最终选择优先级最高的可用的温度传感器
-                for(j=0;j < temp_sensor_quantity;j++)
-                {
-                    if(!strcmp(msg, temp_sensors[j]) && temp_sensor_num > j)
-                    {
-                        temp_sensor_num=j;
-                        //重新分配内存保证了最小内存使用量，temp_sensor_dir只是温度传感器的所在路径，后续会进行拼接
-                        temp_sensor_dir=(char *)my_realloc(temp_sensor_dir, sizeof(char)*(strlen(thermal_dir[i])+1));
-                        strcpy(temp_sensor_dir, thermal_dir[i]);
-                    }
-                }
-            }
-        }
-        my_free(buffer);
-        buffer=NULL;
-        my_free(temp_tmp);
-        temp_tmp=NULL;
-        my_free(msg);
-        msg=NULL;
-        free_malloc_memory(&thermal_dir, thermal_file_num);
-        //判断是否获取到了可用的温度传感器
-        if(temp_sensor_num != 100)
-        {
-            //重新分配内存，使其刚好能够装下路径+“/temp”，因为temp文件内存储的是温度传感器所获取的温度值
-            temp_sensor=(char *)my_realloc(temp_sensor, sizeof(char)*(strlen(temp_sensor_dir)+6));
-            sprintf(temp_sensor, "%s/temp", temp_sensor_dir);
-            printf_with_time("将使用%s温度传感器作为手机温度的获取源。由于每个传感器所处位置不同以及每个手机发热区不同，很可能导致获取到的温度与实际体感温度不同", temp_sensors[temp_sensor_num]);
-            check_read_file(temp_sensor);
-        }
-        //如果没有获取到可用的温度传感器，则打印相关信息
-        else
-        {
-            my_free(temp_sensor);
-            temp_sensor=NULL;
             if(force_temp)
             {
                 printf_with_time("由于找不到程序支持的温度传感器，温度控制及充电时强制显示28℃功能失效！");
@@ -306,8 +323,6 @@ int main()
                 exit(800);
             }
         }
-        my_free(temp_sensor_dir);
-        temp_sensor_dir=NULL;
     }
     else if(!step_charge && !power_control && !force_temp && !current_change)
     {
@@ -407,7 +422,7 @@ int main()
                 }
             }
             //温度控制功能
-            if(read_one_option("TEMP_CTRL") == 1 && temp_sensor_num != 100 && current_change)
+            if(read_one_option("TEMP_CTRL") == 1 && temp_sensor_num == 1 && current_change)
             {
                 //读取温度传感器所获取的温度值
                 read_file(temp_sensor, thermal, sizeof(thermal));
