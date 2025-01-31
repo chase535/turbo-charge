@@ -41,7 +41,7 @@ jobs:
           echo "MIMALLOC_VERSION=${mimalloc_version}" >> ${GITHUB_ENV}
           mkdir -p ${HOME}/mimalloc/out
           cd ${HOME}/mimalloc/out
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_SYSTEM_PROCESSOR=aarch64 -DMI_BUILD_STATIC=ON -DMI_BUILD_SHARED=OFF -DMI_BUILD_OBJECT=OFF -DMI_BUILD_TESTS=OFF -DMI_SECURE=OFF
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=aarch64 -DMI_BUILD_STATIC=ON -DMI_BUILD_SHARED=OFF -DMI_BUILD_OBJECT=OFF -DMI_BUILD_TESTS=OFF -DMI_SECURE=OFF
           make -j$(nproc --all)
           sudo make install -j$(nproc --all)
       - name: Build module
