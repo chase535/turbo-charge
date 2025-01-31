@@ -35,7 +35,7 @@ jobs:
           echo "CXX=${HOME}/aarch64-linux-musl-gcc/bin/aarch64-linux-musl-g++" >> ${GITHUB_ENV}
       - name: Clone and build mimalloc
         run: |
-          git clone https://github.com/microsoft/mimalloc.git ${HOME}/mimalloc -b dev-slice
+          git clone https://github.com/microsoft/mimalloc.git ${HOME}/mimalloc -b dev3
           cd ${HOME}/mimalloc
           mimalloc_version="$(git describe --abbrev=0 --tags | sed "s|^v||g")"
           echo "MIMALLOC_VERSION=${mimalloc_version}" >> ${GITHUB_ENV}
