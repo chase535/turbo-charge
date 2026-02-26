@@ -12,8 +12,8 @@ set(CMAKE_SYSTEM_PROCESSOR "aarch64")
 set(CMAKE_BUILD_TYPE "Release")
 
 # 设置编译链接参数
-set(CMAKE_C_FLAGS "-g0 -O2 -W -Wall -Wno-format-truncation -Wno-unused-result -Werror -fvisibility=hidden -flto -fdata-sections -ffunction-sections")
-set(CMAKE_EXE_LINKER_FLAGS "-g0 -O2 -static -fvisibility=hidden -flto -ffixed-x18 -Wl,-O2,--strip-all,--hash-style=both,--gc-sections,--exclude-libs,ALL")
+set(CMAKE_C_FLAGS "-g0 -O2 -W -Wall -Wno-format-truncation -Wno-unused-result -Werror -fvisibility=hidden -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-common -flto -fdata-sections -ffunction-sections")
+set(CMAKE_EXE_LINKER_FLAGS "-g0 -O2 -static -fvisibility=hidden -flto -ffixed-x18 -Wl,-s,-O2,--build-id=sha1,--gc-sections,--strip-all,--hash-style=both,--gc-sections,--exclude-libs,ALL")
 
 # 查找mimalloc包
 if(DEFINED ENV{MIMALLOC_VERSION})
