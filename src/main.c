@@ -3,7 +3,6 @@
 #include <string.h>
 #include <dirent.h>
 #include <unistd.h>
-#include <regex.h>
 #include <time.h>
 #include <sys/stat.h>
 
@@ -202,59 +201,55 @@ int find_temp_sensor(char *temp_sensor)
     }
 }
 
-int main()
+/*
+判断各个所需文件是否存在
+检查电池状态、电量、充电控制、阶梯充电、温度等相关文件
+并在/sys/class/power_supply中搜索电流文件和温度文件
+根据文件的存在情况设置各功能的启用标志
+*/
+void check_required_files(uchar *battery_status, uchar *battery_capacity, uchar *power_control,
+                          uchar *step_charge, uchar *force_temp, uchar *current_change,
+                          int *temp_sensor_num, char *temp_sensor,
+                          char ***current_max_file, int *current_max_file_num,
+                          char ***current_limit_file, int *current_limit_file_num,
+                          char ***temp_file, int *temp_file_num)
 {
-    char *temp_sensor = NULL,**current_limit_file = NULL,**power_supply_dir_list = NULL,**power_supply_dir = NULL,**current_max_file = NULL,**temp_file = NULL;
-    char charge[25]={0},power[10]={0},current_max_char[20]={0},highest_temp_current_char[20]={0},thermal[15]={0},last_appname[APP_PACKAGE_NAME_MAX_SIZE]={0};
-    uchar step_charge=1,power_control=1,force_temp=1,has_force_temp=0,current_change=1,battery_status=1,battery_capacity=1;
-    int i=0,j=0,temp_int=0,power_supply_file_num=0,current_limit_file_num=0,last_charge_stop=-1,charge_is_stop=0,is_first_time=1,temp_sensor_num=0;
-    int power_supply_dir_list_num=0,current_max_file_num=0,temp_file_num=0,is_bypass=0,can_get_foreground=0,screen_is_off=0,last_temp_max=-1,last_charge_status=0,read_option_time=5;
-    regex_t temp_re = {0},current_max_re = {0},current_limit_re = {0};
-    regmatch_t temp_pmatch = {0},current_max_pmatch = {0},current_limit_pmatch = {0};
-    pthread_t thread1 = {0},thread2 = {0};
-    //初始化链表
-    insert_all_option();
-    printf("作者：酷安@诺鸡鸭\n");
-    printf("GitHub开源地址：https://github.com/chase535/turbo-charge\n\n");
-    //如果是写入文件，则必须加上这句话，不然只能等缓冲区满了后才会一次性写入
-    fflush(stdout);
-    //判断各个所需文件是否存在
-    if(access("/sys/class/power_supply/battery/status", F_OK)) battery_status=0;
-    if(access("/sys/class/power_supply/battery/capacity", F_OK)) battery_capacity=0;
-    if(!battery_status || !battery_capacity)
+    char **power_supply_dir_list = NULL, **power_supply_dir = NULL;
+    int i = 0, j = 0, power_supply_file_num = 0, power_supply_dir_list_num = 0, path_len = 0;
+
+    if(access("/sys/class/power_supply/battery/status", F_OK)) *battery_status=0;
+    if(access("/sys/class/power_supply/battery/capacity", F_OK)) *battery_capacity=0;
+    if(!*battery_status || !*battery_capacity)
     {
-        power_control=0;
-        if(battery_status && !battery_capacity) printf_with_time("由于找不到/sys/class/power_supply/battery/capacity文件，电量控制功能失效！");
-        else if(!battery_status && battery_capacity) printf_with_time("由于找不到/sys/class/power_supply/battery/status文件，电量控制功能失效，且“伪”旁路供电功能无法根据手机的充电状态而自动启停！");
+        *power_control=0;
+        if(*battery_status && !*battery_capacity) printf_with_time("由于找不到/sys/class/power_supply/battery/capacity文件，电量控制功能失效！");
+        else if(!*battery_status && *battery_capacity) printf_with_time("由于找不到/sys/class/power_supply/battery/status文件，电量控制功能失效，且“伪”旁路供电功能无法根据手机的充电状态而自动启停！");
         else printf_with_time("由于找不到/sys/class/power_supply/battery/status和/sys/class/power_supply/battery/capacity文件，电量控制功能失效，且“伪”旁路供电功能无法根据手机的充电状态而自动启停！");
     }
     else if(access("/sys/class/power_supply/battery/charging_enabled", F_OK) && access("/sys/class/power_supply/battery/battery_charging_enabled", F_OK) && access("/sys/class/power_supply/battery/input_suspend", F_OK) && access("/sys/class/qcom-battery/restricted_charging", F_OK))
     {
-        power_control=0;
+        *power_control=0;
         printf_with_time("由于找不到控制手机暂停充电的文件，电量控制功能失效！");
         printf_with_time("目前已知的有关文件有：/sys/class/power_supply/battery/charging_enabled、/sys/class/power_supply/battery/battery_charging_enabled、/sys/class/power_supply/battery/input_suspend、/sys/class/qcom-battery/restricted_charging");
         printf_with_time("如果您知道其他的有关文件，请联系模块制作者！");
     }
     if(access("/sys/class/power_supply/battery/step_charging_enabled", F_OK))
     {
-        step_charge=0;
+        *step_charge=0;
         printf_with_time("由于找不到/sys/class/power_supply/battery/step_charging_enabled文件，阶梯式充电控制的所有功能失效！");
     }
-    else if(!battery_capacity)
+    else if(!*battery_capacity)
     {
-        step_charge=2;
+        *step_charge=2;
         printf_with_time("由于找不到/sys/class/power_supply/battery/capacity文件，阶梯式充电无法根据电量进行开关，此时若在配置中关闭阶梯式充电，则无论电量多少，阶梯式充电都会关闭！");
     }
-    //使用正则表达式，用来模糊查找相应文件
-    regcomp(&current_max_re, ".*/constant_charge_current_max$|.*/fast_charge_current$|.*/thermal_input_current$", REG_EXTENDED|REG_NOSUB);
-    regcomp(&current_limit_re, ".*/thermal_input_current_limit$", REG_EXTENDED|REG_NOSUB);
-    regcomp(&temp_re, ".*/temp$", REG_EXTENDED|REG_NOSUB);
+    //通过字符串后缀匹配来查找相应文件
     power_supply_dir=(char **)my_calloc(1, sizeof(char *));
     power_supply_file_num=list_dir("/sys/class/power_supply", &power_supply_dir);
     //预先分配一个足够大的内存，用来记录文件的个数
-    current_limit_file=(char **)my_calloc(1, sizeof(char *)*100);
-    current_max_file=(char **)my_calloc(1, sizeof(char *)*100);
-    temp_file=(char **)my_calloc(1, sizeof(char *)*100);
+    *current_limit_file=(char **)my_calloc(1, sizeof(char *)*100);
+    *current_max_file=(char **)my_calloc(1, sizeof(char *)*100);
+    *temp_file=(char **)my_calloc(1, sizeof(char *)*100);
     //遍历/sys/class/power_supply
     for(i=0;i < power_supply_file_num;i++)
     {
@@ -264,73 +259,96 @@ int main()
         for(j=0;j < power_supply_dir_list_num;j++)
         {
             //如果匹配到了文件，则分配一个与路径字符串大小相等的内存，装入路径，并且记录相应文件数量的变量值+1
-            if(!regexec(&current_max_re, power_supply_dir_list[j], 1, &current_max_pmatch, 0))
+            path_len=strlen(power_supply_dir_list[j]);
+            if((path_len >= 27 && !strcmp(power_supply_dir_list[j]+path_len-27, "/constant_charge_current_max"))
+                || (path_len >= 19 && !strcmp(power_supply_dir_list[j]+path_len-19, "/fast_charge_current"))
+                || (path_len >= 22 && !strcmp(power_supply_dir_list[j]+path_len-22, "/thermal_input_current")))
             {
-                current_max_file[current_max_file_num]=(char *)my_calloc(1, sizeof(char)*(strlen(power_supply_dir_list[j])+1));
-                strcpy(current_max_file[current_max_file_num], power_supply_dir_list[j]);
-                current_max_file_num++;
+                (*current_max_file)[*current_max_file_num]=(char *)my_calloc(1, sizeof(char)*(path_len+1));
+                strcpy((*current_max_file)[*current_max_file_num], power_supply_dir_list[j]);
+                (*current_max_file_num)++;
             }
-            else if(!regexec(&current_limit_re, power_supply_dir_list[j], 1, &current_limit_pmatch, 0))
+            else if(path_len >= 28 && !strcmp(power_supply_dir_list[j]+path_len-28, "/thermal_input_current_limit"))
             {
-                current_limit_file[current_limit_file_num]=(char *)my_calloc(1, sizeof(char)*(strlen(power_supply_dir_list[j])+1));
-                strcpy(current_limit_file[current_limit_file_num], power_supply_dir_list[j]);
-                current_limit_file_num++;
+                (*current_limit_file)[*current_limit_file_num]=(char *)my_calloc(1, sizeof(char)*(path_len+1));
+                strcpy((*current_limit_file)[*current_limit_file_num], power_supply_dir_list[j]);
+                (*current_limit_file_num)++;
             }
-            else if(!regexec(&temp_re, power_supply_dir_list[j], 1, &temp_pmatch, 0))
+            else if(path_len >= 5 && !strcmp(power_supply_dir_list[j]+path_len-5, "/temp"))
             {
-                temp_file[temp_file_num]=(char *)my_calloc(1, sizeof(char)*(strlen(power_supply_dir_list[j])+1));
-                strcpy(temp_file[temp_file_num], power_supply_dir_list[j]);
-                temp_file_num++;
+                (*temp_file)[*temp_file_num]=(char *)my_calloc(1, sizeof(char)*(path_len+1));
+                strcpy((*temp_file)[*temp_file_num], power_supply_dir_list[j]);
+                (*temp_file_num)++;
             }
         }
         free_malloc_memory(&power_supply_dir_list, power_supply_dir_list_num);
     }
-    regfree(&current_max_re);
-    regfree(&current_limit_re);
-    regfree(&temp_re);
     free_malloc_memory(&power_supply_dir, power_supply_file_num);
     //收缩内存
-    current_limit_file=(char **)my_realloc(current_limit_file, sizeof(char *)*current_limit_file_num);
-    current_max_file=(char **)my_realloc(current_max_file, sizeof(char *)*current_max_file_num);
-    temp_file=(char **)my_realloc(temp_file, sizeof(char *)*temp_file_num);
+    *current_limit_file=(char **)my_realloc(*current_limit_file, sizeof(char *)*(*current_limit_file_num));
+    *current_max_file=(char **)my_realloc(*current_max_file, sizeof(char *)*(*current_max_file_num));
+    *temp_file=(char **)my_realloc(*temp_file, sizeof(char *)*(*temp_file_num));
     //判断文件数量是否为0
-    if(!current_max_file_num)
+    if(!*current_max_file_num)
     {
-        current_change=0;
+        *current_change=0;
         printf_with_time("无法在/sys/class/power_supply中的所有文件夹内找到constant_charge_current_max、fast_charge_current、thermal_input_current文件，有关电流的所有功能（包括“伪”旁路供电功能）失效！");
     }
-    if(!battery_status || !temp_file_num)
+    if(!*battery_status || !*temp_file_num)
     {
-        force_temp=0;
-        if(battery_status && !temp_file_num) printf_with_time("无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！");
-        else if(!battery_status && temp_file_num) printf_with_time("由于找不到/sys/class/power_supply/battery/status文件，充电时强制显示28℃功能失效！");
+        *force_temp=0;
+        if(*battery_status && !*temp_file_num) printf_with_time("无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！");
+        else if(!*battery_status && *temp_file_num) printf_with_time("由于找不到/sys/class/power_supply/battery/status文件，充电时强制显示28℃功能失效！");
         else printf_with_time("由于找不到/sys/class/power_supply/battery/status文件以及无法在/sys/class/power_supply中的所有文件夹内找到temp文件，充电时强制显示28℃功能失效！");
     }
-    if(force_temp || current_change)
+    if(*force_temp || *current_change)
     {
-        temp_sensor_num = find_temp_sensor(temp_sensor);
-        if(temp_sensor_num == 0)
+        *temp_sensor_num = find_temp_sensor(temp_sensor);
+        if(*temp_sensor_num == 0)
         {
-            if(force_temp)
+            if(*force_temp)
             {
                 printf_with_time("由于找不到程序支持的温度传感器，温度控制及充电时强制显示28℃功能失效！");
-                force_temp=0;
+                *force_temp=0;
             }
             else printf_with_time("由于找不到程序支持的温度传感器，温度控制功能失效！");
-            if(!step_charge && !power_control && !force_temp && !current_change)
+            if(!*step_charge && !*power_control && !*force_temp && !*current_change)
             {
                 printf_with_time("所有的所需文件均不存在，完全不适配此手机，程序强制退出！");
                 exit(800);
             }
         }
     }
-    else if(!step_charge && !power_control && !force_temp && !current_change)
+    else if(!*step_charge && !*power_control && !*force_temp && !*current_change)
     {
         printf_with_time("所有的所需文件均不存在，完全不适配此手机，程序强制退出！");
         exit(1000);
     }
-    if(current_change) for(i=0;i < current_max_file_num;i++) printf_with_time("找到电流文件：%s", current_max_file[i]);
-    if(force_temp) for(i=0;i < temp_file_num;i++) printf_with_time("找到温度文件：%s", temp_file[i]);
+    if(*current_change) for(i=0;i < *current_max_file_num;i++) printf_with_time("找到电流文件：%s", (*current_max_file)[i]);
+    if(*force_temp) for(i=0;i < *temp_file_num;i++) printf_with_time("找到温度文件：%s", (*temp_file)[i]);
+}
+
+int main()
+{
+    char *temp_sensor = NULL,**current_limit_file = NULL,**current_max_file = NULL,**temp_file = NULL;
+    char charge[25]={0},power[10]={0},current_max_char[20]={0},highest_temp_current_char[20]={0},thermal[15]={0},last_appname[APP_PACKAGE_NAME_MAX_SIZE]={0};
+    uchar step_charge=1,power_control=1,force_temp=1,has_force_temp=0,current_change=1,battery_status=1,battery_capacity=1;
+    int i=0,temp_int=0,current_limit_file_num=0,last_charge_stop=-1,charge_is_stop=0,is_first_time=1,temp_sensor_num=0;
+    int current_max_file_num=0,temp_file_num=0,is_bypass=0,can_get_foreground=0,screen_is_off=0,last_temp_max=-1,last_charge_status=0,read_option_time=5;
+    pthread_t thread1 = {0},thread2 = {0};
+    //初始化链表
+    insert_all_option();
+    printf("作者：酷安@诺鸡鸭\n");
+    printf("GitHub开源地址：https://github.com/chase535/turbo-charge\n\n");
+    //如果是写入文件，则必须加上这句话，不然只能等缓冲区满了后才会一次性写入
+    fflush(stdout);
+    //判断各个所需文件是否存在
+    check_required_files(&battery_status, &battery_capacity, &power_control,
+                         &step_charge, &force_temp, &current_change,
+                         &temp_sensor_num, temp_sensor,
+                         &current_max_file, &current_max_file_num,
+                         &current_limit_file, &current_limit_file_num,
+                         &temp_file, &temp_file_num);
     //如果有电流文件，则获取安卓版本，为以后“伪”旁路供电做准备
     if(current_change) can_get_foreground=check_android_version();
     //创建一个子线程用来读取配置文件
