@@ -4,7 +4,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <sys/inotify.h>
-#include <sys/select.h>
+#include <poll.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -59,13 +59,11 @@ void *read_option_file(void *arg)
             }
             else
             {
-                //使用 select 阻塞等待 inotify 事件，超时时间为 sleep_time 秒
+                //使用 poll 阻塞等待 inotify 事件，超时时间为 sleep_time 秒
                 //超时后触发周期性兜底重载，以防 inotify 漏报
-                fd_set rfds;
-                struct timeval tv={sleep_time, 0};
-                FD_ZERO(&rfds);
-                FD_SET(ifd, &rfds);
-                int sel=select(ifd+1, &rfds, NULL, NULL, &tv);
+                struct pollfd pfd={ifd, POLLIN, 0};
+                int timeout_ms=sleep_time <= INT_MAX/1000 ? sleep_time*1000 : INT_MAX;
+                int sel=poll(&pfd, 1, timeout_ms);
                 if(sel < 0) continue;
                 if(sel > 0)
                 {
