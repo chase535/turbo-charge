@@ -62,7 +62,7 @@ void *read_option_file(void *arg)
                 {
                     //读取 inotify 事件队列，仅当有与配置文件相关的事件时才重载
                     int relevant=0;
-                    char evbuf[4096];
+                    char evbuf[4096] __attribute__((aligned(__alignof__(struct inotify_event))));
                     ssize_t n;
                     while((n=read(ifd, evbuf, sizeof(evbuf))) > 0)
                     {
