@@ -38,7 +38,17 @@ void *read_option_file(void *arg)
         opt_dir[0]='.'; opt_dir[1]='\0';
     }
     int ifd=inotify_init1(IN_CLOEXEC | IN_NONBLOCK);
-    if(ifd >= 0) inotify_add_watch(ifd, opt_dir, IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE);
+    int wd=-1;
+    if(ifd >= 0)
+    {
+        wd=inotify_add_watch(ifd, opt_dir, IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE);
+        if(wd < 0)
+        {
+            printf_with_time("inotify_add_watch 失败，降级为周期性轮询");
+            close(ifd);
+            ifd=-1;
+        }
+    }
     while(1)
     {
         if(!first_run)
