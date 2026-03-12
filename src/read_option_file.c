@@ -54,11 +54,26 @@ void *read_option_file(void *arg)
         memset(value_stat, 0, sizeof(value_stat));
         pthread_mutex_lock((pthread_mutex_t *)&mutex_options);
         int fd=open(option_file, O_RDONLY);
-        fstat(fd, &statbuf);
+        if(fd == -1)
+        {
+            pthread_mutex_unlock((pthread_mutex_t *)&mutex_options);
+            continue;
+        }
+        if(fstat(fd, &statbuf) == -1)
+        {
+            close(fd);
+            pthread_mutex_unlock((pthread_mutex_t *)&mutex_options);
+            continue;
+        }
         if(statbuf.st_size > 0)
         {
             char *map=mmap(NULL, statbuf.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
             close(fd);
+            if(map == MAP_FAILED)
+            {
+                pthread_mutex_unlock((pthread_mutex_t *)&mutex_options);
+                continue;
+            }
             char *pos=map, *end=map+statbuf.st_size, *line_end;
             while(pos < end)
             {
