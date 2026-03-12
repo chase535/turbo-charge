@@ -70,7 +70,7 @@ void *read_option_file(void *arg)
                 pos=line_end ? line_end+1 : end;
                 line_feed(option);
                 //跳过以英文井号开头的行及空行
-                if((strlen(option) == 0) || (option[0] == ' #')) continue;
+                if((strlen(option) == 0) || (option[0] == '#')) continue;
                 for(opt=0,node=options_head.next;node;opt++,node=node->next)
                 {
                     //将配置名与等号进行拼接，用来进行匹配
