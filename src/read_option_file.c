@@ -38,7 +38,16 @@ void *read_option_file(void *arg)
         opt_dir[0]='.'; opt_dir[1]='\0';
     }
     int ifd=inotify_init1(IN_CLOEXEC | IN_NONBLOCK);
-    if(ifd >= 0) inotify_add_watch(ifd, opt_dir, IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE);
+    if(ifd >= 0)
+    {
+        int wd = inotify_add_watch(ifd, opt_dir, IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE);
+        if(wd < 0)
+        {
+            // inotify 添加监视失败，关闭描述符并降级为周期性轮询
+            close(ifd);
+            ifd = -1;
+        }
+    }
     while(1)
     {
         if(!first_run)
