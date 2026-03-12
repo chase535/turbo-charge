@@ -19,22 +19,65 @@
 void *read_option_file(void *arg)
 {
     int sleep_time=*(int *)arg, first_run=1;
+    //监视配置文件所在目录而非文件本身，以正确处理编辑器的原子保存（先写临时文件再重命名）
+    char opt_dir[PATH_MAX], opt_name[NAME_MAX+1];
+    strncpy(opt_dir, option_file, sizeof(opt_dir)-1);
+    opt_dir[sizeof(opt_dir)-1]='\0';
+    char *slash=strrchr(opt_dir, '/');
+    if(slash)
+    {
+        strncpy(opt_name, slash+1, sizeof(opt_name)-1);
+        opt_name[sizeof(opt_name)-1]='\0';
+        if(slash == opt_dir) { opt_dir[0]='/'; opt_dir[1]='\0'; }
+        else *slash='\0';
+    }
+    else
+    {
+        strncpy(opt_name, option_file, sizeof(opt_name)-1);
+        opt_name[sizeof(opt_name)-1]='\0';
+        opt_dir[0]='.'; opt_dir[1]='\0';
+    }
     int ifd=inotify_init1(IN_CLOEXEC | IN_NONBLOCK);
-    inotify_add_watch(ifd, option_file, IN_CLOSE_WRITE | IN_MODIFY);
+    if(ifd >= 0) inotify_add_watch(ifd, opt_dir, IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE);
     while(1)
     {
         if(!first_run)
         {
-            //使用 select 阻塞等待 inotify 事件，超时时间为 sleep_time 秒
-            //文件未修改时线程持续休眠，不产生任何系统调用开销
-            fd_set rfds;
-            struct timeval tv={sleep_time, 0};
-            FD_ZERO(&rfds);
-            FD_SET(ifd, &rfds);
-            if(select(ifd+1, &rfds, NULL, NULL, &tv) <= 0) continue;
-            //排空 inotify 事件队列，防止积压
-            char evbuf[sizeof(struct inotify_event)+NAME_MAX+1];
-            while(read(ifd, evbuf, sizeof(evbuf)) > 0);
+            if(ifd < 0)
+            {
+                //inotify 初始化失败，降级为周期性轮询
+                sleep(sleep_time);
+            }
+            else
+            {
+                //使用 select 阻塞等待 inotify 事件，超时时间为 sleep_time 秒
+                //超时后触发周期性兜底重载，以防 inotify 漏报
+                fd_set rfds;
+                struct timeval tv={sleep_time, 0};
+                FD_ZERO(&rfds);
+                FD_SET(ifd, &rfds);
+                int sel=select(ifd+1, &rfds, NULL, NULL, &tv);
+                if(sel < 0) continue;
+                if(sel > 0)
+                {
+                    //读取 inotify 事件队列，仅当有与配置文件相关的事件时才重载
+                    int relevant=0;
+                    char evbuf[4096];
+                    ssize_t n;
+                    while((n=read(ifd, evbuf, sizeof(evbuf))) > 0)
+                    {
+                        char *ptr=evbuf;
+                        while(ptr < evbuf+n)
+                        {
+                            struct inotify_event *ev=(struct inotify_event *)ptr;
+                            if(ev->len > 0 && ev->name[0] != '\0' && strcmp(ev->name, opt_name) == 0) relevant=1;
+                            ptr+=sizeof(struct inotify_event)+ev->len;
+                        }
+                    }
+                    if(!relevant) continue;
+                }
+                //sel==0 为超时，直接落入下方进行周期性兜底重载
+            }
         }
         //在循环体内定义变量，这样变量仅存在于单次循环，每次循环结束后变量自动释放，循环开始时变量重新定义
         char option_tmp[42]={0},option[100]={0},*value=NULL;
