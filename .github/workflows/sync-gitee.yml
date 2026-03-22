@@ -11,11 +11,11 @@ env:
   GIT_CLONE: "${{ github.workspace }}/git_clone"
 
 jobs:
-  build:
+  sync-to-gitee:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Install tools
@@ -38,4 +38,4 @@ jobs:
           git remote set-url --push origin "git@gitee.com:chase535/turbo-charge"
           git fetch -p origin
           git for-each-ref --format 'delete %(refname)' refs/pull | git update-ref --stdin
-          git push --mirror
+          git push --mirror -f
