@@ -43,8 +43,8 @@ void *read_option_file(void *arg)
         int wd = inotify_add_watch(ifd, opt_dir, IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE);
         if(wd < 0)
         {
-            // inotify 添加监视失败，关闭描述符并降级为周期性轮询
             close(ifd);
+            printf_with_time("inotify添加监视失败，关闭描述符并降级为周期性轮询");
             ifd = -1;
         }
     }
@@ -54,7 +54,6 @@ void *read_option_file(void *arg)
         {
             if(ifd < 0)
             {
-                //inotify 初始化失败，降级为周期性轮询
                 sleep(sleep_time);
             }
             else
@@ -62,28 +61,27 @@ void *read_option_file(void *arg)
                 //使用 poll 阻塞等待 inotify 事件，超时时间为 sleep_time 秒
                 //超时后触发周期性兜底重载，以防 inotify 漏报
                 struct pollfd pfd={ifd, POLLIN, 0};
-                int timeout_ms=sleep_time <= INT_MAX/1000 ? sleep_time*1000 : INT_MAX;
-                int sel=poll(&pfd, 1, timeout_ms);
-                if(sel < 0) continue;
-                if(sel > 0)
+                int sel=poll(&pfd, 1, -1);
+                if(sel < 0)
                 {
-                    //读取 inotify 事件队列，仅当有与配置文件相关的事件时才重载
-                    int relevant=0;
-                    char evbuf[4096] __attribute__((aligned(__alignof__(struct inotify_event))));
-                    ssize_t n;
-                    while((n=read(ifd, evbuf, sizeof(evbuf))) > 0)
-                    {
-                        char *ptr=evbuf;
-                        while(ptr < evbuf+n)
-                        {
-                            struct inotify_event *ev=(struct inotify_event *)ptr;
-                            if(ev->len > 0 && ev->name[0] != '\0' && strcmp(ev->name, opt_name) == 0) relevant=1;
-                            ptr+=sizeof(struct inotify_event)+ev->len;
-                        }
-                    }
-                    if(!relevant) continue;
+                    printf_with_time("poll函数的返回值为-1，程序出现内部错误，强制停止运行！");
+                    exit(8721);
                 }
-                //sel==0 为超时，直接落入下方进行周期性兜底重载
+                //读取 inotify 事件队列，仅当有与配置文件相关的事件时才重载
+                int relevant=0;
+                char evbuf[4096] __attribute__((aligned(__alignof__(struct inotify_event))));
+                ssize_t n;
+                while((n=read(ifd, evbuf, sizeof(evbuf))) > 0)
+                {
+                    char *ptr=evbuf;
+                    while(ptr < evbuf+n)
+                    {
+                        struct inotify_event *ev=(struct inotify_event *)ptr;
+                        if(ev->len > 0 && ev->name[0] != '\0' && strcmp(ev->name, opt_name) == 0) relevant=1;
+                        ptr+=sizeof(struct inotify_event)+ev->len;
+                    }
+                }
+                if(!relevant) continue;
             }
         }
         //在循环体内定义变量，这样变量仅存在于单次循环，每次循环结束后变量自动释放，循环开始时变量重新定义
@@ -94,7 +92,7 @@ void *read_option_file(void *arg)
         ListNode *node=options_head.next,*tmp=options_head.next;
         if(node == NULL || tmp == NULL)
         {
-            printf_with_time("存储配置信息的链表中没有节点，程序强制停止运行！");
+            printf_with_time("存储配置信息的链表中没有节点，程序出现内部错误，强制停止运行！");
             exit(9988);
         }
         while((tmp=tmp->next) != NULL) option_quantity++;
@@ -107,12 +105,14 @@ void *read_option_file(void *arg)
         if(fd == -1)
         {
             pthread_mutex_unlock((pthread_mutex_t *)&mutex_options);
+            printf_with_time("无法打开配置文件，跳过本次配置获取");
             continue;
         }
         if(fstat(fd, &statbuf) == -1)
         {
             close(fd);
             pthread_mutex_unlock((pthread_mutex_t *)&mutex_options);
+            printf_with_time("无法获取配置文件信息，跳过本次配置获取");
             continue;
         }
         if(statbuf.st_size > 0)
