@@ -139,7 +139,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appn
                 {
                     line_feed(name);
                     //跳过以英文井号开头的行及空行
-                    if(!strlen(name) || (strstr(name, "#") != NULL && !strstr(name, "#"))) continue;
+                    if((strlen(name) == 0) || (name[0] == '#')) continue;
                     bypass_app_num++;
                     bypass_app_package_name=(char **)my_realloc(bypass_app_package_name, sizeof(char *)*bypass_app_num);
                     bypass_app_package_name[bypass_app_num-1]=(char *)my_calloc(1, sizeof(char)*APP_PACKAGE_NAME_MAX_SIZE);
