@@ -66,7 +66,7 @@ jobs:
           git commit -a -m "更新${TAG}版本"
           git push origin main -f
       - name: Update release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           token: ${{ secrets.API_TOKEN_GITHUB }}
           tag_name: ${{ env.TAG }}
