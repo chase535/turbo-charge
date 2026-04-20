@@ -44,7 +44,7 @@ void *read_option_file(void *arg)
         if(wd < 0)
         {
             close(ifd);
-            printf_with_time("inotify添加监视失败，关闭描述符并降级为周期性轮询");
+            printf_with_time("读取配置文件功能的inotify添加监视失败，降级为周期性轮询");
             ifd = -1;
         }
     }
