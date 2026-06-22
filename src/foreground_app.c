@@ -3,8 +3,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <sys/wait.h>
-#include <sys/types.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <ctype.h>
+#include <sys/stat.h>
 
 #include "printf_with_time.h"
 #include "options_linkedlist.h"
@@ -13,86 +15,138 @@
 //全局变量，用于存储当前前台应用的包名
 volatile char ForegroundAppName[100]={0};
 
+//读取小型文件内容到缓冲区，返回读取的字节数，失败返回-1
+static int read_small_file(const char *path, char *buf, int bufsize)
+{
+    int fd=open(path, O_RDONLY);
+    if(fd < 0) return -1;
+    int n=read(fd, buf, bufsize-1);
+    close(fd);
+    if(n < 0) return -1;
+    buf[n]='\0';
+    return n;
+}
+
+//通过sysfs检测屏幕是否开启，返回1为开启，0为关闭
+static int is_screen_on()
+{
+    char buf[32]={0};
+    //尝试常见的LCD背光路径
+    if(read_small_file("/sys/class/leds/lcd-backlight/brightness", buf, sizeof(buf)) > 0)
+        return atoi(buf) > 0;
+    //扫描/sys/class/backlight/目录下的所有背光设备
+    DIR *dir=opendir("/sys/class/backlight");
+    if(dir)
+    {
+        struct dirent *entry;
+        char path[256];
+        while((entry=readdir(dir)) != NULL)
+        {
+            if(entry->d_name[0] == '.') continue;
+            snprintf(path, sizeof(path), "/sys/class/backlight/%s/brightness", entry->d_name);
+            if(read_small_file(path, buf, sizeof(buf)) > 0)
+            {
+                int brightness=atoi(buf);
+                closedir(dir);
+                return brightness > 0;
+            }
+        }
+        closedir(dir);
+    }
+    //无法检测屏幕状态，默认为开启
+    return 1;
+}
+
+/*
+通过扫描/proc目录获取前台应用包名
+优先通过cgroup中的top-app标识判断（Android 7+的前台应用会被置于top-app cgroup）
+后备方案为查找oom_score_adj值为0且UID>=10000的应用进程
+*/
+static int get_foreground_app(char *result, int result_size)
+{
+    DIR *proc_dir=opendir("/proc");
+    if(!proc_dir) return -1;
+    struct dirent *entry;
+    char path[256], buf[1024], cmdline[APP_PACKAGE_NAME_MAX_SIZE];
+    char fallback[APP_PACKAGE_NAME_MAX_SIZE]={0};
+    struct stat st;
+    while((entry=readdir(proc_dir)) != NULL)
+    {
+        //只处理数字目录（即PID）
+        if(!isdigit((unsigned char)entry->d_name[0])) continue;
+        //通过stat检查UID，UID>=10000为应用进程
+        snprintf(path, sizeof(path), "/proc/%s", entry->d_name);
+        if(stat(path, &st) != 0 || st.st_uid < 10000) continue;
+        //读取cmdline获取进程名
+        snprintf(path, sizeof(path), "/proc/%s/cmdline", entry->d_name);
+        if(read_small_file(path, cmdline, sizeof(cmdline)) <= 0) continue;
+        //过滤非应用进程
+        if(cmdline[0] == '/' || cmdline[0] == '[') continue;
+        //去除多进程后缀（如com.example.app:service -> com.example.app）
+        char *colon=strchr(cmdline, ':');
+        if(colon) *colon='\0';
+        //应用包名必须包含点号
+        if(strchr(cmdline, '.') == NULL) continue;
+        //检查cgroup中是否包含top-app标识（前台应用的特征）
+        snprintf(path, sizeof(path), "/proc/%s/cgroup", entry->d_name);
+        if(read_small_file(path, buf, sizeof(buf)) > 0 && strstr(buf, "/top-app"))
+        {
+            strncpy(result, cmdline, result_size-1);
+            result[result_size-1]='\0';
+            closedir(proc_dir);
+            return 0;
+        }
+        //后备方案：记录oom_score_adj为0的应用进程
+        if(!fallback[0])
+        {
+            snprintf(path, sizeof(path), "/proc/%s/oom_score_adj", entry->d_name);
+            if(read_small_file(path, buf, sizeof(buf)) > 0 && atoi(buf) == 0)
+                strncpy(fallback, cmdline, sizeof(fallback)-1);
+        }
+    }
+    closedir(proc_dir);
+    //cgroup方案未找到，使用oom_score_adj后备方案
+    if(fallback[0])
+    {
+        strncpy(result, fallback, result_size-1);
+        result[result_size-1]='\0';
+        return 0;
+    }
+    return -1;
+}
+
 /*
 获取前台应用的包名以配合“伪”旁路供电功能使用
-我是干嵌入式系统开发的，对AndroidNDK不熟悉，无法使用纯C语言实现，所以只能使用popen管道执行Shell命令来获取
-但这就导致了执行效率的大幅下降，我无能为力，只能等待其他大佬的PR
+通过扫描/proc目录与sysfs实现，纯C语言，不依赖popen或Shell命令
 */
 void *get_foreground_appname(void *android_version)
 {
+    (void)android_version;
     while(read_one_option("BYPASS_CHARGE") == 1)
     {
-        //在循环体内定义变量，这样变量仅存在于单次循环，每次循环结束后变量自动释放，循环开始时变量重新定义
-        char result[APP_PACKAGE_NAME_MAX_SIZE+100]={0},*tmpchar1,*tmpchar2;
-        FILE *fp;
-        //判断是否为锁屏状态，如果是则无法获取应用包名，直接将全局变量ForegroundAppName赋值为screen_is_off
-        fp=popen("dumpsys deviceidle | grep 'mScreenOn'", "r");
-        if(fp == NULL)
-        {
-            printf_with_time("无法创建管道通信，跳过本次循环！");
-            continue_no_print:
-            sleep(5);
-            //添加进程取消点，否则无法通过调用pthread_exit()函数取消进程
-            //下面所有pthread_testcancel()函数的作用都同上
-            pthread_testcancel();
-            continue;
-        }
-        fgets(result, sizeof(result), fp);
-        pclose(fp);
-        fp=NULL;
-        line_feed(result);
-        //此Shell命令的返回值格式为  mScreenOn=true
-        //若为true则没有锁屏，若为false则处于锁屏状态
-        tmpchar1=strstr(result, "=");
-        if(tmpchar1 == NULL)
-        {
-            printf_with_time("无法获取锁屏状态，跳过本次循环！");
-            goto continue_no_print;
-        }
-        if(strcmp(tmpchar1+1, "true"))
+        char result[APP_PACKAGE_NAME_MAX_SIZE]={0};
+        //通过sysfs检测屏幕是否开启
+        if(!is_screen_on())
         {
             pthread_mutex_lock((pthread_mutex_t *)&mutex_foreground_app);
             strncpy((char *)ForegroundAppName, "screen_is_off", APP_PACKAGE_NAME_MAX_SIZE-1);
             pthread_mutex_unlock((pthread_mutex_t *)&mutex_foreground_app);
-            goto continue_no_print;
+            sleep(5);
+            pthread_testcancel();
+            continue;
         }
-        /*
-        如果非锁屏状态，则获取前台应用包名
-        安卓10及以上可使用dumpsys activity lru获取应用状态
-        安卓10以下就只能用dumpsys activity o获取，执行效率慢
-        然后再使用grep提取出包含关键字的行，此行即为前台应用的详情
-        */
-        fp=(*((int *)android_version) < 10)?popen("dumpsys activity o | grep ' (top-activity)'", "r"):popen("dumpsys activity lru | grep ' TOP'", "r");
-        if(fp == NULL)
+        //通过/proc获取前台应用包名
+        if(get_foreground_app(result, sizeof(result)) != 0)
         {
-            printf_with_time("无法创建管道通信，跳过本次循环！");
-            goto continue_no_print;
-        }
-        fgets(result, sizeof(result), fp);
-        pclose(fp);
-        fp=NULL;
-        line_feed(result);
-        tmpchar1=(*((int *)android_version) < 10)?strstr(result, "/TOP"):strstr(result, " TOP");
-        if(tmpchar1 == NULL)
-        {
-            can_not_get_package:
             printf_with_time("无法获取前台应用包名，跳过本次循环！");
-            goto continue_no_print;
+            sleep(5);
+            pthread_testcancel();
+            continue;
         }
-        /*
-        从上一步获取到的前台应用的详情中截取应用包名
-        dumpsys activity lru获取到的详情格式为  #98: fg     TOP  LCMN 4493:com.termux/u0a351 act:activities|recents
-        dumpsys activity o获取到的详情格式为  Proc # 0: fg     T/A/TOP  LCMN  t: 0 4493:com.termux/u0a351 (top-activity)
-        */
-        tmpchar2=(*((int *)android_version) < 10)?strstr(strstr(tmpchar1, ":")+1, ":"):strstr(tmpchar1, ":");
-        if(tmpchar2 == NULL) goto can_not_get_package;
-        tmpchar1=strstr(tmpchar2, "/");
-        if(tmpchar1 == NULL) goto can_not_get_package;
-        *tmpchar1='\0';
         pthread_testcancel();
         //将前台应用包名赋值给ForegroundAppName
         pthread_mutex_lock((pthread_mutex_t *)&mutex_foreground_app);
-        strncpy((char *)ForegroundAppName, tmpchar2+1, APP_PACKAGE_NAME_MAX_SIZE-1);
+        strncpy((char *)ForegroundAppName, result, APP_PACKAGE_NAME_MAX_SIZE-1);
         pthread_mutex_unlock((pthread_mutex_t *)&mutex_foreground_app);
         sleep(5);
         pthread_testcancel();
@@ -104,31 +158,35 @@ void *get_foreground_appname(void *android_version)
     return NULL;
 }
 
-//获取安卓版本，因为只有安卓7及以上才能使用Shell命令获取安卓版本
+//通过读取/system/build.prop获取安卓版本
 int check_android_version()
 {
-    char android_version_char[5];
     int android_version=0;
-    FILE *fp=NULL;
-    fp=popen("getprop ro.build.version.release", "r");
-    if(fp == NULL)
+    const char *prop_files[]={"/system/build.prop", "/vendor/build.prop", "/system/vendor/build.prop", NULL};
+    const char key[]="ro.build.version.release=";
+    for(int i=0;prop_files[i];i++)
     {
-        printf_with_time("无法创建管道通信，故无法获取安卓版本，“伪”旁路供电功能失效！");
-        return 0;
+        FILE *fp=fopen(prop_files[i], "r");
+        if(!fp) continue;
+        char line[256];
+        while(fgets(line, sizeof(line), fp))
+        {
+            line_feed(line);
+            if(strstr(line, key) == line)
+            {
+                android_version=atoi(line+strlen(key));
+                fclose(fp);
+                goto version_found;
+            }
+        }
+        fclose(fp);
     }
-    fgets(android_version_char, sizeof(android_version_char), fp);
-    line_feed(android_version_char);
-    pclose(fp);
-    fp=NULL;
-    if(!strlen(android_version_char))
-    {
-        printf_with_time("无法获取安卓版本，而只有安卓7及以上能够通过Shell命令获取前台应用，所以必须要获取安卓版本进行判断，“伪”旁路供电功能失效！");
-        return 0;
-    }
-    android_version=atoi(android_version_char);
+    printf_with_time("无法从属性文件中获取安卓版本，“伪”旁路供电功能失效！");
+    return 0;
+version_found:
     if(android_version < 7)
     {
-        printf_with_time("安卓7及以下无法通过Shell命令获取前台应用，当前版本为安卓%d，“伪”旁路供电功能失效！", android_version);
+        printf_with_time("安卓7及以下无法获取前台应用，当前版本为安卓%d，“伪”旁路供电功能失效！", android_version);
         return 0;
     }
     return android_version;
