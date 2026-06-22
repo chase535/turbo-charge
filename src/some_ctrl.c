@@ -2,6 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
+#include <sys/inotify.h>
+#include <poll.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <limits.h>
 
 #include "some_ctrl.h"
 #include "options_linkedlist.h"
@@ -99,10 +105,43 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appn
 {
     char name[APP_PACKAGE_NAME_MAX_SIZE]={0};
     uchar in_list=0;
-    FILE *fp;
     static char **bypass_app_package_name=NULL;
-    static uint bypass_file_last_modify_time=0,bypass_app_num=0;
-    struct stat statbuf;
+    static uint bypass_app_num=0;
+    static int bypass_ifd=-2;
+    static char bypass_dir[PATH_MAX], bypass_fname[NAME_MAX+1];
+    static int bypass_need_reload=1;
+    //初始化inotify，监视bypass_charge_file所在目录
+    if(bypass_ifd == -2)
+    {
+        strncpy(bypass_dir, bypass_charge_file, sizeof(bypass_dir)-1);
+        bypass_dir[sizeof(bypass_dir)-1]='\0';
+        char *slash=strrchr(bypass_dir, '/');
+        if(slash)
+        {
+            strncpy(bypass_fname, slash+1, sizeof(bypass_fname)-1);
+            bypass_fname[sizeof(bypass_fname)-1]='\0';
+            if(slash == bypass_dir) { bypass_dir[0]='/'; bypass_dir[1]='\0'; }
+            else *slash='\0';
+        }
+        else
+        {
+            strncpy(bypass_fname, bypass_charge_file, sizeof(bypass_fname)-1);
+            bypass_fname[sizeof(bypass_fname)-1]='\0';
+            bypass_dir[0]='.'; bypass_dir[1]='\0';
+        }
+        bypass_ifd=inotify_init1(IN_CLOEXEC | IN_NONBLOCK);
+        if(bypass_ifd >= 0)
+        {
+            int wd=inotify_add_watch(bypass_ifd, bypass_dir, IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE);
+            if(wd < 0)
+            {
+                close(bypass_ifd);
+                printf_with_time("“伪”旁路充电功能的inotify添加监视失败，降级为每次重新读取");
+                bypass_ifd=-1;
+            }
+        }
+        else bypass_ifd=-1;
+    }
     /*
     为了不使获取前台应用包名拖累主程序的执行效率，所以使用了子线程方案
     如果配置文件的BYPASS_CHARGE值为1且ForegroundAppName值为空(没有子线程正在执行)，则创建子线程
@@ -126,27 +165,67 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appn
                 if(*is_bypass) printf_with_time("手机屏幕开启，恢复“伪”旁路供电模式");
                 *screen_is_off=0;
             }
-            //读取“伪”旁路供电的配置文件
-            check_read_file(bypass_charge_file);
-            stat(option_file, &statbuf);
-            if(statbuf.st_mtime != bypass_file_last_modify_time)
+
+            //通过inotify检测bypass_charge_file是否有变更
+            if(bypass_ifd >= 0)
             {
-                bypass_app_num=0;
-                if(bypass_app_package_name != NULL) free_malloc_memory(&bypass_app_package_name, bypass_app_num);
-                bypass_app_package_name=(char **)my_calloc(1, sizeof(char *));
-                fp=fopen(bypass_charge_file, "rt");
-                while(fgets(name, sizeof(name), fp) != NULL)
+                struct pollfd pfd={bypass_ifd, POLLIN, 0};
+                if(poll(&pfd, 1, 0) > 0)
                 {
-                    line_feed(name);
-                    //跳过以英文井号开头的行及空行
-                    if((strlen(name) == 0) || (name[0] == '#')) continue;
-                    bypass_app_num++;
-                    bypass_app_package_name=(char **)my_realloc(bypass_app_package_name, sizeof(char *)*bypass_app_num);
-                    bypass_app_package_name[bypass_app_num-1]=(char *)my_calloc(1, sizeof(char)*APP_PACKAGE_NAME_MAX_SIZE);
-                    strncpy(bypass_app_package_name[bypass_app_num-1], name, APP_PACKAGE_NAME_MAX_SIZE-1);
+                    char evbuf[4096] __attribute__((aligned(__alignof__(struct inotify_event))));
+                    ssize_t n;
+                    while((n=read(bypass_ifd, evbuf, sizeof(evbuf))) > 0)
+                    {
+                        char *ptr=evbuf;
+                        while(ptr < evbuf+n)
+                        {
+                            struct inotify_event *ev=(struct inotify_event *)ptr;
+                            if(ev->len > 0 && ev->name[0] != '\0' && strcmp(ev->name, bypass_fname) == 0) bypass_need_reload=1;
+                            ptr+=sizeof(struct inotify_event)+ev->len;
+                        }
+                    }
                 }
-                fclose(fp);
-                fp=NULL;
+            }
+            else bypass_need_reload=1; //inotify不可用时每次都重新读取
+            //读取"伪"旁路供电的配置文件
+            if(bypass_need_reload)
+            {
+                bypass_need_reload=0;
+                check_read_file(bypass_charge_file);
+                if(bypass_app_package_name != NULL) free_malloc_memory(&bypass_app_package_name, bypass_app_num);
+                bypass_app_num=0;
+                bypass_app_package_name=(char **)my_calloc(1, sizeof(char *));
+                int fd=open(bypass_charge_file, O_RDONLY);
+                if(fd != -1)
+                {
+                    struct stat statbuf;
+                    if(fstat(fd, &statbuf) != -1 && statbuf.st_size > 0)
+                    {
+                        char *map=mmap(NULL, statbuf.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+                        if(map != MAP_FAILED)
+                        {
+                            char *pos=map, *end=map+statbuf.st_size, *line_end;
+                            while(pos < end)
+                            {
+                                line_end=memchr(pos, '\n', end-pos);
+                                size_t line_len=line_end ? (size_t)(line_end-pos) : (size_t)(end-pos);
+                                if(line_len >= sizeof(name)) line_len=sizeof(name)-1;
+                                memcpy(name, pos, line_len);
+                                name[line_len]='\0';
+                                pos=line_end ? line_end+1 : end;
+                                line_feed(name);
+                                //跳过以英文井号开头的行及空行
+                                if((strlen(name) == 0) || (name[0] == '#')) continue;
+                                bypass_app_num++;
+                                bypass_app_package_name=(char **)my_realloc(bypass_app_package_name, sizeof(char *)*bypass_app_num);
+                                bypass_app_package_name[bypass_app_num-1]=(char *)my_calloc(1, sizeof(char)*APP_PACKAGE_NAME_MAX_SIZE);
+                                strncpy(bypass_app_package_name[bypass_app_num-1], name, APP_PACKAGE_NAME_MAX_SIZE-1);
+                            }
+                            munmap(map, statbuf.st_size);
+                        }
+                    }
+                    close(fd);
+                }
             }
             //判断前台应用包名是否在配置文件中
             for(uint i=0;i < bypass_app_num; i++)
