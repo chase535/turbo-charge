@@ -1,8 +1,9 @@
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
 
-#define BYPASS_CHARGE_CURRENT "500000"
-#define APP_PACKAGE_NAME_MAX_SIZE 100
+#define BYPASS_CHARGE_CURRENT          "500000"
+#define APP_PACKAGE_NAME_MAX_SIZE       (100)
+#define FOREGROUND_APP_STRING_MAX_SIZE  (APP_PACKAGE_NAME_MAX_SIZE + 1)
 
 extern char option_file[];
 extern char bypass_charge_file[];
