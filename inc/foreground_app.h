@@ -3,7 +3,7 @@
 
 #include "main.h"
 
-extern volatile char ForegroundAppName[APP_PACKAGE_NAME_MAX_SIZE];
+extern volatile char ForegroundAppName[FOREGROUND_APP_STRING_MAX_SIZE];
 
 void *get_foreground_appname(void *android_version);
 int check_android_version();

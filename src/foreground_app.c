@@ -11,7 +11,7 @@
 #include "foreground_app.h"
 
 //全局变量，用于存储当前前台应用的包名
-volatile char ForegroundAppName[100]={0};
+volatile char ForegroundAppName[FOREGROUND_APP_STRING_MAX_SIZE]={0};
 
 /*
 获取前台应用的包名以配合“伪”旁路供电功能使用
@@ -23,7 +23,7 @@ void *get_foreground_appname(void *android_version)
     while(read_one_option("BYPASS_CHARGE") == 1)
     {
         //在循环体内定义变量，这样变量仅存在于单次循环，每次循环结束后变量自动释放，循环开始时变量重新定义
-        char result[APP_PACKAGE_NAME_MAX_SIZE+100]={0},*tmpchar1,*tmpchar2;
+        char result[2 * APP_PACKAGE_NAME_MAX_SIZE]={0},*tmpchar1,*tmpchar2;
         FILE *fp;
         //判断是否为锁屏状态，如果是则无法获取应用包名，直接将全局变量ForegroundAppName赋值为screen_is_off
         fp=popen("dumpsys deviceidle | grep 'mScreenOn'", "r");
@@ -52,7 +52,7 @@ void *get_foreground_appname(void *android_version)
         if(strcmp(tmpchar1+1, "true"))
         {
             pthread_mutex_lock((pthread_mutex_t *)&mutex_foreground_app);
-            strncpy((char *)ForegroundAppName, "screen_is_off", APP_PACKAGE_NAME_MAX_SIZE-1);
+            strncpy((char *)ForegroundAppName, "screen_is_off", APP_PACKAGE_NAME_MAX_SIZE);
             pthread_mutex_unlock((pthread_mutex_t *)&mutex_foreground_app);
             goto continue_no_print;
         }
@@ -72,27 +72,28 @@ void *get_foreground_appname(void *android_version)
         pclose(fp);
         fp=NULL;
         line_feed(result);
-        tmpchar1=(*((int *)android_version) < 10)?strstr(result, "/TOP"):strstr(result, " TOP");
+        /*
+        从上一步获取到的前台应用的详情中截取应用包名
+        dumpsys activity lru获取到的详情格式为  #98: fg     TOP  LCMN 4493:com.termux/u0a351 act:activities|recents
+        dumpsys activity o获取到的详情格式为  Proc # 0: fg     T/A/TOP  LCMN  t: 0 4493:com.termux/u0a351 (top-activity)
+        */
+        tmpchar1=strstr(result, "TOP ");
         if(tmpchar1 == NULL)
         {
             can_not_get_package:
             printf_with_time("无法获取前台应用包名，跳过本次循环！");
             goto continue_no_print;
         }
-        /*
-        从上一步获取到的前台应用的详情中截取应用包名
-        dumpsys activity lru获取到的详情格式为  #98: fg     TOP  LCMN 4493:com.termux/u0a351 act:activities|recents
-        dumpsys activity o获取到的详情格式为  Proc # 0: fg     T/A/TOP  LCMN  t: 0 4493:com.termux/u0a351 (top-activity)
-        */
         tmpchar2=(*((int *)android_version) < 10)?strstr(strstr(tmpchar1, ":")+1, ":"):strstr(tmpchar1, ":");
         if(tmpchar2 == NULL) goto can_not_get_package;
         tmpchar1=strstr(tmpchar2, "/");
         if(tmpchar1 == NULL) goto can_not_get_package;
         *tmpchar1='\0';
+        tmpchar1 = tmpchar2+1;
         pthread_testcancel();
         //将前台应用包名赋值给ForegroundAppName
         pthread_mutex_lock((pthread_mutex_t *)&mutex_foreground_app);
-        strncpy((char *)ForegroundAppName, tmpchar2+1, APP_PACKAGE_NAME_MAX_SIZE-1);
+        strncpy((char *)ForegroundAppName, tmpchar1, APP_PACKAGE_NAME_MAX_SIZE);
         pthread_mutex_unlock((pthread_mutex_t *)&mutex_foreground_app);
         sleep(5);
         pthread_testcancel();

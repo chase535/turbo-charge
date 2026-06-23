@@ -111,7 +111,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appn
     pthread_mutex_lock((pthread_mutex_t *)&mutex_foreground_app);
     if(read_one_option("BYPASS_CHARGE") == 1 && !strlen((char *)ForegroundAppName))
     {
-        strncpy((char *)ForegroundAppName, "chase535", APP_PACKAGE_NAME_MAX_SIZE-1);
+        strncpy((char *)ForegroundAppName, "chase535", APP_PACKAGE_NAME_MAX_SIZE);
         pthread_create(thread1, NULL, get_foreground_appname, (void *)android_version);
         pthread_detach(*thread1);
     }
@@ -142,8 +142,8 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appn
                     if((strlen(name) == 0) || (name[0] == '#')) continue;
                     bypass_app_num++;
                     bypass_app_package_name=(char **)my_realloc(bypass_app_package_name, sizeof(char *)*bypass_app_num);
-                    bypass_app_package_name[bypass_app_num-1]=(char *)my_calloc(1, sizeof(char)*APP_PACKAGE_NAME_MAX_SIZE);
-                    strncpy(bypass_app_package_name[bypass_app_num-1], name, APP_PACKAGE_NAME_MAX_SIZE-1);
+                    bypass_app_package_name[bypass_app_num-1]=(char *)my_calloc(1, sizeof(char)*FOREGROUND_APP_STRING_MAX_SIZE);
+                    strncpy(bypass_app_package_name[bypass_app_num-1], name, APP_PACKAGE_NAME_MAX_SIZE);
                 }
                 fclose(fp);
                 fp=NULL;
@@ -182,7 +182,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appn
                     *is_bypass=0;
                 }
             }
-            strncpy(last_appname, (char *)ForegroundAppName, APP_PACKAGE_NAME_MAX_SIZE-1);
+            memcpy(last_appname, (char *)ForegroundAppName, sizeof(char)*FOREGROUND_APP_STRING_MAX_SIZE);
         }
         else
         {
@@ -197,7 +197,7 @@ void bypass_charge_ctl(pthread_t *thread1, int *android_version, char *last_appn
     //子线程结束运行或者获取不到前台应用包名，则清空上一次获取到的前台应用包名并恢复正常充电模式
     else
     {
-        if(strlen(last_appname)) memset(last_appname, 0, APP_PACKAGE_NAME_MAX_SIZE*sizeof(char));
+        if(strlen(last_appname)) memset(last_appname, 0, sizeof(char)*FOREGROUND_APP_STRING_MAX_SIZE);
         if(*is_bypass) *is_bypass=0;
     }
     pthread_mutex_unlock((pthread_mutex_t *)&mutex_foreground_app);
